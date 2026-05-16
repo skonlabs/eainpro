@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export function Header() {
   const { t, lang, setLang } = useI18n();
+  const { user, signOut } = useAuth();
   const toggle = () => setLang(lang === "en" ? "my" : "en");
 
   return (
@@ -26,6 +28,11 @@ export function Header() {
           <Link to="/providers" className="text-foreground/80 hover:text-foreground">
             {t("nav_providers")}
           </Link>
+          {user && (
+            <Link to="/my-jobs" className="text-foreground/80 hover:text-foreground">
+              {lang === "en" ? "My jobs" : "ကျွန်ုပ်၏ အလုပ်များ"}
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -36,9 +43,20 @@ export function Header() {
           >
             {lang === "en" ? "မြန်မာ" : "EN"}
           </button>
-          <Link to="/signin" className="hidden sm:block">
-            <Button variant="ghost" size="sm">{t("nav_signin")}</Button>
-          </Link>
+          {user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              onClick={() => signOut()}
+            >
+              {lang === "en" ? "Sign out" : "ထွက်ရန်"}
+            </Button>
+          ) : (
+            <Link to="/signin" className="hidden sm:block">
+              <Button variant="ghost" size="sm">{t("nav_signin")}</Button>
+            </Link>
+          )}
           <Link to="/post-job" className="hidden md:block">
             <Button size="sm">{t("nav_post")}</Button>
           </Link>
