@@ -33,6 +33,11 @@ export function Header() {
               {lang === "en" ? "My requests" : "ကျွန်ုပ်၏ တောင်းဆိုမှုများ"}
             </Link>
           )}
+          {user && (
+            <Link to="/account" className="text-foreground/80 hover:text-foreground">
+              {lang === "en" ? "Account" : "အကောင့်"}
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
