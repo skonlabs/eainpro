@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
+import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -71,6 +72,11 @@ const ProviderDashboardRoute = ProviderDashboardRouteImport.update({
   path: '/provider/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PProviderIdRoute = PProviderIdRouteImport.update({
+  id: '/p/$providerId',
+  path: '/p/$providerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/jobs/$jobId'
+    | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/jobs/$jobId'
+    | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/jobs/$jobId'
+    | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
+  PProviderIdRoute: typeof PProviderIdRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
 }
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$providerId': {
+      id: '/p/$providerId'
+      path: '/p/$providerId'
+      fullPath: '/p/$providerId'
+      preLoaderRoute: typeof PProviderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs/$jobId': {
       id: '/jobs/$jobId'
       path: '/jobs/$jobId'
@@ -275,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   JobsJobIdRoute: JobsJobIdRoute,
+  PProviderIdRoute: PProviderIdRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
 }
