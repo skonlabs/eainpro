@@ -1352,9 +1352,13 @@ function ReviewSheet({
     setSubmitting(false);
     if (error) {
       setErr(error.message);
+      toast.error(error.message);
       return;
     }
-    if (data) onSubmitted(data as Review);
+    if (data) {
+      onSubmitted(data as Review);
+      toast.success(lang === "en" ? "Thanks for your review!" : "ကျေးဇူးတင်ပါသည်!");
+    }
   };
 
   return (
