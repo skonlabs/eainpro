@@ -71,7 +71,7 @@ function NewRequestPage() {
     description: "",
     answers: {} as Record<string, string>,
     urgency: "flexible" as "today" | "tomorrow" | "this_week" | "flexible",
-    city: "yangon",
+    city: initialCity ?? "yangon",
     township: "",
     area: "",
     address: "",
