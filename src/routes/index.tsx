@@ -61,24 +61,24 @@ function Index() {
   const [city, setCity] = useState("yangon");
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-secondary/60 via-background to-accent/20" />
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pt-20 lg:pt-28">
+        <div className="mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-28">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               {t("hero_title")}
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:mt-5 sm:text-lg">
               {t("hero_sub")}
             </p>
           </div>
 
           {/* Search */}
-          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-lg sm:p-4">
+          <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-lg sm:mt-8 sm:p-4">
             <div className="grid gap-2 sm:grid-cols-[1fr_220px_auto]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -158,9 +158,9 @@ function Index() {
       </section>
 
       {/* CATEGORIES */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="mb-8 flex items-end justify-between">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
+        <div className="mb-5 flex items-end justify-between sm:mb-8">
+          <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
             {t("categories")}
           </h2>
           <Link to="/services" className="text-sm font-medium text-primary hover:underline">
@@ -192,8 +192,8 @@ function Index() {
 
       {/* HOW IT WORKS */}
       <section className="border-t border-border/60 bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
+          <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
             {t("how_it_works")}
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
