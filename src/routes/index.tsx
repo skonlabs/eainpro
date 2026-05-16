@@ -191,14 +191,19 @@ function Index() {
                   ))}
                 </select>
               </div>
-              <Link
-                to="/post-job"
-                search={{ q: query || undefined, city }}
+              <Button
+                size="lg"
+                onClick={() => {
+                  if (suggestions.length > 0) {
+                    go(suggestions[0].slug);
+                  } else {
+                    navigate({ to: "/providers" });
+                  }
+                }}
+                className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto"
               >
-                <Button size="lg" className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto">
-                  {t("cta_find")}
-                </Button>
-              </Link>
+                {t("cta_find")}
+              </Button>
             </div>
 
             {/* Popular chips */}
