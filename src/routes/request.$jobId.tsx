@@ -160,7 +160,7 @@ function RequestDetailPage() {
     }
     let cancelled = false;
     (async () => {
-      const [jr, ir, qr, mr] = await Promise.all([
+      const [jr, ir, qr, mr, br] = await Promise.all([
         supabase.from("job_requests").select("*").eq("id", jobId).maybeSingle(),
         supabase
           .from("request_invitations")
@@ -177,15 +177,32 @@ function RequestDetailPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
-          .select("id, sender_id, body, created_at")
+          .select("id, sender_id, body, created_at, attachment_url, kind")
           .eq("job_id", jobId)
           .order("created_at", { ascending: true }),
+        supabase
+          .from("bookings")
+          .select(
+            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          )
+          .eq("job_id", jobId)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (jr.data) setJob(jr.data as Job);
       if (ir.data) setInvites(ir.data as unknown as Invite[]);
       if (qr.data) setQuotes(qr.data as unknown as Quote[]);
       if (mr.data) setMessages(mr.data as Message[]);
+      if (br.data) {
+        const b = br.data as unknown as Booking;
+        setBooking(b);
+        const { data: rv } = await supabase
+          .from("reviews")
+          .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
+          .eq("booking_id", b.id)
+          .maybeSingle();
+        if (rv) setReview(rv as Review);
+      }
     })();
     return () => {
       cancelled = true;
