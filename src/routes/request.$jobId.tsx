@@ -416,9 +416,10 @@ function RequestDetailPage() {
 
         {/* Tabs */}
         <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 text-sm">
-          {((booking
-            ? ["booking", "details", "quotes", "messages"]
-            : ["details", "providers", "quotes", "messages"]) as const).map((t) => {
+          {(booking
+            ? (["booking", "details", "quotes", "messages"] as const)
+            : (["details", "providers", "quotes", "messages"] as const)
+          ).map((t) => {
             const labels = {
               details: L("Details", "အသေးစိတ်"),
               providers: L("Providers", "ဝန်ဆောင်မှုပေးသူ"),
