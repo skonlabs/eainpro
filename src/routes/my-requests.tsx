@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
@@ -69,7 +67,7 @@ function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-10">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -159,7 +157,7 @@ function MyRequestsPage() {
           </ul>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

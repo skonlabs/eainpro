@@ -1,8 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -187,7 +185,7 @@ function NewRequestPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-2xl px-4 py-5 sm:px-6 sm:py-10">
         {/* Stepper */}
         <div className="mb-6">
@@ -666,7 +664,7 @@ function NewRequestPage() {
           )}
         </div>
       </div>
-      <Footer />
+
     </div>
   );
 }

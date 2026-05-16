@@ -11,6 +11,8 @@ import {
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { BottomNav } from "@/components/site/BottomNav";
+import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -135,7 +137,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <I18nProvider>
-          <Outlet />
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <div className="flex-1">
+              <Outlet />
+            </div>
+            <Footer />
+          </div>
           <BottomNav />
           <Toaster position="top-center" richColors />
         </I18nProvider>

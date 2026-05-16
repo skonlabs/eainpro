@@ -1,7 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/catalog";
@@ -59,7 +57,7 @@ function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-12">
         <Link
           to="/services"
@@ -156,7 +154,7 @@ function CategoryPage() {
           </ul>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

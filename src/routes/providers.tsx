@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
@@ -51,7 +49,7 @@ function ProvidersPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-14">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           {lang === "en" ? "Find providers" : "ဝန်ဆောင်မှုပေးသူများ ရှာရန်"}
@@ -106,7 +104,7 @@ function ProvidersPage() {
           ))}
         </ul>
       </main>
-      <Footer />
+
     </div>
   );
 }

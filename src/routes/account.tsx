@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,7 +163,7 @@ function AccountPage() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
+
         <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <p className="text-sm text-muted-foreground">{L("Loading…", "တင်နေ…")}</p>
         </main>
@@ -175,7 +173,7 @@ function AccountPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-5 sm:px-6 sm:py-10">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -441,7 +439,7 @@ function AccountPage() {
           </TabsContent>
         </Tabs>
       </main>
-      <Footer />
+
     </div>
   );
 }

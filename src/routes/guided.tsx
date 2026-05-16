@@ -1,7 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -50,7 +48,7 @@ function GuidedPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-12">
         {stack.length > 1 && (
           <button
@@ -95,7 +93,7 @@ function GuidedPage() {
           </Button>
         </div>
       </main>
-      <Footer />
+
     </div>
   );
 }

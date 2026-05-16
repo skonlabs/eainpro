@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
@@ -87,7 +85,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0">
-      <Header />
+
 
       {/* HERO */}
       <section className="relative overflow-hidden">
@@ -325,7 +323,7 @@ function Index() {
         </div>
       </section>
 
-      <Footer />
+
     </div>
   );
 }

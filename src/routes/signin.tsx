@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
@@ -36,7 +34,7 @@ function SignInPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-16">
         <h1 className="text-2xl font-bold tracking-tight">
           {lang === "en" ? "Sign in" : "ဝင်ရောက်ရန်"}
@@ -73,7 +71,7 @@ function SignInPage() {
           </p>
         </form>
       </main>
-      <Footer />
+
     </div>
   );
 }

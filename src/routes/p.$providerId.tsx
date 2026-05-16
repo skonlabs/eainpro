@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
@@ -69,7 +67,7 @@ function ProviderProfilePage() {
   if (!p) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
+
         <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14">
           <p className="text-sm text-muted-foreground">{lang === "en" ? "Loading…" : "တင်နေသည်…"}</p>
         </main>
@@ -79,7 +77,7 @@ function ProviderProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-14">
         <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
           <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-secondary text-xl font-bold text-primary">
@@ -158,7 +156,7 @@ function ProviderProfilePage() {
           <Button className="w-full">{lang === "en" ? "Request a service" : "ဝန်ဆောင်မှု တောင်းရန်"}</Button>
         </Link>
       </main>
-      <Footer />
+
     </div>
   );
 }
