@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ProvidersRouteImport } from './routes/providers'
@@ -16,6 +17,11 @@ import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/providers'
     | '/services'
     | '/signin'
+    | '/signup'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/providers'
     | '/services'
     | '/signin'
+    | '/signup'
     | '/services/$category'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/providers'
     | '/services'
     | '/signin'
+    | '/signup'
     | '/services/$category'
   fileRoutesById: FileRoutesById
 }
@@ -105,10 +117,18 @@ export interface RootRouteChildren {
   ProvidersRoute: typeof ProvidersRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signin': {
       id: '/signin'
       path: '/signin'
@@ -172,6 +192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProvidersRoute: ProvidersRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
