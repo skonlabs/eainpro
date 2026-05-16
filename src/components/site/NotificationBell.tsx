@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Bell, Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -24,6 +24,7 @@ type Notif = {
 export function NotificationBell() {
   const { user } = useAuth();
   const { lang } = useI18n();
+  const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [items, setItems] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
@@ -122,22 +123,16 @@ export function NotificationBell() {
               );
               return (
                 <li key={n.id} className="hover:bg-secondary/40">
-                  {n.link ? (
-                    <Link
-                      to={n.link}
-                      onClick={() => {
-                        markOneRead(n.id);
-                        setOpen(false);
-                      }}
-                      className="block"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <button onClick={() => markOneRead(n.id)} className="block w-full">
-                      {inner}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      markOneRead(n.id);
+                      setOpen(false);
+                      if (n.link) nav({ to: n.link });
+                    }}
+                    className="block w-full"
+                  >
+                    {inner}
+                  </button>
                 </li>
               );
             })}
