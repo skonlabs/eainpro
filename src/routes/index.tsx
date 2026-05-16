@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,31 @@ function Index() {
   const { t, lang } = useI18n();
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("yangon");
+  const [open, setOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const navigate = useNavigate();
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return CATEGORIES.filter((c) =>
+      c.en.toLowerCase().includes(q) || c.my.toLowerCase().includes(q) || c.slug.includes(q),
+    ).slice(0, 6);
+  }, [query]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const go = (slug: string) => {
+    setOpen(false);
+    navigate({ to: "/services/$category", params: { category: slug } });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0">
@@ -88,14 +113,68 @@ function Index() {
           {/* Search */}
           <div className="mx-auto mt-7 max-w-3xl rounded-3xl border border-border/60 bg-card p-4 shadow-elevated sm:mt-10 sm:p-6">
             <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto]">
-              <div className="relative">
+              <div className="relative" ref={wrapRef}>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setOpen(true);
+                    setActiveIdx(0);
+                  }}
+                  onFocus={() => query && setOpen(true)}
+                  onKeyDown={(e) => {
+                    if (!open || suggestions.length === 0) return;
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setActiveIdx((i) => (i + 1) % suggestions.length);
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setActiveIdx((i) => (i - 1 + suggestions.length) % suggestions.length);
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      go(suggestions[activeIdx].slug);
+                    } else if (e.key === "Escape") {
+                      setOpen(false);
+                    }
+                  }}
                   placeholder={t("search_placeholder")}
+                  role="combobox"
+                  aria-expanded={open && suggestions.length > 0}
+                  aria-autocomplete="list"
                   className="h-12 rounded-2xl border-transparent bg-muted/60 pl-10 font-medium placeholder:text-muted-foreground/70 focus-visible:bg-card"
                 />
+                {open && suggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-elevated animate-in fade-in slide-in-from-top-1">
+                    <ul role="listbox" className="max-h-72 overflow-y-auto py-1">
+                      {suggestions.map((c, i) => {
+                        const Icon = ICONS[c.icon] ?? Hammer;
+                        return (
+                          <li key={c.slug} role="option" aria-selected={i === activeIdx}>
+                            <button
+                              type="button"
+                              onMouseEnter={() => setActiveIdx(i)}
+                              onClick={() => go(c.slug)}
+                              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+                                i === activeIdx ? "bg-primary/10" : "bg-transparent"
+                              }`}
+                            >
+                              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                                <Icon className="h-4 w-4" />
+                              </span>
+                              <span className="font-semibold text-foreground">
+                                {lang === "en" ? c.en : c.my}
+                              </span>
+                              <span className="ml-auto text-xs text-muted-foreground">
+                                {lang === "en" ? "View pros" : "ကြည့်ရန်"}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
               <div className="relative">
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
