@@ -10,7 +10,7 @@ export const Route = createFileRoute("/providers")({
 function ProvidersPage() {
   const { lang } = useI18n();
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight">

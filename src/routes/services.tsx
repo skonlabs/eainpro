@@ -17,7 +17,7 @@ export const Route = createFileRoute("/services")({
 function ServicesPage() {
   const { t, lang } = useI18n();
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight">{t("categories")}</h1>

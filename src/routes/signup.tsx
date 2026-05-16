@@ -41,7 +41,7 @@ function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">
