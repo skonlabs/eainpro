@@ -91,7 +91,16 @@ function MyRequestsPage() {
           </Link>
         </div>
 
-        {!rows && <p className="mt-8 text-sm text-muted-foreground">{L("Loading…", "တင်နေ…")}</p>}
+        {!rows && (
+          <ul className="mt-6 grid gap-2">
+            {[0, 1, 2].map((i) => (
+              <li
+                key={i}
+                className="h-20 animate-pulse rounded-2xl border border-border bg-card/60"
+              />
+            ))}
+          </ul>
+        )}
 
         {rows && rows.length === 0 && (
           <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">

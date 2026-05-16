@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { NotificationBell } from "@/components/site/NotificationBell";
 
 export function Header() {
   const { t, lang, setLang } = useI18n();
@@ -41,6 +42,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {user && <NotificationBell />}
           <button
             onClick={toggle}
             className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:bg-secondary"
