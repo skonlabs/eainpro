@@ -26,7 +26,10 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   AlertTriangle,
+  CalendarClock,
+  Heart,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const searchSchema = z.object({
   tab: z.enum(["details", "providers", "quotes", "messages", "booking"]).optional(),
