@@ -76,6 +76,7 @@ function NewRequestPage() {
     area: "",
     address: "",
     photoUrls: [] as string[],
+    videoUrls: [] as string[],
     uploading: false,
     timing: "this_week",
     window: "any" as "morning" | "afternoon" | "evening" | "any",
@@ -107,9 +108,14 @@ function NewRequestPage() {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length || !user) return;
+    if (!files.length) return;
+    if (!user) {
+      setErr(L("Please sign in to upload photos.", "ဓာတ်ပုံ တင်ရန် အကောင့်ဝင်ပါ။"));
+      return;
+    }
     set("uploading", true);
-    const urls: string[] = [];
+    const photoUrls: string[] = [];
+    const videoUrls: string[] = [];
     for (const f of files) {
       const ext = f.name.split(".").pop() ?? "jpg";
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -119,10 +125,16 @@ function NewRequestPage() {
       });
       if (!error) {
         const { data } = supabase.storage.from("job-photos").getPublicUrl(path);
-        urls.push(data.publicUrl);
+        if (f.type.startsWith("video/")) videoUrls.push(data.publicUrl);
+        else photoUrls.push(data.publicUrl);
       }
     }
-    setForm((f) => ({ ...f, photoUrls: [...f.photoUrls, ...urls], uploading: false }));
+    setForm((f) => ({
+      ...f,
+      photoUrls: [...f.photoUrls, ...photoUrls],
+      videoUrls: [...f.videoUrls, ...videoUrls],
+      uploading: false,
+    }));
     e.target.value = "";
   };
 
@@ -142,10 +154,13 @@ function NewRequestPage() {
         description: form.description,
         category_answers: form.answers,
         city_slug: form.city,
+        township_text: form.township || null,
         area: form.area || null,
         address: form.address || null,
         photo_urls: form.photoUrls,
+        video_urls: form.videoUrls,
         urgency: form.urgency,
+        timing: form.timing || null,
         preferred_date: form.customDate || null,
         preferred_window: form.window,
         budget_range: form.budget,
