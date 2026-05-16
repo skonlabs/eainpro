@@ -227,9 +227,10 @@ function JobDetailPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto grid max-w-5xl gap-6 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-5">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10 lg:grid lg:grid-cols-[1fr_360px]">
+        {/* Job summary — top on all viewports */}
+        <div className="space-y-6 lg:order-1">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold tracking-tight">
                 {catName ? (lang === "en" ? catName.en : catName.my) : job.category_slug}
@@ -238,7 +239,7 @@ function JobDetailPage() {
                 {booking?.status ?? job.status}
               </span>
             </div>
-            <div className="mt-2 text-sm text-muted-foreground">
+            <div className="mt-2 text-xs sm:text-sm text-muted-foreground">
               {cityName ? (lang === "en" ? cityName.en : cityName.my) : job.city_slug}
               {job.address ? ` · ${job.address}` : ""} · {job.urgency}
             </div>
@@ -246,7 +247,7 @@ function JobDetailPage() {
           </div>
 
           {/* Chat */}
-          <div className="flex h-[420px] flex-col rounded-2xl border border-border bg-card">
+          <div className="flex h-[60vh] min-h-[360px] flex-col rounded-2xl border border-border bg-card lg:h-[520px]">
             <div className="border-b border-border p-3 text-sm font-semibold">
               {lang === "en" ? "Conversation" : "စကားပြောချက်"}
             </div>
@@ -287,7 +288,8 @@ function JobDetailPage() {
           {err && <p className="text-sm text-destructive">{err}</p>}
         </div>
 
-        <aside className="space-y-4">
+        {/* Quotes + booking actions — surfaced ABOVE chat on mobile */}
+        <aside className="order-first space-y-4 lg:order-2">
           {/* Quotes list */}
           <div className="rounded-2xl border border-border bg-card p-4">
             <div className="text-sm font-semibold">
