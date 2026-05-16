@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
+  '/signin': typeof SigninRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
+  '/signin': typeof SigninRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
+  '/signin': typeof SigninRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRouteTypes {
@@ -70,15 +79,23 @@ export interface FileRouteTypes {
     | '/post-job'
     | '/providers'
     | '/services'
+    | '/signin'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/post-job' | '/providers' | '/services' | '/services/$category'
+  to:
+    | '/'
+    | '/post-job'
+    | '/providers'
+    | '/services'
+    | '/signin'
+    | '/services/$category'
   id:
     | '__root__'
     | '/'
     | '/post-job'
     | '/providers'
     | '/services'
+    | '/signin'
     | '/services/$category'
   fileRoutesById: FileRoutesById
 }
@@ -87,10 +104,18 @@ export interface RootRouteChildren {
   PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
   ServicesRoute: typeof ServicesRouteWithChildren
+  SigninRoute: typeof SigninRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/services': {
       id: '/services'
       path: '/services'
@@ -146,6 +171,7 @@ const rootRouteChildren: RootRouteChildren = {
   PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
   ServicesRoute: ServicesRouteWithChildren,
+  SigninRoute: SigninRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
