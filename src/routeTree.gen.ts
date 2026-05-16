@@ -15,11 +15,13 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as PostJobRouteImport } from './routes/post-job'
+import { Route as MyRequestsRouteImport } from './routes/my-requests'
 import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 import { Route as RequestNewRouteImport } from './routes/request.new'
+import { Route as RequestJobIdRouteImport } from './routes/request.$jobId'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
@@ -55,6 +57,11 @@ const PostJobRoute = PostJobRouteImport.update({
   path: '/post-job',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyRequestsRoute = MyRequestsRouteImport.update({
+  id: '/my-requests',
+  path: '/my-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MyJobsRoute = MyJobsRouteImport.update({
   id: '/my-jobs',
   path: '/my-jobs',
@@ -78,6 +85,11 @@ const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
 const RequestNewRoute = RequestNewRouteImport.update({
   id: '/request/new',
   path: '/request/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestJobIdRoute = RequestJobIdRouteImport.update({
+  id: '/request/$jobId',
+  path: '/request/$jobId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
@@ -105,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
+  '/my-requests': typeof MyRequestsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -115,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
@@ -122,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
+  '/my-requests': typeof MyRequestsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -132,6 +147,7 @@ export interface FileRoutesByTo {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
@@ -140,6 +156,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
+  '/my-requests': typeof MyRequestsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -150,6 +167,7 @@ export interface FileRoutesById {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
@@ -159,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/my-jobs'
+    | '/my-requests'
     | '/post-job'
     | '/providers'
     | '/reset-password'
@@ -169,6 +188,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
@@ -176,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/my-jobs'
+    | '/my-requests'
     | '/post-job'
     | '/providers'
     | '/reset-password'
@@ -186,6 +207,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
   id:
@@ -193,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/my-jobs'
+    | '/my-requests'
     | '/post-job'
     | '/providers'
     | '/reset-password'
@@ -203,6 +226,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
   fileRoutesById: FileRoutesById
@@ -211,6 +235,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   MyJobsRoute: typeof MyJobsRoute
+  MyRequestsRoute: typeof MyRequestsRoute
   PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -221,6 +246,7 @@ export interface RootRouteChildren {
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
+  RequestJobIdRoute: typeof RequestJobIdRoute
   RequestNewRoute: typeof RequestNewRoute
 }
 
@@ -268,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostJobRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-requests': {
+      id: '/my-requests'
+      path: '/my-requests'
+      fullPath: '/my-requests'
+      preLoaderRoute: typeof MyRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/my-jobs': {
       id: '/my-jobs'
       path: '/my-jobs'
@@ -301,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/request/new'
       fullPath: '/request/new'
       preLoaderRoute: typeof RequestNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request/$jobId': {
+      id: '/request/$jobId'
+      path: '/request/$jobId'
+      fullPath: '/request/$jobId'
+      preLoaderRoute: typeof RequestJobIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/provider/onboarding': {
@@ -350,6 +390,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   MyJobsRoute: MyJobsRoute,
+  MyRequestsRoute: MyRequestsRoute,
   PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -360,8 +401,19 @@ const rootRouteChildren: RootRouteChildren = {
   PProviderIdRoute: PProviderIdRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
+  RequestJobIdRoute: RequestJobIdRoute,
   RequestNewRoute: RequestNewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
