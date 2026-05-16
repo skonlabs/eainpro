@@ -14,9 +14,7 @@ import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProvidersRouteImport } from './routes/providers'
-import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as MyRequestsRouteImport } from './routes/my-requests'
-import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as GuidedRouteImport } from './routes/guided'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -54,19 +52,9 @@ const ProvidersRoute = ProvidersRouteImport.update({
   path: '/providers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostJobRoute = PostJobRouteImport.update({
-  id: '/post-job',
-  path: '/post-job',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MyRequestsRoute = MyRequestsRouteImport.update({
   id: '/my-requests',
   path: '/my-requests',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyJobsRoute = MyJobsRouteImport.update({
-  id: '/my-jobs',
-  path: '/my-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidedRoute = GuidedRouteImport.update({
@@ -130,9 +118,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
-  '/my-jobs': typeof MyJobsRoute
   '/my-requests': typeof MyRequestsRoute
-  '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
@@ -151,9 +137,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
-  '/my-jobs': typeof MyJobsRoute
   '/my-requests': typeof MyRequestsRoute
-  '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
@@ -173,9 +157,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
-  '/my-jobs': typeof MyJobsRoute
   '/my-requests': typeof MyRequestsRoute
-  '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
@@ -196,9 +178,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
-    | '/my-jobs'
     | '/my-requests'
-    | '/post-job'
     | '/providers'
     | '/reset-password'
     | '/services'
@@ -217,9 +197,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
-    | '/my-jobs'
     | '/my-requests'
-    | '/post-job'
     | '/providers'
     | '/reset-password'
     | '/services'
@@ -238,9 +216,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
-    | '/my-jobs'
     | '/my-requests'
-    | '/post-job'
     | '/providers'
     | '/reset-password'
     | '/services'
@@ -260,9 +236,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   GuidedRoute: typeof GuidedRoute
-  MyJobsRoute: typeof MyJobsRoute
   MyRequestsRoute: typeof MyRequestsRoute
-  PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -313,25 +287,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProvidersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/post-job': {
-      id: '/post-job'
-      path: '/post-job'
-      fullPath: '/post-job'
-      preLoaderRoute: typeof PostJobRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/my-requests': {
       id: '/my-requests'
       path: '/my-requests'
       fullPath: '/my-requests'
       preLoaderRoute: typeof MyRequestsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-jobs': {
-      id: '/my-jobs'
-      path: '/my-jobs'
-      fullPath: '/my-jobs'
-      preLoaderRoute: typeof MyJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guided': {
@@ -431,9 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   GuidedRoute: GuidedRoute,
-  MyJobsRoute: MyJobsRoute,
   MyRequestsRoute: MyRequestsRoute,
-  PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ServicesRoute: ServicesRouteWithChildren,
