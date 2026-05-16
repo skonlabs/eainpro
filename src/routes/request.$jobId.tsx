@@ -276,6 +276,18 @@ function RequestDetailPage() {
     })();
   }, [job]);
 
+  // Load favorites for the current customer
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("favorites")
+        .select("provider_id")
+        .eq("customer_id", user.id);
+      setFavorites(new Set((data ?? []).map((f) => f.provider_id as string)));
+    })();
+  }, [user]);
+
   const toggleSelect = (id: string) => {
     setSelected((s) => {
       const next = new Set(s);
