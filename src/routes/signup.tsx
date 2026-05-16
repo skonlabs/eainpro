@@ -29,6 +29,7 @@ function SignUpPage() {
   const [role, setRole] = useState<"customer" | "provider">(as ?? "customer");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +50,6 @@ function SignUpPage() {
     }
     window.location.href = safeRedirect(redirect, "/");
   };
-
-  const [needsConfirm, setNeedsConfirm] = useState(false);
 
   if (needsConfirm) {
     return (
