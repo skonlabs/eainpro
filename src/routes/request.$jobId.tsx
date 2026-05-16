@@ -276,17 +276,104 @@ function RequestDetailPage() {
     setMsgBody("");
     const { data } = await supabase
       .from("messages")
-      .insert({ job_id: jobId, sender_id: user.id, body })
-      .select("id, sender_id, body, created_at")
+      .insert({ job_id: jobId, sender_id: user.id, body, kind: "text" })
+      .select("id, sender_id, body, created_at, attachment_url, kind")
       .single();
     if (data) setMessages((m) => [...m, data as Message]);
+  };
+
+  const sendPhoto = async (file: File) => {
+    if (!user) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/chat/${jobId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("job-photos").upload(path, file, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: pu } = supabase.storage.from("job-photos").getPublicUrl(path);
+      const { data } = await supabase
+        .from("messages")
+        .insert({ job_id: jobId, sender_id: user.id, attachment_url: pu.publicUrl, kind: "image" })
+        .select("id, sender_id, body, created_at, attachment_url, kind")
+        .single();
+      if (data) setMessages((m) => [...m, data as Message]);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const acceptQuote = async (q: Quote) => {
+    if (!user || !job) return;
+    // Mark quote accepted
+    await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
+    // Decline others
+    await supabase
+      .from("quotes")
+      .update({ status: "declined" })
+      .eq("job_id", jobId)
+      .neq("id", q.id)
+      .eq("status", "pending");
+    // Create booking
+    const { data: b } = await supabase
+      .from("bookings")
+      .insert({
+        job_id: jobId,
+        quote_id: q.id,
+        customer_id: user.id,
+        provider_id: q.provider_id,
+        amount: q.amount,
+        scheduled_at: q.earliest_at,
+        customer_phone: job.contact_phone ?? null,
+        status: "accepted",
+      })
+      .select(
+        "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+      )
+      .maybeSingle();
+    if (b) setBooking(b as unknown as Booking);
+    await supabase.from("job_requests").update({ status: "accepted" }).eq("id", jobId);
+    setJob((j) => (j ? { ...j, status: "accepted" } : j));
+    // System message
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
+    });
+    setTab("booking");
+  };
+
+  const confirmCompletion = async () => {
+    if (!booking) return;
+    const now = new Date().toISOString();
+    await supabase
+      .from("bookings")
+      .update({ status: "completed", customer_confirmed_at: now })
+      .eq("id", booking.id);
+    await supabase.from("job_requests").update({ status: "completed" }).eq("id", jobId);
+    setBooking({ ...booking, status: "completed", customer_confirmed_at: now });
+    setJob((j) => (j ? { ...j, status: "completed" } : j));
+  };
+
+  const cancelBooking = async (reason: string) => {
+    if (!booking) return;
+    const now = new Date().toISOString();
+    await supabase
+      .from("bookings")
+      .update({ status: "cancelled", cancelled_at: now, cancel_reason: reason })
+      .eq("id", booking.id);
+    await supabase.from("job_requests").update({ status: "cancelled" }).eq("id", jobId);
+    setBooking({ ...booking, status: "cancelled", cancelled_at: now, cancel_reason: reason });
+    setJob((j) => (j ? { ...j, status: "cancelled" } : j));
   };
 
   const cat = CATEGORIES.find((c) => c.slug === job?.category_slug);
   const city = CITIES.find((c) => c.slug === job?.city_slug);
   const invitedIds = new Set(invites.map((i) => i.provider_id));
 
-  const setTab = (t: "details" | "providers" | "quotes" | "messages") =>
+  const setTab = (t: "details" | "providers" | "quotes" | "messages" | "booking") =>
     nav({ to: "/request/$jobId", params: { jobId }, search: { tab: t } });
 
   if (!job) {
