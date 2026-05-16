@@ -1286,6 +1286,14 @@ function BookingPanel({
               {L("View", "ကြည့်")}
             </Button>
           </Link>
+          <button
+            type="button"
+            onClick={() => onToggleFavorite()}
+            aria-label="favorite"
+            className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground"
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? "fill-destructive text-destructive" : ""}`} />
+          </button>
         </div>
       </div>
 
@@ -1336,6 +1344,21 @@ function BookingPanel({
                 <Check className="mr-2 h-4 w-4" />
               )}
               {L("Mark complete", "ပြီးဆုံးပြီ")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewWhen(
+                  booking.scheduled_at
+                    ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                    : "",
+                );
+                setShowReschedule(true);
+              }}
+              className="rounded-xl"
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {L("Reschedule", "ပြန်ညှိ")}
             </Button>
             <Button
               variant="outline"
