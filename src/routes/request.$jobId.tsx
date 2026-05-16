@@ -737,6 +737,14 @@ function RequestDetailPage() {
                                 {L("View", "ကြည့်")}
                               </Button>
                             </Link>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavorite(p.id)}
+                              aria-label="favorite"
+                              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+                            >
+                              <Heart className={`h-3.5 w-3.5 ${favorites.has(p.id) ? "fill-destructive text-destructive" : ""}`} />
+                            </button>
                           </div>
                         </div>
                       </div>
