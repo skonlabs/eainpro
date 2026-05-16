@@ -23,10 +23,15 @@ import {
   ShieldCheck,
   Loader2,
   Heart,
+  Phone,
+  Image as ImageIcon,
+  CheckCircle2,
+  Calendar,
+  AlertTriangle,
 } from "lucide-react";
 
 const searchSchema = z.object({
-  tab: z.enum(["details", "providers", "quotes", "messages"]).optional(),
+  tab: z.enum(["details", "providers", "quotes", "messages", "booking"]).optional(),
 });
 
 export const Route = createFileRoute("/request/$jobId")({
