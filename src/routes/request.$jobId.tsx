@@ -1210,6 +1210,9 @@ function BookingPanel({
   jobAddress,
   onComplete,
   onCancel,
+  onReschedule,
+  onToggleFavorite,
+  isFavorite,
   onReviewed,
   onOpenMessages,
 }: {
@@ -1219,6 +1222,9 @@ function BookingPanel({
   jobAddress: string | null;
   onComplete: () => Promise<void>;
   onCancel: (reason: string) => Promise<void>;
+  onReschedule: (iso: string) => Promise<void>;
+  onToggleFavorite: () => Promise<void> | void;
+  isFavorite: boolean;
   onReviewed: (r: Review) => void;
   onOpenMessages: () => void;
 }) {
@@ -1227,6 +1233,9 @@ function BookingPanel({
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [showReview, setShowReview] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [newWhen, setNewWhen] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
 
   const isCancelled = booking.status === "cancelled";
   const isCompleted = booking.status === "completed";
