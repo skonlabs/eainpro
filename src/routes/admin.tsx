@@ -78,7 +78,7 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-14">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           {lang === "en" ? "Admin console" : "Admin စီမံခန့်ခွဲ"}
         </h1>

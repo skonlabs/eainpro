@@ -19,7 +19,7 @@ function ServicesPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
         <h1 className="text-3xl font-bold tracking-tight">{t("categories")}</h1>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {CATEGORIES.map((c) => (
