@@ -861,6 +861,8 @@ function QuotesTab({
   invites,
   lang,
   jobId,
+  disabled,
+  onAccept,
   onRefresh,
   onInvite,
 }: {
@@ -868,6 +870,8 @@ function QuotesTab({
   invites: Invite[];
   lang: "en" | "my";
   jobId: string;
+  disabled?: boolean;
+  onAccept: (q: Quote) => Promise<void>;
   onRefresh: () => Promise<void>;
   onInvite: () => void;
 }) {
@@ -882,12 +886,6 @@ function QuotesTab({
       else if (n.size < 3) n.add(id);
       return n;
     });
-
-  const accept = async (q: Quote) => {
-    await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
-    await supabase.from("job_requests").update({ status: "accepted" }).eq("id", jobId);
-    await onRefresh();
-  };
 
   const decline = async (q: Quote) => {
     await supabase.from("quotes").update({ status: "declined" }).eq("id", q.id);
