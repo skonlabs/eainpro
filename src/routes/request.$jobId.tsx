@@ -505,9 +505,6 @@ function RequestDetailPage() {
       </div>
     );
   }
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
