@@ -10,15 +10,15 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur"
+      className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/75 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-primary-foreground font-bold sm:h-9 sm:w-9">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground font-extrabold shadow-lg shadow-primary/25">
             E
           </div>
-          <span className="text-base font-semibold tracking-tight sm:text-lg">{t("brand")}</span>
+          <span className="text-base font-bold tracking-tight sm:text-lg">{t("brand")}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm md:flex">
@@ -38,7 +38,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggle}
-            className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-secondary"
+            className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:bg-secondary"
             aria-label="Toggle language"
           >
             {lang === "en" ? "မြန်မာ" : "EN"}
