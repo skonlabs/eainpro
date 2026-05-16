@@ -17,6 +17,7 @@ import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
+import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -58,6 +59,11 @@ const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => ServicesRoute,
 } as any)
+const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
+  id: '/provider/onboarding',
+  path: '/provider/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/provider/onboarding'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/provider/onboarding'
     | '/services/$category'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/provider/onboarding'
     | '/services/$category'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
+  ProviderOnboardingRoute: typeof ProviderOnboardingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesCategoryRouteImport
       parentRoute: typeof ServicesRoute
     }
+    '/provider/onboarding': {
+      id: '/provider/onboarding'
+      path: '/provider/onboarding'
+      fullPath: '/provider/onboarding'
+      preLoaderRoute: typeof ProviderOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -214,7 +234,18 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
+  ProviderOnboardingRoute: ProviderOnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
