@@ -838,6 +838,9 @@ function RequestDetailPage() {
             jobId={jobId}
             disabled={!!booking}
             onAccept={acceptQuote}
+            acceptingId={acceptingId}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
             onRefresh={async () => {
               const { data } = await supabase
                 .from("quotes")
