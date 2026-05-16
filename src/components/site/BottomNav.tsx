@@ -12,7 +12,7 @@ export function BottomNav() {
   const isAdmin = roles.includes("admin");
 
   const items: Array<{
-    to: "/" | "/services" | "/request/new" | "/providers" | "/signin" | "/my-requests" | "/provider/dashboard" | "/admin";
+    to: "/" | "/services" | "/request/new" | "/providers" | "/signin" | "/my-requests" | "/account" | "/provider/dashboard" | "/admin";
     icon: typeof Home;
     en: string;
     my: string;
@@ -23,21 +23,21 @@ export function BottomNav() {
         { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
         { to: "/admin", icon: Shield, en: "Admin", my: "Admin", primary: true },
         { to: "/my-requests", icon: Briefcase, en: "Requests", my: "တောင်းဆို" },
-        { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
+        { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
       ]
     : isProvider
       ? [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
           { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
           { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
-          { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
+          { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
         ]
       : [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
           { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
           { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
           { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
-          { to: user ? "/my-requests" : "/signin", icon: User, en: user ? "Requests" : "Sign in", my: user ? "တောင်းဆို" : "ဝင်ရောက်" },
+          { to: user ? "/account" : "/signin", icon: User, en: user ? "Account" : "Sign in", my: user ? "အကောင့်" : "ဝင်ရောက်" },
         ];
 
   return (
