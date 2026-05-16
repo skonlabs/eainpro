@@ -987,6 +987,9 @@ function QuotesTab({
   jobId,
   disabled,
   onAccept,
+  acceptingId,
+  favorites,
+  onToggleFavorite,
   onRefresh,
   onInvite,
 }: {
@@ -996,6 +999,9 @@ function QuotesTab({
   jobId: string;
   disabled?: boolean;
   onAccept: (q: Quote) => Promise<void>;
+  acceptingId: string | null;
+  favorites: Set<string>;
+  onToggleFavorite: (providerId: string) => Promise<void> | void;
   onRefresh: () => Promise<void>;
   onInvite: () => void;
 }) {
