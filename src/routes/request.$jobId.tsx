@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS } from "@/lib/catalog";
 import {
   ArrowLeft,
@@ -341,6 +342,10 @@ function RequestDetailPage() {
       body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
     });
     setTab("booking");
+    toast.success(
+      lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
+      { description: lang === "en" ? "Contact details are now shared with the provider." : "ဆက်သွယ်ရန် အချက်အလက် မျှဝေပြီး။" },
+    );
   };
 
   const confirmCompletion = async () => {
@@ -353,6 +358,9 @@ function RequestDetailPage() {
     await supabase.from("job_requests").update({ status: "completed" }).eq("id", jobId);
     setBooking({ ...booking, status: "completed", customer_confirmed_at: now });
     setJob((j) => (j ? { ...j, status: "completed" } : j));
+    toast.success(lang === "en" ? "Service marked complete" : "ပြီးဆုံးပြီ", {
+      description: lang === "en" ? "Please leave a review for the provider." : "ပညာရှင်ကို သုံးသပ်ချက် ပေးပါ။",
+    });
   };
 
   const cancelBooking = async (reason: string) => {
@@ -365,6 +373,7 @@ function RequestDetailPage() {
     await supabase.from("job_requests").update({ status: "cancelled" }).eq("id", jobId);
     setBooking({ ...booking, status: "cancelled", cancelled_at: now, cancel_reason: reason });
     setJob((j) => (j ? { ...j, status: "cancelled" } : j));
+    toast(lang === "en" ? "Booking cancelled" : "ဘွတ်ကင် ပယ်ဖျက်ပြီး");
   };
 
   const cat = CATEGORIES.find((c) => c.slug === job?.category_slug);
