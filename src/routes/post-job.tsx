@@ -210,19 +210,22 @@ function PostJobPage() {
             {step < 4 ? (
               <Button onClick={next}>{lang === "en" ? "Next" : "ဆက်လုပ်ရန်"}</Button>
             ) : (
-              <Button
-                onClick={() =>
-                  alert(
-                    lang === "en"
-                      ? "Job request ready. Sign in to submit — full backend wiring lands in Phase 2."
-                      : "အလုပ်တောင်းခံချက် ပြင်ဆင်ပြီးပါပြီ။ Phase 2 တွင် အပြည့်အဝ ဆက်သွယ်ပေးပါမည်။",
-                  )
-                }
-              >
-                {lang === "en" ? "Submit" : "တင်ပြရန်"}
+              <Button onClick={submit} disabled={submitting || authLoading}>
+                {submitting
+                  ? "…"
+                  : !user
+                    ? lang === "en"
+                      ? "Sign in to submit"
+                      : "တင်ပြရန် ဝင်ရောက်ပါ"
+                    : lang === "en"
+                      ? "Submit"
+                      : "တင်ပြရန်"}
               </Button>
             )}
           </div>
+          {submitError && (
+            <p className="pt-2 text-xs text-destructive">{submitError}</p>
+          )}
         </div>
       </main>
       <Footer />
