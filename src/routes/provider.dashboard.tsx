@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -48,13 +46,27 @@ function DashboardPage() {
       if (!prov) return void nav({ to: "/provider/onboarding" });
       setProvider(prov);
 
-      const { data, error } = await supabase
-        .from("job_requests")
-        .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
-        .in("status", ["open", "quoted"])
-        .order("created_at", { ascending: false });
-      if (error) setErr(error.message);
-      else setJobs(data as Job[]);
+      // Match jobs to provider's own service categories AND service-area cities.
+      const [{ data: svcRows }, { data: areaRows }] = await Promise.all([
+        supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+      ]);
+      const cats = (svcRows ?? []).map((r) => r.category_slug);
+      const cities = (areaRows ?? []).map((r) => r.city_slug);
+      if (cats.length === 0) {
+        setJobs([]);
+      } else {
+        let q = supabase
+          .from("job_requests")
+          .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
+          .in("status", ["open", "quoted"])
+          .in("category_slug", cats)
+          .order("created_at", { ascending: false });
+        if (cities.length > 0) q = q.in("city_slug", cities);
+        const { data, error } = await q;
+        if (error) setErr(error.message);
+        else setJobs(data as Job[]);
+      }
 
       const { data: qs } = await supabase
         .from("quotes")
