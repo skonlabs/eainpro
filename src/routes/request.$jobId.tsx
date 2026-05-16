@@ -1082,3 +1082,359 @@ function CompareRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+function BookingPanel({
+  booking,
+  review,
+  lang,
+  jobAddress,
+  onComplete,
+  onCancel,
+  onReviewed,
+  onOpenMessages,
+}: {
+  booking: Booking;
+  review: Review | null;
+  lang: "en" | "my";
+  jobAddress: string | null;
+  onComplete: () => Promise<void>;
+  onCancel: (reason: string) => Promise<void>;
+  onReviewed: (r: Review) => void;
+  onOpenMessages: () => void;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [showReview, setShowReview] = useState(false);
+
+  const isCancelled = booking.status === "cancelled";
+  const isCompleted = booking.status === "completed";
+  const inFlight = ["accepted", "on_the_way", "started", "in_progress"].includes(booking.status);
+
+  return (
+    <div className="mt-5 space-y-4">
+      {/* Status banner */}
+      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          {isCompleted
+            ? L("Service completed", "ဝန်ဆောင်မှု ပြီးဆုံး")
+            : isCancelled
+              ? L("Booking cancelled", "ဘွတ်ကင် ပယ်ဖျက်")
+              : L("Booking confirmed", "ဘွတ်ကင် အတည်ပြုပြီး")}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isCompleted
+            ? L("Thank you. You can rate your provider below.", "ကျေးဇူးတင်ပါသည်။")
+            : isCancelled
+              ? booking.cancel_reason || L("This booking was cancelled.", "ဤဘွတ်ကင်ကို ပယ်ဖျက်ခဲ့သည်။")
+              : L(
+                  "Your address and phone have been shared with the provider.",
+                  "သင်၏ လိပ်စာနှင့် ဖုန်းကို ဝန်ဆောင်မှုပေးသူသို့ မျှဝေပြီးပါပြီ။",
+                )}
+        </p>
+      </div>
+
+      {/* Provider */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-start gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-muted text-base font-bold">
+            {(booking.provider?.business_name ?? "P").slice(0, 1)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold">{booking.provider?.business_name ?? "Provider"}</span>
+              {booking.provider?.is_verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+            </div>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <Star className="h-3 w-3 fill-primary text-primary" />
+              {booking.provider?.rating_avg.toFixed(1) ?? "—"} ({booking.provider?.rating_count ?? 0})
+            </div>
+          </div>
+          <Link to="/p/$providerId" params={{ providerId: booking.provider_id }}>
+            <Button size="sm" variant="outline" className="rounded-lg text-xs">
+              {L("View", "ကြည့်")}
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {L("Booking details", "ဘွတ်ကင် အသေးစိတ်")}
+        </h3>
+        <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+          <Field
+            label={L("Price", "စျေး")}
+            value={`${(booking.amount ?? 0).toLocaleString()} MMK`}
+          />
+          <Field
+            label={L("When", "အချိန်")}
+            value={
+              booking.scheduled_at
+                ? new Date(booking.scheduled_at).toLocaleString(lang === "en" ? "en" : "my")
+                : L("To be agreed in chat", "ချတ်တွင် ညှိနှိုင်းရန်")
+            }
+          />
+          <Field label={L("Address", "လိပ်စာ")} value={jobAddress || "—"} />
+          <Field label={L("Phone", "ဖုန်း")} value={booking.customer_phone || "—"} />
+        </dl>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button variant="outline" onClick={onOpenMessages} className="flex-1 rounded-xl">
+          <MessageCircle className="mr-2 h-4 w-4" />
+          {L("Message provider", "မက်ဆေ့ပို့")}
+        </Button>
+        {inFlight && (
+          <>
+            <Button
+              onClick={async () => {
+                setConfirmingComplete(true);
+                await onComplete();
+                setConfirmingComplete(false);
+                setShowReview(true);
+              }}
+              disabled={confirmingComplete}
+              className="flex-1 rounded-xl"
+            >
+              {confirmingComplete ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-4 w-4" />
+              )}
+              {L("Mark complete", "ပြီးဆုံးပြီ")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancel(true)}
+              className="rounded-xl text-destructive hover:bg-destructive/10"
+            >
+              <X className="mr-2 h-4 w-4" />
+              {L("Cancel", "ပယ်ဖျက်")}
+            </Button>
+          </>
+        )}
+        {isCompleted && !review && (
+          <Button onClick={() => setShowReview(true)} className="flex-1 rounded-xl">
+            <Star className="mr-2 h-4 w-4" />
+            {L("Leave a review", "သုံးသပ်ချက် ပေး")}
+          </Button>
+        )}
+      </div>
+
+      {isCompleted && review && (
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Star className="h-4 w-4 fill-primary text-primary" />
+            {L("Your review", "သင်၏ သုံးသပ်ချက်")}
+          </div>
+          <div className="mt-2 flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star
+                key={n}
+                className={`h-4 w-4 ${n <= review.rating ? "fill-primary text-primary" : "text-muted-foreground"}`}
+              />
+            ))}
+          </div>
+          {review.comment && <p className="mt-1 text-sm">{review.comment}</p>}
+        </div>
+      )}
+
+      {/* Cancel sheet */}
+      {showCancel && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur"
+          onClick={() => setShowCancel(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-base font-bold">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {L("Cancel booking?", "ဘွတ်ကင် ပယ်ဖျက်မလား?")}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {L(
+                "Please share a reason so we can improve.",
+                "အကြောင်းပြချက် မျှဝေပါ။",
+              )}
+            </p>
+            <Textarea
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder={L("Reason (optional)", "အကြောင်းပြချက်")}
+              className="mt-3"
+            />
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" onClick={() => setShowCancel(false)} className="flex-1 rounded-xl">
+                {L("Keep booking", "ဆက်ထား")}
+              </Button>
+              <Button
+                onClick={async () => {
+                  await onCancel(cancelReason);
+                  setShowCancel(false);
+                }}
+                className="flex-1 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {L("Cancel booking", "ပယ်ဖျက်")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review sheet */}
+      {showReview && booking.status === "completed" && !review && (
+        <ReviewSheet
+          booking={booking}
+          lang={lang}
+          onClose={() => setShowReview(false)}
+          onSubmitted={(r) => {
+            onReviewed(r);
+            setShowReview(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReviewSheet({
+  booking,
+  lang,
+  onClose,
+  onSubmitted,
+}: {
+  booking: Booking;
+  lang: "en" | "my";
+  onClose: () => void;
+  onSubmitted: (r: Review) => void;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [overall, setOverall] = useState(5);
+  const [quality, setQuality] = useState(5);
+  const [speed, setSpeed] = useState(5);
+  const [value, setValue] = useState(5);
+  const [comm, setComm] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async () => {
+    setSubmitting(true);
+    setErr(null);
+    const { data, error } = await supabase
+      .from("reviews")
+      .insert({
+        booking_id: booking.id,
+        customer_id: booking.customer_id,
+        provider_id: booking.provider_id,
+        rating: overall,
+        rating_quality: quality,
+        rating_speed: speed,
+        rating_value: value,
+        rating_communication: comm,
+        comment: comment.trim() || null,
+      })
+      .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
+      .single();
+    setSubmitting(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    if (data) onSubmitted(data as Review);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-md overflow-auto rounded-2xl border border-border bg-card p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">{L("Rate your service", "သုံးသပ်ပါ")}</h3>
+          <button onClick={onClose}><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {L("Overall", "ပြည့်စုံ")}
+          </p>
+          <StarRow value={overall} onChange={setOverall} big />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Dim label={L("Quality", "အရည်အသွေး")} value={quality} onChange={setQuality} />
+          <Dim label={L("Speed", "မြန်ဆန်မှု")} value={speed} onChange={setSpeed} />
+          <Dim label={L("Value", "တန်ဖိုး")} value={value} onChange={setValue} />
+          <Dim label={L("Communication", "ဆက်သွယ်မှု")} value={comm} onChange={setComm} />
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {L("Comment", "မှတ်ချက်")}
+          </p>
+          <Textarea
+            rows={3}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={L("How was your experience?", "သင်၏ အတွေ့အကြုံ ဘယ်လိုလဲ?")}
+            className="mt-1"
+          />
+        </div>
+
+        {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
+
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl">
+            {L("Cancel", "ပယ်ဖျက်")}
+          </Button>
+          <Button onClick={submit} disabled={submitting} className="flex-1 rounded-xl">
+            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {L("Submit", "တင်ပါ")}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dim({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <StarRow value={value} onChange={onChange} />
+    </div>
+  );
+}
+
+function StarRow({ value, onChange, big }: { value: number; onChange: (n: number) => void; big?: boolean }) {
+  return (
+    <div className="mt-1 flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} type="button" onClick={() => onChange(n)} aria-label={`${n} stars`}>
+          <Star
+            className={`${big ? "h-7 w-7" : "h-5 w-5"} ${n <= value ? "fill-primary text-primary" : "text-muted-foreground"}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
