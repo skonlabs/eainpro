@@ -569,6 +569,9 @@ function RequestDetailPage() {
             jobAddress={job.address}
             onComplete={confirmCompletion}
             onCancel={cancelBooking}
+            onReschedule={reschedule}
+            onToggleFavorite={() => toggleFavorite(booking.provider_id)}
+            isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
             onOpenMessages={() => setTab("messages")}
           />
