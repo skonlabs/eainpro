@@ -451,7 +451,7 @@ function RequestDetailPage() {
             jobAddress={job.address}
             onComplete={confirmCompletion}
             onCancel={cancelBooking}
-            onReviewed={(r) => setReview(r)}
+            onReviewed={(r: Review) => setReview(r)}
             onOpenMessages={() => setTab("messages")}
           />
         )}
