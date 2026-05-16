@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { BottomNav } from "@/components/site/BottomNav";
 import { AuthProvider } from "@/lib/auth";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,7 @@ function RootComponent() {
         <I18nProvider>
           <Outlet />
           <BottomNav />
+          <Toaster position="top-center" richColors />
         </I18nProvider>
       </AuthProvider>
     </QueryClientProvider>
