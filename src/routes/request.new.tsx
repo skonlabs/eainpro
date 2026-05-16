@@ -98,7 +98,7 @@ function NewRequestPage() {
 
   const canNext = () => {
     if (step === 1) return !!form.category;
-    if (step === 2) return form.description.trim().length >= 5;
+    if (step === 2) return form.description.trim().length >= 20;
     if (step === 3) return !!form.city && !!form.township.trim();
     return true;
   };
