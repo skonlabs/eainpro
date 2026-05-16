@@ -166,7 +166,7 @@ function MyRequestsPage() {
 
 function StatusPill({ status, lang }: { status: string; lang: "en" | "my" }) {
   const map: Record<string, { en: string; my: string; cls: string }> = {
-    open: { en: "Draft", my: "မူကြမ်း", cls: "bg-muted text-foreground/70" },
+    open: { en: "Looking for providers", my: "ပညာရှင် ရှာနေ", cls: "bg-muted text-foreground/70" },
     quoted: { en: "Quotes coming", my: "စျေး စောင့်", cls: "bg-primary/10 text-primary" },
     accepted: { en: "Selected", my: "ရွေးပြီး", cls: "bg-primary text-primary-foreground" },
     on_the_way: { en: "On the way", my: "လမ်းပေါ်", cls: "bg-primary text-primary-foreground" },
