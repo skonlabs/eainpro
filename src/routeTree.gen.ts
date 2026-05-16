@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as MyJobsRouteImport } from './routes/my-jobs'
@@ -36,6 +37,11 @@ const SigninRoute = SigninRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProvidersRoute = ProvidersRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/my-jobs'
     | '/post-job'
     | '/providers'
+    | '/reset-password'
     | '/services'
     | '/signin'
     | '/signup'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/my-jobs'
     | '/post-job'
     | '/providers'
+    | '/reset-password'
     | '/services'
     | '/signin'
     | '/signup'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/my-jobs'
     | '/post-job'
     | '/providers'
+    | '/reset-password'
     | '/services'
     | '/signin'
     | '/signup'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   MyJobsRoute: typeof MyJobsRoute
   PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/providers': {
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyJobsRoute: MyJobsRoute,
   PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
@@ -323,3 +344,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

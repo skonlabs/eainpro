@@ -66,6 +66,11 @@ function SignInPage() {
               {lang === "en" ? "Create an account" : "အကောင့်ဖွင့်ရန်"}
             </Link>
           </p>
+          <p className="text-center text-xs text-muted-foreground">
+            <Link to="/reset-password" className="hover:text-foreground">
+              {lang === "en" ? "Forgot password?" : "စကားဝှက် မေ့သွားပါသလား?"}
+            </Link>
+          </p>
         </form>
       </main>
       <Footer />
