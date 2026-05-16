@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -22,27 +22,59 @@ export const Route = createFileRoute("/signup")({
 function SignUpPage() {
   const { as, redirect } = Route.useSearch();
   const { lang } = useI18n();
-  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"customer" | "provider">(as ?? "customer");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, role } },
     });
     setLoading(false);
     if (error) return setErr(error.message);
+    // When email confirmation is required, Supabase returns no session.
+    // Show a check-your-inbox message instead of silently redirecting.
+    if (!data.session) {
+      setNeedsConfirm(true);
+      return;
+    }
     window.location.href = safeRedirect(redirect, "/");
   };
+
+  if (needsConfirm) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-16">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {lang === "en" ? "Check your inbox" : "သင့်အီးမေးလ်ကို စစ်ဆေးပါ"}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {lang === "en"
+              ? `We sent a confirmation link to ${email}. Click it to activate your account, then sign in.`
+              : `${email} ထံသို့ အတည်ပြုလင့်ခ်တစ်ခု ပို့ပြီးပါပြီ။ အကောင့်ကို အသက်သွင်းရန် နှိပ်ပြီး ဝင်ရောက်ပါ။`}
+          </p>
+          <div className="mt-6 flex gap-2">
+            <Link to="/signin" className="flex-1">
+              <Button className="w-full">
+                {lang === "en" ? "Go to sign in" : "ဝင်ရောက်ရန် သွားပါ"}
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
