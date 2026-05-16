@@ -208,6 +208,53 @@ function RequestDetailPage() {
     };
   }, [authLoading, user, jobId, nav]);
 
+  // Realtime: messages, quotes, bookings
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`req:${jobId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `job_id=eq.${jobId}` },
+        (payload) => {
+          const m = payload.new as Message;
+          setMessages((cur) => (cur.some((x) => x.id === m.id) ? cur : [...cur, m]));
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "quotes", filter: `job_id=eq.${jobId}` },
+        async () => {
+          const { data } = await supabase
+            .from("quotes")
+            .select(
+              "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+            )
+            .eq("job_id", jobId)
+            .order("created_at", { ascending: false });
+          if (data) setQuotes(data as unknown as Quote[]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `job_id=eq.${jobId}` },
+        async () => {
+          const { data } = await supabase
+            .from("bookings")
+            .select(
+              "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+            )
+            .eq("job_id", jobId)
+            .maybeSingle();
+          if (data) setBooking(data as unknown as Booking);
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, jobId]);
+
   // Load matched providers for the providers tab
   useEffect(() => {
     if (!job) return;
