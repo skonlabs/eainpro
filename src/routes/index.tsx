@@ -203,35 +203,35 @@ function Index() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="border-t border-border/60 bg-secondary/30">
+      <section className="border-t border-border/40 bg-gradient-to-b from-secondary/50 to-background">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
           <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
             {t("how_it_works")}
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[t("step1"), t("step2"), t("step3"), t("step4")].map((label, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-5">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              <div key={i} className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/25">
                   {i + 1}
                 </div>
-                <div className="mt-4 text-base font-semibold">{label}</div>
+                <div className="mt-4 text-base font-semibold leading-snug">{label}</div>
               </div>
             ))}
           </div>
 
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6 sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground shadow-elevated sm:flex-row sm:p-8">
             <div>
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-bold sm:text-xl">
                 {lang === "en" ? "Are you a service professional?" : "သင်က ဝန်ဆောင်မှုပေးသူလား?"}
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-primary-foreground/80">
                 {lang === "en"
                   ? "Grow your business with new customers across Myanmar."
                   : "မြန်မာတစ်နိုင်ငံလုံးမှ ဖောက်သည်အသစ်များဖြင့် သင့်လုပ်ငန်းကို ချဲ့ထွင်ပါ။"}
               </p>
             </div>
             <Link to="/signup" search={{ as: "provider" }}>
-              <Button size="lg" variant="default">
+              <Button size="lg" variant="secondary" className="rounded-2xl font-bold">
                 {t("cta_join")}
               </Button>
             </Link>
