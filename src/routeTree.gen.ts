@@ -19,6 +19,7 @@ import { Route as MyRequestsRouteImport } from './routes/my-requests'
 import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as GuidedRouteImport } from './routes/guided'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 import { Route as RequestNewRouteImport } from './routes/request.new'
@@ -78,6 +79,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -121,6 +127,7 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
   '/my-jobs': typeof MyJobsRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
   '/my-jobs': typeof MyJobsRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
   '/my-jobs': typeof MyJobsRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
     | '/guided'
     | '/my-jobs'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/admin'
     | '/guided'
     | '/my-jobs'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
     | '/guided'
     | '/my-jobs'
@@ -245,6 +257,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   GuidedRoute: typeof GuidedRoute
   MyJobsRoute: typeof MyJobsRoute
@@ -335,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -408,6 +428,7 @@ const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   GuidedRoute: GuidedRoute,
   MyJobsRoute: MyJobsRoute,
