@@ -11,6 +11,9 @@ export function BottomNav() {
   const isProvider = roles.includes("provider");
   const isAdmin = roles.includes("admin");
 
+  // Hide on flows that have their own fixed bottom action bar to avoid overlap.
+  if (pathname.startsWith("/request/new")) return null;
+
   const items: Array<{
     to: "/" | "/services" | "/request/new" | "/providers" | "/signin" | "/my-requests" | "/account" | "/provider/dashboard" | "/admin";
     icon: typeof Home;
