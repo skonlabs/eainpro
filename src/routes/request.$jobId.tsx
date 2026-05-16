@@ -1107,6 +1107,14 @@ function QuotesTab({
               <div className="ml-auto flex gap-1.5">
                 {q.status === "pending" ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => onToggleFavorite(q.provider_id)}
+                      aria-label="favorite"
+                      className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+                    >
+                      <Heart className={`h-3.5 w-3.5 ${favorites.has(q.provider_id) ? "fill-destructive text-destructive" : ""}`} />
+                    </button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1120,10 +1128,14 @@ function QuotesTab({
                     <Button
                       size="sm"
                       onClick={() => onAccept(q)}
-                      disabled={disabled}
+                      disabled={disabled || acceptingId === q.id}
                       className="rounded-lg text-xs"
                     >
-                      <Check className="mr-1 h-3 w-3" />
+                      {acceptingId === q.id ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="mr-1 h-3 w-3" />
+                      )}
                       {L("Accept", "လက်ခံ")}
                     </Button>
                   </>
