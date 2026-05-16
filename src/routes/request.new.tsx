@@ -76,6 +76,7 @@ function NewRequestPage() {
     area: "",
     address: "",
     photoUrls: [] as string[],
+    videoUrls: [] as string[],
     uploading: false,
     timing: "this_week",
     window: "any" as "morning" | "afternoon" | "evening" | "any",
