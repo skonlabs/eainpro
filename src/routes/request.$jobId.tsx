@@ -88,8 +88,10 @@ type Quote = {
 type Message = {
   id: string;
   sender_id: string;
-  body: string;
+  body: string | null;
   created_at: string;
+  attachment_url?: string | null;
+  kind?: string | null;
 };
 
 type Invite = {
@@ -97,6 +99,34 @@ type Invite = {
   provider_id: string;
   status: string;
   provider: Provider | null;
+};
+
+type Booking = {
+  id: string;
+  job_id: string;
+  quote_id: string | null;
+  customer_id: string;
+  provider_id: string;
+  amount: number | null;
+  status: string;
+  scheduled_at: string | null;
+  scheduled_window: string | null;
+  customer_phone: string | null;
+  customer_confirmed_at: string | null;
+  provider_confirmed_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  provider?: Provider | null;
+};
+
+type Review = {
+  id: string;
+  rating: number;
+  rating_quality: number | null;
+  rating_speed: number | null;
+  rating_value: number | null;
+  rating_communication: number | null;
+  comment: string | null;
 };
 
 function RequestDetailPage() {
@@ -111,11 +141,14 @@ function RequestDetailPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [msgBody, setMsgBody] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
