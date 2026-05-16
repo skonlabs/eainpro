@@ -26,7 +26,10 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   AlertTriangle,
+  CalendarClock,
+  Heart,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const searchSchema = z.object({
   tab: z.enum(["details", "providers", "quotes", "messages", "booking"]).optional(),
@@ -148,6 +151,8 @@ function RequestDetailPage() {
   const [msgBody, setMsgBody] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -271,6 +276,18 @@ function RequestDetailPage() {
     })();
   }, [job]);
 
+  // Load favorites for the current customer
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("favorites")
+        .select("provider_id")
+        .eq("customer_id", user.id);
+      setFavorites(new Set((data ?? []).map((f) => f.provider_id as string)));
+    })();
+  }, [user]);
+
   const toggleSelect = (id: string) => {
     setSelected((s) => {
       const next = new Set(s);
@@ -352,6 +369,9 @@ function RequestDetailPage() {
 
   const acceptQuote = async (q: Quote) => {
     if (!user || !job) return;
+    if (acceptingId) return;
+    setAcceptingId(q.id);
+    try {
     // Mark quote accepted
     await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
     // Decline others
@@ -393,6 +413,9 @@ function RequestDetailPage() {
       lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
       { description: lang === "en" ? "Contact details are now shared with the provider." : "ဆက်သွယ်ရန် အချက်အလက် မျှဝေပြီး။" },
     );
+    } finally {
+      setAcceptingId(null);
+    }
   };
 
   const confirmCompletion = async () => {
@@ -423,6 +446,43 @@ function RequestDetailPage() {
     toast(lang === "en" ? "Booking cancelled" : "ဘွတ်ကင် ပယ်ဖျက်ပြီး");
   };
 
+  const reschedule = async (newAt: string) => {
+    if (!booking || !user) return;
+    const { error } = await supabase
+      .from("bookings")
+      .update({ scheduled_at: newAt, rescheduled_at: new Date().toISOString() })
+      .eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setBooking({ ...booking, scheduled_at: newAt });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body: `Customer proposed new time: ${new Date(newAt).toLocaleString()}`,
+    });
+    toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
+  };
+
+  const toggleFavorite = async (providerId: string) => {
+    if (!user) return;
+    const isFav = favorites.has(providerId);
+    setFavorites((s) => {
+      const n = new Set(s);
+      if (isFav) n.delete(providerId);
+      else n.add(providerId);
+      return n;
+    });
+    if (isFav) {
+      await supabase.from("favorites").delete().eq("customer_id", user.id).eq("provider_id", providerId);
+    } else {
+      await supabase.from("favorites").insert({ customer_id: user.id, provider_id: providerId });
+      toast.success(lang === "en" ? "Saved to favorites" : "နှစ်သက်ရာ သိမ်းပြီး");
+    }
+  };
+
   const cat = CATEGORIES.find((c) => c.slug === job?.category_slug);
   const city = CITIES.find((c) => c.slug === job?.city_slug);
   const invitedIds = new Set(invites.map((i) => i.provider_id));
@@ -434,8 +494,13 @@ function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="grid min-h-[40vh] place-items-center text-sm text-muted-foreground">
-          {L("Loading…", "တင်နေသည်…")}
+        <main className="mx-auto max-w-4xl space-y-4 px-4 py-5 sm:px-6 sm:py-10">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
         </main>
       </div>
     );
@@ -504,6 +569,9 @@ function RequestDetailPage() {
             jobAddress={job.address}
             onComplete={confirmCompletion}
             onCancel={cancelBooking}
+            onReschedule={reschedule}
+            onToggleFavorite={() => toggleFavorite(booking.provider_id)}
+            isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
             onOpenMessages={() => setTab("messages")}
           />
@@ -669,6 +737,14 @@ function RequestDetailPage() {
                                 {L("View", "ကြည့်")}
                               </Button>
                             </Link>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavorite(p.id)}
+                              aria-label="favorite"
+                              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+                            >
+                              <Heart className={`h-3.5 w-3.5 ${favorites.has(p.id) ? "fill-destructive text-destructive" : ""}`} />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -770,6 +846,9 @@ function RequestDetailPage() {
             jobId={jobId}
             disabled={!!booking}
             onAccept={acceptQuote}
+            acceptingId={acceptingId}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
             onRefresh={async () => {
               const { data } = await supabase
                 .from("quotes")
@@ -916,6 +995,9 @@ function QuotesTab({
   jobId,
   disabled,
   onAccept,
+  acceptingId,
+  favorites,
+  onToggleFavorite,
   onRefresh,
   onInvite,
 }: {
@@ -925,6 +1007,9 @@ function QuotesTab({
   jobId: string;
   disabled?: boolean;
   onAccept: (q: Quote) => Promise<void>;
+  acceptingId: string | null;
+  favorites: Set<string>;
+  onToggleFavorite: (providerId: string) => Promise<void> | void;
   onRefresh: () => Promise<void>;
   onInvite: () => void;
 }) {
@@ -1030,6 +1115,14 @@ function QuotesTab({
               <div className="ml-auto flex gap-1.5">
                 {q.status === "pending" ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => onToggleFavorite(q.provider_id)}
+                      aria-label="favorite"
+                      className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+                    >
+                      <Heart className={`h-3.5 w-3.5 ${favorites.has(q.provider_id) ? "fill-destructive text-destructive" : ""}`} />
+                    </button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1043,10 +1136,14 @@ function QuotesTab({
                     <Button
                       size="sm"
                       onClick={() => onAccept(q)}
-                      disabled={disabled}
+                      disabled={disabled || acceptingId === q.id}
                       className="rounded-lg text-xs"
                     >
-                      <Check className="mr-1 h-3 w-3" />
+                      {acceptingId === q.id ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="mr-1 h-3 w-3" />
+                      )}
                       {L("Accept", "လက်ခံ")}
                     </Button>
                   </>
@@ -1142,6 +1239,9 @@ function BookingPanel({
   jobAddress,
   onComplete,
   onCancel,
+  onReschedule,
+  onToggleFavorite,
+  isFavorite,
   onReviewed,
   onOpenMessages,
 }: {
@@ -1151,6 +1251,9 @@ function BookingPanel({
   jobAddress: string | null;
   onComplete: () => Promise<void>;
   onCancel: (reason: string) => Promise<void>;
+  onReschedule: (iso: string) => Promise<void>;
+  onToggleFavorite: () => Promise<void> | void;
+  isFavorite: boolean;
   onReviewed: (r: Review) => void;
   onOpenMessages: () => void;
 }) {
@@ -1159,6 +1262,9 @@ function BookingPanel({
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [showReview, setShowReview] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [newWhen, setNewWhen] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
 
   const isCancelled = booking.status === "cancelled";
   const isCompleted = booking.status === "completed";
@@ -1209,6 +1315,14 @@ function BookingPanel({
               {L("View", "ကြည့်")}
             </Button>
           </Link>
+          <button
+            type="button"
+            onClick={() => onToggleFavorite()}
+            aria-label="favorite"
+            className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground"
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? "fill-destructive text-destructive" : ""}`} />
+          </button>
         </div>
       </div>
 
@@ -1262,6 +1376,21 @@ function BookingPanel({
             </Button>
             <Button
               variant="outline"
+              onClick={() => {
+                setNewWhen(
+                  booking.scheduled_at
+                    ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                    : "",
+                );
+                setShowReschedule(true);
+              }}
+              className="rounded-xl"
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {L("Reschedule", "ပြန်ညှိ")}
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowCancel(true)}
               className="rounded-xl text-destructive hover:bg-destructive/10"
             >
@@ -1293,6 +1422,54 @@ function BookingPanel({
             ))}
           </div>
           {review.comment && <p className="mt-1 text-sm">{review.comment}</p>}
+        </div>
+      )}
+
+      {/* Reschedule sheet */}
+      {showReschedule && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur"
+          onClick={() => setShowReschedule(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-base font-bold">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              {L("Propose a new time", "အချိန် အသစ် တင်ပြ")}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {L(
+                "Pick a time. The provider will be notified to confirm.",
+                "အချိန် ရွေးပါ။ ဝန်ဆောင်မှုပေးသူ အတည်ပြုပါမည်။",
+              )}
+            </p>
+            <input
+              type="datetime-local"
+              value={newWhen}
+              onChange={(e) => setNewWhen(e.target.value)}
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" onClick={() => setShowReschedule(false)} className="flex-1 rounded-xl">
+                {L("Cancel", "ပယ်ဖျက်")}
+              </Button>
+              <Button
+                disabled={!newWhen || rescheduling}
+                onClick={async () => {
+                  setRescheduling(true);
+                  await onReschedule(new Date(newWhen).toISOString());
+                  setRescheduling(false);
+                  setShowReschedule(false);
+                }}
+                className="flex-1 rounded-xl"
+              >
+                {rescheduling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {L("Propose", "တင်ပြ")}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

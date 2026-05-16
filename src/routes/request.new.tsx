@@ -98,7 +98,7 @@ function NewRequestPage() {
 
   const canNext = () => {
     if (step === 1) return !!form.category;
-    if (step === 2) return form.description.trim().length >= 5;
+    if (step === 2) return form.description.trim().length >= 20;
     if (step === 3) return !!form.city && !!form.township.trim();
     return true;
   };
@@ -289,12 +289,23 @@ function NewRequestPage() {
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
             />
-            <p className="mt-2 text-xs text-muted-foreground">
-              {L(
-                "Add as much detail as you can. This helps providers give better prices.",
-                "ပိုပြောပြလေ စျေးကောင်းရလေ ဖြစ်ပါသည်။",
-              )}
-            </p>
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {L(
+                  "Add as much detail as you can. This helps providers give better prices.",
+                  "ပိုပြောပြလေ စျေးကောင်းရလေ ဖြစ်ပါသည်။",
+                )}
+              </span>
+              <span
+                className={
+                  form.description.trim().length < 20
+                    ? "shrink-0 font-semibold text-destructive"
+                    : "shrink-0 font-semibold text-foreground/70"
+                }
+              >
+                {form.description.trim().length}/20
+              </span>
+            </div>
 
             {questions.map((q) => (
               <div key={q.id} className="mt-5">
