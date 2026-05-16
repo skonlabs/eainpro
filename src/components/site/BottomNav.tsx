@@ -12,7 +12,7 @@ export function BottomNav() {
   const isAdmin = roles.includes("admin");
 
   const items: Array<{
-    to: "/" | "/services" | "/post-job" | "/providers" | "/signin" | "/my-jobs" | "/provider/dashboard" | "/admin";
+    to: "/" | "/services" | "/request/new" | "/providers" | "/signin" | "/my-requests" | "/provider/dashboard" | "/admin";
     icon: typeof Home;
     en: string;
     my: string;
@@ -22,7 +22,7 @@ export function BottomNav() {
         { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
         { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
         { to: "/admin", icon: Shield, en: "Admin", my: "Admin", primary: true },
-        { to: "/my-jobs", icon: Briefcase, en: "Jobs", my: "အလုပ်" },
+        { to: "/my-requests", icon: Briefcase, en: "Requests", my: "တောင်းဆို" },
         { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
       ]
     : isProvider
@@ -35,9 +35,9 @@ export function BottomNav() {
       : [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
           { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
-          { to: "/post-job", icon: PlusCircle, en: "Post", my: "တင်ရန်", primary: true },
+          { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
           { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
-          { to: user ? "/my-jobs" : "/signin", icon: User, en: user ? "Jobs" : "Sign in", my: user ? "အလုပ်" : "ဝင်ရောက်" },
+          { to: user ? "/my-requests" : "/signin", icon: User, en: user ? "Requests" : "Sign in", my: user ? "တောင်းဆို" : "ဝင်ရောက်" },
         ];
 
   return (

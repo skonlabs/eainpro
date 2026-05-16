@@ -154,8 +154,8 @@ function ProviderProfilePage() {
           </ul>
         </div>
 
-        <Link to="/post-job">
-          <Button className="w-full">{lang === "en" ? "Post a job in this area" : "ဤနယ်မြေတွင် အလုပ်တင်ရန်"}</Button>
+        <Link to="/request/new">
+          <Button className="w-full">{lang === "en" ? "Request a service" : "ဝန်ဆောင်မှု တောင်းရန်"}</Button>
         </Link>
       </main>
       <Footer />

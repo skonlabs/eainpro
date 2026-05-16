@@ -33,6 +33,8 @@ import {
 const searchSchema = z.object({
   cat: z.string().optional(),
   sub: z.string().optional(),
+  category: z.string().optional(),
+  city: z.string().optional(),
 });
 
 export const Route = createFileRoute("/request/new")({
@@ -51,7 +53,10 @@ const STEPS = [
 ];
 
 function NewRequestPage() {
-  const { cat, sub } = Route.useSearch();
+  const search = Route.useSearch();
+  const cat = search.cat ?? search.category;
+  const sub = search.sub;
+  const initialCity = search.city;
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
@@ -66,7 +71,7 @@ function NewRequestPage() {
     description: "",
     answers: {} as Record<string, string>,
     urgency: "flexible" as "today" | "tomorrow" | "this_week" | "flexible",
-    city: "yangon",
+    city: initialCity ?? "yangon",
     township: "",
     area: "",
     address: "",

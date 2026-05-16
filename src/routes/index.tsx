@@ -82,7 +82,7 @@ function Index() {
 
   const go = (slug: string) => {
     setOpen(false);
-    navigate({ to: "/services/$category", params: { category: slug } });
+    navigate({ to: "/request/new", search: { category: slug } });
   };
 
   return (
@@ -196,7 +196,11 @@ function Index() {
                 onClick={() => {
                   setOpen(false);
                   const cat = suggestions.length > 0 ? suggestions[0].slug : "";
-                  navigate({ to: "/providers", search: { cat, city } });
+                  if (cat) {
+                    navigate({ to: "/request/new", search: { category: cat, city } });
+                  } else {
+                    navigate({ to: "/services" });
+                  }
                 }}
                 className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto"
               >
