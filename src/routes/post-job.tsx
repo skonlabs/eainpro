@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -23,7 +25,11 @@ export const Route = createFileRoute("/post-job")({
 function PostJobPage() {
   const { q, city } = Route.useSearch();
   const { t, lang } = useI18n();
+  const { user, loading: authLoading } = useAuth();
+  const nav = useNavigate();
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     category: q ?? "",
     description: "",
@@ -35,6 +41,40 @@ function PostJobPage() {
 
   const next = () => setStep((s) => Math.min(4, s + 1));
   const back = () => setStep((s) => Math.max(1, s - 1));
+
+  const submit = async () => {
+    setSubmitError(null);
+    if (!form.category) {
+      setSubmitError(lang === "en" ? "Please choose a category." : "ဝန်ဆောင်မှု အမျိုးအစား ရွေးပါ။");
+      setStep(1);
+      return;
+    }
+    if (!user) {
+      const redirect = "/post-job";
+      nav({ to: "/signin", search: { redirect } });
+      return;
+    }
+    setSubmitting(true);
+    const { data, error } = await supabase
+      .from("job_requests")
+      .insert({
+        customer_id: user.id,
+        category_slug: form.category,
+        description: form.description || null,
+        city_slug: form.city,
+        address: form.township || null,
+        urgency: form.urgency,
+        preferred_contact: form.contact,
+      })
+      .select("id")
+      .single();
+    setSubmitting(false);
+    if (error) {
+      setSubmitError(error.message);
+      return;
+    }
+    nav({ to: "/my-jobs", search: { created: data.id } });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -170,19 +210,22 @@ function PostJobPage() {
             {step < 4 ? (
               <Button onClick={next}>{lang === "en" ? "Next" : "ဆက်လုပ်ရန်"}</Button>
             ) : (
-              <Button
-                onClick={() =>
-                  alert(
-                    lang === "en"
-                      ? "Job request ready. Sign in to submit — full backend wiring lands in Phase 2."
-                      : "အလုပ်တောင်းခံချက် ပြင်ဆင်ပြီးပါပြီ။ Phase 2 တွင် အပြည့်အဝ ဆက်သွယ်ပေးပါမည်။",
-                  )
-                }
-              >
-                {lang === "en" ? "Submit" : "တင်ပြရန်"}
+              <Button onClick={submit} disabled={submitting || authLoading}>
+                {submitting
+                  ? "…"
+                  : !user
+                    ? lang === "en"
+                      ? "Sign in to submit"
+                      : "တင်ပြရန် ဝင်ရောက်ပါ"
+                    : lang === "en"
+                      ? "Submit"
+                      : "တင်ပြရန်"}
               </Button>
             )}
           </div>
+          {submitError && (
+            <p className="pt-2 text-xs text-destructive">{submitError}</p>
+          )}
         </div>
       </main>
       <Footer />

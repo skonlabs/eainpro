@@ -14,6 +14,7 @@ import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as PostJobRouteImport } from './routes/post-job'
+import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 
@@ -42,6 +43,11 @@ const PostJobRoute = PostJobRouteImport.update({
   path: '/post-job',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyJobsRoute = MyJobsRouteImport.update({
+  id: '/my-jobs',
+  path: '/my-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MyJobsRoute: typeof MyJobsRoute
   PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -157,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostJobRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-jobs': {
+      id: '/my-jobs'
+      path: '/my-jobs'
+      fullPath: '/my-jobs'
+      preLoaderRoute: typeof MyJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -188,6 +208,7 @@ const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MyJobsRoute: MyJobsRoute,
   PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
   ServicesRoute: ServicesRouteWithChildren,

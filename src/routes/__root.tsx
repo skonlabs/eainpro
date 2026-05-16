@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { BottomNav } from "@/components/site/BottomNav";
+import { AuthProvider } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -125,10 +126,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <Outlet />
-        <BottomNav />
-      </I18nProvider>
+      <AuthProvider>
+        <I18nProvider>
+          <Outlet />
+          <BottomNav />
+        </I18nProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,16 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
-export const Route = createFileRoute("/signin")({ component: SignInPage });
+const searchSchema = z.object({ redirect: z.string().optional() });
+
+export const Route = createFileRoute("/signin")({
+  validateSearch: searchSchema,
+  component: SignInPage,
+});
 
 function SignInPage() {
   const { lang } = useI18n();
+  const { redirect } = Route.useSearch();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +31,11 @@ function SignInPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
-    nav({ to: "/" });
+    if (redirect) {
+      window.location.href = redirect;
+    } else {
+      nav({ to: "/" });
+    }
   };
 
   return (
