@@ -127,7 +127,7 @@ export function NotificationBell() {
                     onClick={() => {
                       markOneRead(n.id);
                       setOpen(false);
-                      if (n.link) nav({ to: n.link });
+                      if (n.link) nav({ to: n.link as never });
                     }}
                     className="block w-full"
                   >
