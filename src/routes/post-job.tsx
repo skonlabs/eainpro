@@ -79,7 +79,7 @@ function PostJobPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-12">
         <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
           {[1, 2, 3, 4].map((n) => (
             <div key={n} className="flex flex-1 items-center gap-2">

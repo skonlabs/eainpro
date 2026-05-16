@@ -47,7 +47,7 @@ function SignUpPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
+      <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-16">
         <h1 className="text-2xl font-bold tracking-tight">
           {lang === "en" ? "Create an account" : "အကောင့်ဖွင့်ရန်"}
         </h1>

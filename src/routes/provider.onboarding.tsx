@@ -134,7 +134,7 @@ function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-14">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           {lang === "en" ? "Provider onboarding" : "ဝန်ဆောင်မှုပေးသူ မှတ်ပုံတင်"}
         </h1>

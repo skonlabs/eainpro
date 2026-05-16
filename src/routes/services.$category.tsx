@@ -33,7 +33,7 @@ function CategoryPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-12">
         <Link to="/services" className="text-sm text-muted-foreground hover:text-foreground">
           ← {t("nav_services")}
         </Link>

@@ -195,7 +195,7 @@ function JobDetailPage() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
-        <main className="mx-auto max-w-3xl px-4 py-14 sm:px-6 text-center">
+        <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14 text-center">
           <h1 className="text-xl font-bold">
             {lang === "en" ? "Job not available" : "အလုပ်မတွေ့ပါ"}
           </h1>
@@ -212,7 +212,7 @@ function JobDetailPage() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
-        <main className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
+        <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14">
           <p className="text-sm text-muted-foreground">
             {lang === "en" ? "Loading…" : "တင်နေသည်…"}
           </p>
