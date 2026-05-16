@@ -8,6 +8,10 @@ import { CATEGORIES, CITIES } from "@/lib/catalog";
 import { Star, BadgeCheck } from "lucide-react";
 
 export const Route = createFileRoute("/providers")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    cat: typeof s.cat === "string" ? s.cat : "",
+    city: typeof s.city === "string" ? s.city : "",
+  }),
   component: ProvidersPage,
 });
 
@@ -24,9 +28,10 @@ type Row = {
 
 function ProvidersPage() {
   const { lang } = useI18n();
+  const sp = Route.useSearch();
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [cat, setCat] = useState("");
-  const [city, setCity] = useState("");
+  const [cat, setCat] = useState(sp.cat);
+  const [city, setCity] = useState(sp.city);
 
   useEffect(() => {
     (async () => {

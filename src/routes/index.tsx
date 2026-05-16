@@ -194,11 +194,9 @@ function Index() {
               <Button
                 size="lg"
                 onClick={() => {
-                  if (suggestions.length > 0) {
-                    go(suggestions[0].slug);
-                  } else {
-                    navigate({ to: "/providers" });
-                  }
+                  setOpen(false);
+                  const cat = suggestions.length > 0 ? suggestions[0].slug : "";
+                  navigate({ to: "/providers", search: { cat, city } });
                 }}
                 className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto"
               >
