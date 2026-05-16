@@ -434,6 +434,43 @@ function RequestDetailPage() {
     toast(lang === "en" ? "Booking cancelled" : "ဘွတ်ကင် ပယ်ဖျက်ပြီး");
   };
 
+  const reschedule = async (newAt: string) => {
+    if (!booking || !user) return;
+    const { error } = await supabase
+      .from("bookings")
+      .update({ scheduled_at: newAt, rescheduled_at: new Date().toISOString() })
+      .eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setBooking({ ...booking, scheduled_at: newAt });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body: `Customer proposed new time: ${new Date(newAt).toLocaleString()}`,
+    });
+    toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
+  };
+
+  const toggleFavorite = async (providerId: string) => {
+    if (!user) return;
+    const isFav = favorites.has(providerId);
+    setFavorites((s) => {
+      const n = new Set(s);
+      if (isFav) n.delete(providerId);
+      else n.add(providerId);
+      return n;
+    });
+    if (isFav) {
+      await supabase.from("favorites").delete().eq("customer_id", user.id).eq("provider_id", providerId);
+    } else {
+      await supabase.from("favorites").insert({ customer_id: user.id, provider_id: providerId });
+      toast.success(lang === "en" ? "Saved to favorites" : "နှစ်သက်ရာ သိမ်းပြီး");
+    }
+  };
+
   const cat = CATEGORIES.find((c) => c.slug === job?.category_slug);
   const city = CITIES.find((c) => c.slug === job?.city_slug);
   const invitedIds = new Set(invites.map((i) => i.provider_id));
