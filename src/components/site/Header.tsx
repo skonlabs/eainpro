@@ -29,8 +29,8 @@ export function Header() {
             {t("nav_providers")}
           </Link>
           {user && (
-            <Link to="/my-jobs" className="text-foreground/80 hover:text-foreground">
-              {lang === "en" ? "My jobs" : "ကျွန်ုပ်၏ အလုပ်များ"}
+            <Link to="/my-requests" className="text-foreground/80 hover:text-foreground">
+              {lang === "en" ? "My requests" : "ကျွန်ုပ်၏ တောင်းဆိုမှုများ"}
             </Link>
           )}
         </nav>
@@ -57,8 +57,8 @@ export function Header() {
               <Button variant="ghost" size="sm">{t("nav_signin")}</Button>
             </Link>
           )}
-          <Link to="/post-job" className="hidden md:block">
-            <Button size="sm">{t("nav_post")}</Button>
+          <Link to="/request/new" className="hidden md:block">
+            <Button size="sm">{lang === "en" ? "Request service" : "ဝန်ဆောင်မှု တောင်းဆိုရန်"}</Button>
           </Link>
         </div>
       </div>
