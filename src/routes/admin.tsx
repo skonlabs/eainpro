@@ -54,7 +54,7 @@ function AdminPage() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
-        <main className="mx-auto max-w-xl px-4 py-16 sm:px-6 text-center">
+        <main className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-16 text-center">
           <h1 className="text-xl font-bold">{lang === "en" ? "Admin only" : "Admin သာ"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {lang === "en"
