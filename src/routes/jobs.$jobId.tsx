@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { QuoteForm } from "./provider.dashboard";
+import { QuoteForm } from "@/components/jobs/QuoteForm";
 import { Send, Star } from "lucide-react";
 
 export const Route = createFileRoute("/jobs/$jobId")({
@@ -46,6 +46,8 @@ function JobDetailPage() {
   const nav = useNavigate();
 
   const [job, setJob] = useState<Job | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isMatchingProvider, setIsMatchingProvider] = useState(false);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [booking, setBooking] = useState<Booking>(null);
@@ -58,8 +60,8 @@ function JobDetailPage() {
 
   const isCustomer = !!user && job?.customer_id === user.id;
   const myQuote = quotes.find((q) => q.provider_id === user?.id) ?? null;
-  const isProvider = !!myQuote || (booking?.status && booking && false);
   const acceptedQuote = quotes.find((q) => q.status === "accepted") ?? null;
+  const isProvider = !!myQuote || isMatchingProvider;
 
   const refresh = async () => {
     const [{ data: j }, { data: qs }, { data: ms }, { data: b }] = await Promise.all([
@@ -77,12 +79,22 @@ function JobDetailPage() {
       supabase.from("bookings").select("id, status, scheduled_at, amount, payment_method").eq("job_id", jobId).maybeSingle(),
     ]);
     setJob(j as Job | null);
+    setNotFound(!j);
     setQuotes((qs ?? []) as unknown as Quote[]);
     setMessages((ms ?? []) as Msg[]);
     setBooking(b as Booking);
     if (b && user) {
       const { data: r } = await supabase.from("reviews").select("id").eq("booking_id", b.id).maybeSingle();
       setReviewExists(!!r);
+    }
+    if (j && user && (j as Job).customer_id !== user.id) {
+      const { data: ps } = await supabase
+        .from("provider_services")
+        .select("category_slug")
+        .eq("provider_id", user.id)
+        .eq("category_slug", (j as Job).category_slug)
+        .maybeSingle();
+      setIsMatchingProvider(!!ps);
     }
   };
 
@@ -155,33 +167,47 @@ function JobDetailPage() {
   };
 
   const submitReview = async () => {
-    if (!user || !booking || !job) return;
+    if (!user || !booking || !job || !acceptedQuote) return;
     const { error } = await supabase.from("reviews").insert({
       booking_id: booking.id,
       customer_id: job.customer_id,
-      provider_id: booking.id ? quotes.find((q) => q.status === "accepted")?.provider_id : null,
+      provider_id: acceptedQuote.provider_id,
       rating: reviewRating,
       comment: reviewText || null,
     });
     if (!error) {
-      // bump provider aggregate
-      const provId = quotes.find((q) => q.status === "accepted")?.provider_id;
-      if (provId) {
-        const { data: agg } = await supabase
-          .from("reviews")
-          .select("rating")
-          .eq("provider_id", provId);
-        const ratings = (agg ?? []).map((r) => r.rating);
-        const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
-        await supabase
-          .from("providers")
-          .update({ rating_avg: Number(avg.toFixed(2)), rating_count: ratings.length })
-          .eq("id", provId);
-      }
+      const provId = acceptedQuote.provider_id;
+      const { data: agg } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("provider_id", provId);
+      const ratings = (agg ?? []).map((r) => r.rating);
+      const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+      await supabase
+        .from("providers")
+        .update({ rating_avg: Number(avg.toFixed(2)), rating_count: ratings.length })
+        .eq("id", provId);
       setReviewExists(true);
     } else setErr(error.message);
   };
 
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <main className="mx-auto max-w-3xl px-4 py-14 sm:px-6 text-center">
+          <h1 className="text-xl font-bold">
+            {lang === "en" ? "Job not available" : "အလုပ်မတွေ့ပါ"}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {lang === "en"
+              ? "This job doesn't exist or you don't have access to view it."
+              : "ဤအလုပ်မရှိပါ သို့မဟုတ် ကြည့်ခွင့်မရှိပါ။"}
+          </p>
+        </main>
+      </div>
+    );
+  }
   if (!job) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -299,7 +325,7 @@ function JobDetailPage() {
           </div>
 
           {/* Provider: quote form */}
-          {!isCustomer && !booking && (
+          {!isCustomer && !booking && isProvider && (
             <QuoteForm
               jobId={job.id}
               existing={

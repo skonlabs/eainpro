@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -48,13 +46,27 @@ function DashboardPage() {
       if (!prov) return void nav({ to: "/provider/onboarding" });
       setProvider(prov);
 
-      const { data, error } = await supabase
-        .from("job_requests")
-        .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
-        .in("status", ["open", "quoted"])
-        .order("created_at", { ascending: false });
-      if (error) setErr(error.message);
-      else setJobs(data as Job[]);
+      // Match jobs to provider's own service categories AND service-area cities.
+      const [{ data: svcRows }, { data: areaRows }] = await Promise.all([
+        supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+      ]);
+      const cats = (svcRows ?? []).map((r) => r.category_slug);
+      const cities = (areaRows ?? []).map((r) => r.city_slug);
+      if (cats.length === 0) {
+        setJobs([]);
+      } else {
+        let q = supabase
+          .from("job_requests")
+          .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
+          .in("status", ["open", "quoted"])
+          .in("category_slug", cats)
+          .order("created_at", { ascending: false });
+        if (cities.length > 0) q = q.in("city_slug", cities);
+        const { data, error } = await q;
+        if (error) setErr(error.message);
+        else setJobs(data as Job[]);
+      }
 
       const { data: qs } = await supabase
         .from("quotes")
@@ -150,79 +162,3 @@ function DashboardPage() {
   );
 }
 
-export function QuoteForm({
-  jobId,
-  onSubmitted,
-  existing,
-}: {
-  jobId: string;
-  onSubmitted: () => void;
-  existing?: { amount: number; eta_text: string | null; notes: string | null };
-}) {
-  const { lang } = useI18n();
-  const { user } = useAuth();
-  const [amount, setAmount] = useState(existing?.amount?.toString() ?? "");
-  const [eta, setEta] = useState(existing?.eta_text ?? "");
-  const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const submit = async () => {
-    if (!user) return;
-    setErr(null);
-    const amt = Number(amount);
-    if (!amt || amt <= 0) {
-      setErr(lang === "en" ? "Enter a valid amount" : "ပမာဏ မှန်ကန်စွာ ဖြည့်ပါ");
-      return;
-    }
-    setBusy(true);
-    const { error } = await supabase.from("quotes").upsert(
-      {
-        job_id: jobId,
-        provider_id: user.id,
-        amount: amt,
-        eta_text: eta || null,
-        notes: notes || null,
-        status: "pending",
-      },
-      { onConflict: "job_id,provider_id" },
-    );
-    if (!error) {
-      await supabase.from("job_requests").update({ status: "quoted" }).eq("id", jobId).eq("status", "open");
-    }
-    setBusy(false);
-    if (error) setErr(error.message);
-    else onSubmitted();
-  };
-
-  return (
-    <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-      <div className="text-sm font-semibold">
-        {existing
-          ? lang === "en" ? "Update your quote" : "သင်၏ စျေးကို ပြင်"
-          : lang === "en" ? "Send a quote" : "စျေးပေးပို့"}
-      </div>
-      <Input
-        type="number"
-        placeholder={lang === "en" ? "Amount in MMK" : "ပမာဏ (ကျပ်)"}
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <Input
-        placeholder={lang === "en" ? "ETA (e.g. Tomorrow 10am)" : "ETA (ဥပမာ မနက်ဖြန် ၁၀နာရီ)"}
-        value={eta}
-        onChange={(e) => setEta(e.target.value)}
-      />
-      <Textarea
-        rows={2}
-        placeholder={lang === "en" ? "Notes (optional)" : "မှတ်ချက် (ရွေး)"}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
-      {err && <p className="text-xs text-destructive">{err}</p>}
-      <Button onClick={submit} disabled={busy} className="w-full">
-        {busy ? "…" : lang === "en" ? "Send quote" : "စျေးပေးပို့"}
-      </Button>
-    </div>
-  );
-}

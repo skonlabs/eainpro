@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
@@ -18,7 +19,6 @@ export const Route = createFileRoute("/signin")({
 function SignInPage() {
   const { lang } = useI18n();
   const { redirect } = Route.useSearch();
-  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -31,11 +31,7 @@ function SignInPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
-    if (redirect) {
-      window.location.href = redirect;
-    } else {
-      nav({ to: "/" });
-    }
+    window.location.href = safeRedirect(redirect, "/");
   };
 
   return (
@@ -68,6 +64,11 @@ function SignInPage() {
             {lang === "en" ? "New here?" : "အကောင့်မရှိသေးပါက"}{" "}
             <Link to="/signup" search={{ as: undefined }} className="text-primary hover:underline">
               {lang === "en" ? "Create an account" : "အကောင့်ဖွင့်ရန်"}
+            </Link>
+          </p>
+          <p className="text-center text-xs text-muted-foreground">
+            <Link to="/reset-password" className="hover:text-foreground">
+              {lang === "en" ? "Forgot password?" : "စကားဝှက် မေ့သွားပါသလား?"}
             </Link>
           </p>
         </form>
