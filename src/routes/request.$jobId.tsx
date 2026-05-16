@@ -151,6 +151,8 @@ function RequestDetailPage() {
   const [msgBody, setMsgBody] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -355,6 +357,9 @@ function RequestDetailPage() {
 
   const acceptQuote = async (q: Quote) => {
     if (!user || !job) return;
+    if (acceptingId) return;
+    setAcceptingId(q.id);
+    try {
     // Mark quote accepted
     await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
     // Decline others
@@ -396,6 +401,9 @@ function RequestDetailPage() {
       lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
       { description: lang === "en" ? "Contact details are now shared with the provider." : "ဆက်သွယ်ရန် အချက်အလက် မျှဝေပြီး။" },
     );
+    } finally {
+      setAcceptingId(null);
+    }
   };
 
   const confirmCompletion = async () => {
