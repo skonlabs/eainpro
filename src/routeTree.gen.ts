@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
+import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -70,6 +71,11 @@ const ProviderDashboardRoute = ProviderDashboardRouteImport.update({
   path: '/provider/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JobsJobIdRoute = JobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/services/$category'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
+  JobsJobIdRoute: typeof JobsJobIdRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
 }
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jobs/$jobId': {
+      id: '/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -254,6 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
+  JobsJobIdRoute: JobsJobIdRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
 }
