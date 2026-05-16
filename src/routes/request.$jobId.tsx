@@ -494,9 +494,17 @@ function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="grid min-h-[40vh] place-items-center text-sm text-muted-foreground">
-          {L("Loading…", "တင်နေသည်…")}
+        <main className="mx-auto max-w-4xl space-y-4 px-4 py-5 sm:px-6 sm:py-10">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
         </main>
+      </div>
+    );
+  }
       </div>
     );
   }
