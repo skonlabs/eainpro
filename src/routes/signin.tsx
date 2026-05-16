@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
@@ -31,11 +32,7 @@ function SignInPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
-    if (redirect) {
-      window.location.href = redirect;
-    } else {
-      nav({ to: "/" });
-    }
+    window.location.href = safeRedirect(redirect, "/");
   };
 
   return (
