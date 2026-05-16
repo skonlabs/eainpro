@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
@@ -44,5 +44,3 @@ export function Header() {
     </header>
   );
 }
-
-export function _typeShim(_: Lang) {} // keep Lang import used
