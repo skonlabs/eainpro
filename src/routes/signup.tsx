@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
@@ -54,7 +52,7 @@ function SignUpPage() {
   if (needsConfirm) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
+
         <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-16">
           <h1 className="text-2xl font-bold tracking-tight">
             {lang === "en" ? "Check your inbox" : "သင့်အီးမေးလ်ကို စစ်ဆေးပါ"}
@@ -72,14 +70,14 @@ function SignUpPage() {
             </Link>
           </div>
         </main>
-        <Footer />
+
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-16">
         <h1 className="text-2xl font-bold tracking-tight">
           {lang === "en" ? "Create an account" : "အကောင့်ဖွင့်ရန်"}
@@ -136,7 +134,7 @@ function SignUpPage() {
           </p>
         </form>
       </main>
-      <Footer />
+
     </div>
   );
 }

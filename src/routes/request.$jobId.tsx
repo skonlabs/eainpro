@@ -1,8 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -493,7 +491,7 @@ function RequestDetailPage() {
   if (!job) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+
         <main className="mx-auto max-w-4xl space-y-4 px-4 py-5 sm:px-6 sm:py-10">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="h-8 w-2/3" />
@@ -508,7 +506,7 @@ function RequestDetailPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <Header />
+
       <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-10">
         <Link
           to="/my-requests"
@@ -939,7 +937,7 @@ function RequestDetailPage() {
           </div>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
@@ -194,7 +192,7 @@ function JobDetailPage() {
   if (notFound) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
+
         <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14 text-center">
           <h1 className="text-xl font-bold">
             {lang === "en" ? "Job not available" : "အလုပ်မတွေ့ပါ"}
@@ -211,7 +209,7 @@ function JobDetailPage() {
   if (!job) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
+
         <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14">
           <p className="text-sm text-muted-foreground">
             {lang === "en" ? "Loading…" : "တင်နေသည်…"}
@@ -226,7 +224,7 @@ function JobDetailPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+
       <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10 lg:grid lg:grid-cols-[1fr_360px]">
         {/* Job summary — top on all viewports */}
         <div className="space-y-6 lg:order-1">
@@ -406,7 +404,7 @@ function JobDetailPage() {
           )}
         </aside>
       </main>
-      <Footer />
+
     </div>
   );
 }
