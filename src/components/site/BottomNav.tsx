@@ -1,24 +1,44 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 
 export function BottomNav() {
   const { lang } = useI18n();
+  const { user, roles } = useAuth();
   const { pathname } = useLocation();
 
+  const isProvider = roles.includes("provider");
+  const isAdmin = roles.includes("admin");
+
   const items: Array<{
-    to: "/" | "/services" | "/post-job" | "/providers" | "/signin";
+    to: "/" | "/services" | "/post-job" | "/providers" | "/signin" | "/my-jobs" | "/provider/dashboard" | "/admin";
     icon: typeof Home;
     en: string;
     my: string;
     primary?: boolean;
-  }> = [
-    { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-    { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
-    { to: "/post-job", icon: PlusCircle, en: "Post", my: "တင်ရန်", primary: true },
-    { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
-    { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
-  ];
+  }> = isAdmin
+    ? [
+        { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
+        { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+        { to: "/admin", icon: Shield, en: "Admin", my: "Admin", primary: true },
+        { to: "/my-jobs", icon: Briefcase, en: "Jobs", my: "အလုပ်" },
+        { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
+      ]
+    : isProvider
+      ? [
+          { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
+          { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
+          { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+          { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
+        ]
+      : [
+          { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
+          { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
+          { to: "/post-job", icon: PlusCircle, en: "Post", my: "တင်ရန်", primary: true },
+          { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+          { to: user ? "/my-jobs" : "/signin", icon: User, en: user ? "Jobs" : "Sign in", my: user ? "အလုပ်" : "ဝင်ရောက်" },
+        ];
 
   return (
     <nav

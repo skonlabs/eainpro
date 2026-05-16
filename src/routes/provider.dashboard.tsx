@@ -1,0 +1,228 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { Clock, MapPin } from "lucide-react";
+
+export const Route = createFileRoute("/provider/dashboard")({
+  component: DashboardPage,
+  head: () => ({ meta: [{ title: "Provider dashboard — Eain Pro" }] }),
+});
+
+type Job = {
+  id: string;
+  category_slug: string;
+  description: string | null;
+  city_slug: string;
+  address: string | null;
+  urgency: string;
+  status: string;
+  created_at: string;
+};
+
+function DashboardPage() {
+  const { lang } = useI18n();
+  const { user, loading } = useAuth();
+  const nav = useNavigate();
+  const [jobs, setJobs] = useState<Job[] | null>(null);
+  const [provider, setProvider] = useState<{ is_verified: boolean } | null>(null);
+  const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>({});
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/dashboard" } });
+    (async () => {
+      const { data: prov } = await supabase
+        .from("providers")
+        .select("is_verified")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!prov) return void nav({ to: "/provider/onboarding" });
+      setProvider(prov);
+
+      const { data, error } = await supabase
+        .from("job_requests")
+        .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
+        .in("status", ["open", "quoted"])
+        .order("created_at", { ascending: false });
+      if (error) setErr(error.message);
+      else setJobs(data as Job[]);
+
+      const { data: qs } = await supabase
+        .from("quotes")
+        .select("job_id, amount, status")
+        .eq("provider_id", user.id);
+      const m: Record<string, { amount: number; status: string }> = {};
+      (qs ?? []).forEach((q) => (m[q.job_id] = { amount: Number(q.amount), status: q.status }));
+      setMyQuotes(m);
+    })();
+  }, [loading, user, nav]);
+
+  const catName = (s: string) => {
+    const c = CATEGORIES.find((x) => x.slug === s);
+    return c ? (lang === "en" ? c.en : c.my) : s;
+  };
+  const cityName = (s: string) => {
+    const c = CITIES.find((x) => x.slug === s);
+    return c ? (lang === "en" ? c.en : c.my) : s;
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <Header />
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {lang === "en" ? "Incoming jobs" : "ဝင်လာသော အလုပ်များ"}
+          </h1>
+          <Link to="/provider/onboarding">
+            <Button variant="ghost" size="sm">
+              {lang === "en" ? "Edit profile" : "ပရိုဖိုင် ပြင်ရန်"}
+            </Button>
+          </Link>
+        </div>
+
+        {provider && !provider.is_verified && (
+          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+            {lang === "en"
+              ? "Your profile is pending admin verification. You can still send quotes."
+              : "သင်၏ ပရိုဖိုင်ကို Admin အတည်ပြုနေပါသည်။ စျေးနှုန်း ဆက်ပေးနိုင်ပါသည်။"}
+          </div>
+        )}
+
+        {err && <p className="mt-4 text-sm text-destructive">{err}</p>}
+        {!jobs && !err && (
+          <p className="mt-6 text-sm text-muted-foreground">{lang === "en" ? "Loading…" : "တင်နေသည်…"}</p>
+        )}
+        {jobs && jobs.length === 0 && (
+          <p className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+            {lang === "en"
+              ? "No matching jobs yet. Make sure your services and service areas are set."
+              : "ကိုက်ညီသော အလုပ်မရှိသေးပါ။ ဝန်ဆောင်မှု နှင့် ဧရိယာ မှန်ကန်ကြောင်း သေချာပါ။"}
+          </p>
+        )}
+        <ul className="mt-6 space-y-3">
+          {(jobs ?? []).map((j) => (
+            <li key={j.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">{catName(j.category_slug)}</div>
+                  {j.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{j.description}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {cityName(j.city_slug)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {j.urgency}
+                    </span>
+                  </div>
+                </div>
+                <Link to="/jobs/$jobId" params={{ jobId: j.id }}>
+                  <Button size="sm" variant="outline">
+                    {myQuotes[j.id]
+                      ? lang === "en"
+                        ? `Quoted ${myQuotes[j.id].amount.toLocaleString()}`
+                        : `စျေးပေးပြီး ${myQuotes[j.id].amount.toLocaleString()}`
+                      : lang === "en"
+                        ? "View & quote"
+                        : "ကြည့်ပြီး စျေးပေး"}
+                  </Button>
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export function QuoteForm({
+  jobId,
+  onSubmitted,
+  existing,
+}: {
+  jobId: string;
+  onSubmitted: () => void;
+  existing?: { amount: number; eta_text: string | null; notes: string | null };
+}) {
+  const { lang } = useI18n();
+  const { user } = useAuth();
+  const [amount, setAmount] = useState(existing?.amount?.toString() ?? "");
+  const [eta, setEta] = useState(existing?.eta_text ?? "");
+  const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!user) return;
+    setErr(null);
+    const amt = Number(amount);
+    if (!amt || amt <= 0) {
+      setErr(lang === "en" ? "Enter a valid amount" : "ပမာဏ မှန်ကန်စွာ ဖြည့်ပါ");
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.from("quotes").upsert(
+      {
+        job_id: jobId,
+        provider_id: user.id,
+        amount: amt,
+        eta_text: eta || null,
+        notes: notes || null,
+        status: "pending",
+      },
+      { onConflict: "job_id,provider_id" },
+    );
+    if (!error) {
+      await supabase.from("job_requests").update({ status: "quoted" }).eq("id", jobId).eq("status", "open");
+    }
+    setBusy(false);
+    if (error) setErr(error.message);
+    else onSubmitted();
+  };
+
+  return (
+    <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+      <div className="text-sm font-semibold">
+        {existing
+          ? lang === "en" ? "Update your quote" : "သင်၏ စျေးကို ပြင်"
+          : lang === "en" ? "Send a quote" : "စျေးပေးပို့"}
+      </div>
+      <Input
+        type="number"
+        placeholder={lang === "en" ? "Amount in MMK" : "ပမာဏ (ကျပ်)"}
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
+      <Input
+        placeholder={lang === "en" ? "ETA (e.g. Tomorrow 10am)" : "ETA (ဥပမာ မနက်ဖြန် ၁၀နာရီ)"}
+        value={eta}
+        onChange={(e) => setEta(e.target.value)}
+      />
+      <Textarea
+        rows={2}
+        placeholder={lang === "en" ? "Notes (optional)" : "မှတ်ချက် (ရွေး)"}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+      {err && <p className="text-xs text-destructive">{err}</p>}
+      <Button onClick={submit} disabled={busy} className="w-full">
+        {busy ? "…" : lang === "en" ? "Send quote" : "စျေးပေးပို့"}
+      </Button>
+    </div>
+  );
+}

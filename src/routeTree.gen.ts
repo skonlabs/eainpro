@@ -15,8 +15,13 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as PostJobRouteImport } from './routes/post-job'
 import { Route as MyJobsRouteImport } from './routes/my-jobs'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
+import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
+import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
+import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
+import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -48,6 +53,11 @@ const MyJobsRoute = MyJobsRouteImport.update({
   path: '/my-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -58,79 +68,134 @@ const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => ServicesRoute,
 } as any)
+const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
+  id: '/provider/onboarding',
+  path: '/provider/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProviderDashboardRoute = ProviderDashboardRouteImport.update({
+  id: '/provider/dashboard',
+  path: '/provider/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PProviderIdRoute = PProviderIdRouteImport.update({
+  id: '/p/$providerId',
+  path: '/p/$providerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsJobIdRoute = JobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
+  '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
+  '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/my-jobs': typeof MyJobsRoute
   '/post-job': typeof PostJobRoute
   '/providers': typeof ProvidersRoute
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/p/$providerId': typeof PProviderIdRoute
+  '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/onboarding': typeof ProviderOnboardingRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
+    | '/p/$providerId'
+    | '/provider/dashboard'
+    | '/provider/onboarding'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
+    | '/p/$providerId'
+    | '/provider/dashboard'
+    | '/provider/onboarding'
     | '/services/$category'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/my-jobs'
     | '/post-job'
     | '/providers'
     | '/services'
     | '/signin'
     | '/signup'
+    | '/jobs/$jobId'
+    | '/p/$providerId'
+    | '/provider/dashboard'
+    | '/provider/onboarding'
     | '/services/$category'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   MyJobsRoute: typeof MyJobsRoute
   PostJobRoute: typeof PostJobRoute
   ProvidersRoute: typeof ProvidersRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
+  JobsJobIdRoute: typeof JobsJobIdRoute
+  PProviderIdRoute: typeof PProviderIdRoute
+  ProviderDashboardRoute: typeof ProviderDashboardRoute
+  ProviderOnboardingRoute: typeof ProviderOnboardingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -177,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -190,6 +262,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/services/$category'
       preLoaderRoute: typeof ServicesCategoryRouteImport
       parentRoute: typeof ServicesRoute
+    }
+    '/provider/onboarding': {
+      id: '/provider/onboarding'
+      path: '/provider/onboarding'
+      fullPath: '/provider/onboarding'
+      preLoaderRoute: typeof ProviderOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/provider/dashboard': {
+      id: '/provider/dashboard'
+      path: '/provider/dashboard'
+      fullPath: '/provider/dashboard'
+      preLoaderRoute: typeof ProviderDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$providerId': {
+      id: '/p/$providerId'
+      path: '/p/$providerId'
+      fullPath: '/p/$providerId'
+      preLoaderRoute: typeof PProviderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/$jobId': {
+      id: '/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -208,12 +308,17 @@ const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   MyJobsRoute: MyJobsRoute,
   PostJobRoute: PostJobRoute,
   ProvidersRoute: ProvidersRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
+  JobsJobIdRoute: JobsJobIdRoute,
+  PProviderIdRoute: PProviderIdRoute,
+  ProviderDashboardRoute: ProviderDashboardRoute,
+  ProviderOnboardingRoute: ProviderOnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
