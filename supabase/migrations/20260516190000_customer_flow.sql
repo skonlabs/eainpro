@@ -73,3 +73,22 @@ create policy "saved_addr self read" on public.saved_addresses
 drop policy if exists "saved_addr self write" on public.saved_addresses;
 create policy "saved_addr self write" on public.saved_addresses
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Storage bucket for customer-uploaded job photos
+insert into storage.buckets (id, name, public)
+  values ('job-photos', 'job-photos', true)
+  on conflict (id) do nothing;
+
+drop policy if exists "job-photos public read" on storage.objects;
+create policy "job-photos public read" on storage.objects
+  for select using (bucket_id = 'job-photos');
+
+drop policy if exists "job-photos owner write" on storage.objects;
+create policy "job-photos owner write" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'job-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "job-photos owner delete" on storage.objects;
+create policy "job-photos owner delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'job-photos' and (storage.foldername(name))[1] = auth.uid()::text);

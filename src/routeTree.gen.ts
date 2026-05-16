@@ -19,6 +19,7 @@ import { Route as MyJobsRouteImport } from './routes/my-jobs'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
+import { Route as RequestNewRouteImport } from './routes/request.new'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
@@ -74,6 +75,11 @@ const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => ServicesRoute,
 } as any)
+const RequestNewRoute = RequestNewRouteImport.update({
+  id: '/request/new',
+  path: '/request/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
   id: '/provider/onboarding',
   path: '/provider/onboarding',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRoutesById {
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
 }
 export interface FileRouteTypes {
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/new'
     | '/services/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/new'
     | '/services/$category'
   id:
     | '__root__'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/dashboard'
     | '/provider/onboarding'
+    | '/request/new'
     | '/services/$category'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
+  RequestNewRoute: typeof RequestNewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesCategoryRouteImport
       parentRoute: typeof ServicesRoute
     }
+    '/request/new': {
+      id: '/request/new'
+      path: '/request/new'
+      fullPath: '/request/new'
+      preLoaderRoute: typeof RequestNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/provider/onboarding': {
       id: '/provider/onboarding'
       path: '/provider/onboarding'
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   PProviderIdRoute: PProviderIdRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
+  RequestNewRoute: RequestNewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
