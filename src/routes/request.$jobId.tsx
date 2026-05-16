@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,8 @@ import {
   MessageCircle,
   ShieldCheck,
   Loader2,
-  Heart,
-  Phone,
   Image as ImageIcon,
   CheckCircle2,
-  Calendar,
   AlertTriangle,
 } from "lucide-react";
 
