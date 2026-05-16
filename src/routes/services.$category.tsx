@@ -79,10 +79,10 @@ function CategoryPage() {
                 : "အတည်ပြုထားသူများကို ကြည့်ပါ၊ သို့မဟုတ် အလုပ်တင်၍ ချိတ်ဆက်ပါ။"}
             </p>
           </div>
-          <Link to="/post-job" search={{ q: cat.en, city: undefined }}>
+          <Link to="/request/new" search={{ category: cat.slug }}>
             <Button size="lg" className="rounded-2xl font-bold shadow-lg shadow-primary/25">
               <PlusCircle className="mr-2 h-4 w-4" />
-              {lang === "en" ? "Post a job" : "အလုပ်တင်ရန်"}
+              {lang === "en" ? "Request service" : "ဝန်ဆောင်မှု တောင်းရန်"}
             </Button>
           </Link>
         </div>
@@ -117,9 +117,9 @@ function CategoryPage() {
                 ? "No verified providers in this category yet. Post a job and we'll match you."
                 : "ဤအမျိုးအစားတွင် အတည်ပြုထားသူ မရှိသေးပါ။ အလုပ်တင်ပါ။"}
             </p>
-            <Link to="/post-job" search={{ q: cat.en, city: undefined }} className="mt-4 inline-block">
+            <Link to="/request/new" search={{ category: cat.slug }} className="mt-4 inline-block">
               <Button variant="default" size="sm" className="rounded-xl font-semibold">
-                {lang === "en" ? "Post a job" : "အလုပ်တင်ရန်"}
+                {lang === "en" ? "Request service" : "ဝန်ဆောင်မှု တောင်းရန်"}
               </Button>
             </Link>
           </div>
