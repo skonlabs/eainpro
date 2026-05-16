@@ -1396,6 +1396,54 @@ function BookingPanel({
         </div>
       )}
 
+      {/* Reschedule sheet */}
+      {showReschedule && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur"
+          onClick={() => setShowReschedule(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-base font-bold">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              {L("Propose a new time", "အချိန် အသစ် တင်ပြ")}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {L(
+                "Pick a time. The provider will be notified to confirm.",
+                "အချိန် ရွေးပါ။ ဝန်ဆောင်မှုပေးသူ အတည်ပြုပါမည်။",
+              )}
+            </p>
+            <input
+              type="datetime-local"
+              value={newWhen}
+              onChange={(e) => setNewWhen(e.target.value)}
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" onClick={() => setShowReschedule(false)} className="flex-1 rounded-xl">
+                {L("Cancel", "ပယ်ဖျက်")}
+              </Button>
+              <Button
+                disabled={!newWhen || rescheduling}
+                onClick={async () => {
+                  setRescheduling(true);
+                  await onReschedule(new Date(newWhen).toISOString());
+                  setRescheduling(false);
+                  setShowReschedule(false);
+                }}
+                className="flex-1 rounded-xl"
+              >
+                {rescheduling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {L("Propose", "တင်ပြ")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cancel sheet */}
       {showCancel && (
         <div
