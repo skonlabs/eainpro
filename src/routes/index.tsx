@@ -66,27 +66,35 @@ function Index() {
 
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-secondary/60 via-background to-accent/20" />
-        <div className="mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-28">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-secondary/70 via-background to-background" />
+        <div className="absolute -left-20 -top-20 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -right-20 top-40 -z-10 h-72 w-72 rounded-full bg-accent/15 blur-3xl" />
+        <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-28">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              {t("hero_title")}
+            <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              {t("hero_title").split(/(Myanmar|မြန်မာ)/).map((part, i) =>
+                part === "Myanmar" || part === "မြန်မာ" ? (
+                  <span key={i} className="text-primary">{part}</span>
+                ) : (
+                  <span key={i}>{part}</span>
+                ),
+              )}
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:mt-5 sm:text-lg">
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] font-medium leading-relaxed text-muted-foreground sm:mt-5 sm:text-lg">
               {t("hero_sub")}
             </p>
           </div>
 
           {/* Search */}
-          <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-lg sm:mt-8 sm:p-4">
-            <div className="grid gap-2 sm:grid-cols-[1fr_220px_auto]">
+          <div className="mx-auto mt-7 max-w-3xl rounded-3xl border border-border/60 bg-card p-4 shadow-elevated sm:mt-10 sm:p-6">
+            <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t("search_placeholder")}
-                  className="h-12 pl-9"
+                  className="h-12 rounded-2xl border-transparent bg-muted/60 pl-10 font-medium placeholder:text-muted-foreground/70 focus-visible:bg-card"
                 />
               </div>
               <div className="relative">
@@ -95,7 +103,7 @@ function Index() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   aria-label={t("city")}
-                  className="h-12 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-12 w-full appearance-none rounded-2xl border border-transparent bg-muted/60 pl-10 pr-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {CITIES.map((c) => (
                     <option key={c.slug} value={c.slug}>
@@ -108,17 +116,18 @@ function Index() {
                 to="/post-job"
                 search={{ q: query || undefined, city }}
               >
-                <Button size="lg" className="h-12 w-full sm:w-auto">
+                <Button size="lg" className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto">
                   {t("cta_find")}
                 </Button>
               </Link>
             </div>
 
             {/* Popular chips */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t("popular")}:
-              </span>
+            <div className="mt-5">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
+                {t("popular")}
+              </div>
+              <div className="flex flex-wrap gap-2">
               {POPULAR.map((slug) => {
                 const c = CATEGORIES.find((x) => x.slug === slug);
                 if (!c) return null;
@@ -127,30 +136,33 @@ function Index() {
                     key={slug}
                     to="/services/$category"
                     params={{ category: slug }}
-                    className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground/80 hover:border-primary hover:text-foreground"
+                    className="rounded-full border border-border/70 bg-muted/40 px-3.5 py-1.5 text-xs font-semibold text-foreground/75 transition hover:border-primary hover:bg-card hover:text-primary"
                   >
                     {lang === "en" ? c.en : c.my}
                   </Link>
                 );
               })}
+              </div>
             </div>
           </div>
 
           {/* Trust badges */}
-          <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-3 text-xs sm:grid-cols-5 sm:text-sm">
+          <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-3 text-xs sm:grid-cols-5 sm:text-sm">
             {[
-              { i: ShieldCheck, k: "trust_verified" as const },
-              { i: Tag, k: "trust_pricing" as const },
-              { i: MessagesSquare, k: "trust_chat" as const },
-              { i: Star, k: "trust_reviews" as const },
-              { i: Languages, k: "trust_support" as const },
-            ].map(({ i: Icon, k }) => (
+              { i: ShieldCheck, k: "trust_verified" as const, tint: "bg-primary/10 text-primary" },
+              { i: Tag, k: "trust_pricing" as const, tint: "bg-amber-100 text-amber-700" },
+              { i: MessagesSquare, k: "trust_chat" as const, tint: "bg-sky-100 text-sky-700" },
+              { i: Star, k: "trust_reviews" as const, tint: "bg-violet-100 text-violet-700" },
+              { i: Languages, k: "trust_support" as const, tint: "bg-rose-100 text-rose-700" },
+            ].map(({ i: Icon, k, tint }) => (
               <div
                 key={k}
-                className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-2"
+                className="flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card/70 p-3 backdrop-blur"
               >
-                <Icon className="h-4 w-4 text-primary" />
-                <span className="font-medium text-foreground/80">{t(k)}</span>
+                <span className={`grid h-8 w-8 place-items-center rounded-lg ${tint}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="font-semibold text-foreground/90">{t(k)}</span>
               </div>
             ))}
           </div>
@@ -176,9 +188,9 @@ function Index() {
                 key={c.slug}
                 to="/services/$category"
                 params={{ category: c.slug }}
-                className="group flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                className="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-soft"
               >
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary text-primary">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="text-sm font-semibold">
