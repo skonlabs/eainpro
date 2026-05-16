@@ -58,7 +58,7 @@ function OnboardingPage() {
         svcs.forEach((s) => (m[s.category_slug] = s.base_price?.toString() ?? ""));
         setCats(m);
       }
-      if (areas) {
+      if (areas && areas.length > 0) {
         const m: Record<string, boolean> = {};
         areas.forEach((a) => (m[a.city_slug] = true));
         setCities(m);
