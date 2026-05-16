@@ -47,7 +47,8 @@ function SignUpPage() {
       setNeedsConfirm(true);
       return;
     }
-    window.location.href = safeRedirect(redirect, "/");
+    const defaultDest = role === "provider" ? "/provider/onboarding" : "/";
+    window.location.href = safeRedirect(redirect, defaultDest);
   };
 
   if (needsConfirm) {
