@@ -6,13 +6,19 @@ export function BottomNav() {
   const { lang } = useI18n();
   const { pathname } = useLocation();
 
-  const items = [
+  const items: Array<{
+    to: "/" | "/services" | "/post-job" | "/providers" | "/signin";
+    icon: typeof Home;
+    en: string;
+    my: string;
+    primary?: boolean;
+  }> = [
     { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
     { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
     { to: "/post-job", icon: PlusCircle, en: "Post", my: "တင်ရန်", primary: true },
     { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
     { to: "/signin", icon: User, en: "Account", my: "အကောင့်" },
-  ] as const;
+  ];
 
   return (
     <nav
