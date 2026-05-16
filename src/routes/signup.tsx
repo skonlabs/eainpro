@@ -43,7 +43,7 @@ function SignUpPage() {
     if (redirect) {
       window.location.href = redirect;
     } else {
-      nav({ to: role === "provider" ? "/provider/onboarding" : "/" });
+      nav({ to: "/" });
     }
   };
 
