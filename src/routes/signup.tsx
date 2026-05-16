@@ -8,7 +8,10 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
-const searchSchema = z.object({ as: z.enum(["customer", "provider"]).optional() });
+const searchSchema = z.object({
+  as: z.enum(["customer", "provider"]).optional(),
+  redirect: z.string().optional(),
+});
 
 export const Route = createFileRoute("/signup")({
   validateSearch: searchSchema,
@@ -16,7 +19,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 function SignUpPage() {
-  const { as } = Route.useSearch();
+  const { as, redirect } = Route.useSearch();
   const { lang } = useI18n();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
@@ -37,7 +40,11 @@ function SignUpPage() {
     });
     setLoading(false);
     if (error) return setErr(error.message);
-    nav({ to: "/" });
+    if (redirect) {
+      window.location.href = redirect;
+    } else {
+      nav({ to: role === "provider" ? "/provider/onboarding" : "/" });
+    }
   };
 
   return (
