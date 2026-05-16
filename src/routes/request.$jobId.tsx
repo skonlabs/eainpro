@@ -981,6 +981,7 @@ function QuotesTab({
                       size="sm"
                       variant="outline"
                       onClick={() => decline(q)}
+                      disabled={disabled}
                       className="rounded-lg text-xs"
                     >
                       <X className="mr-1 h-3 w-3" />
@@ -988,7 +989,8 @@ function QuotesTab({
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => accept(q)}
+                      onClick={() => onAccept(q)}
+                      disabled={disabled}
                       className="rounded-lg text-xs"
                     >
                       <Check className="mr-1 h-3 w-3" />
