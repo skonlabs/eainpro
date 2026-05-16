@@ -715,6 +715,8 @@ function RequestDetailPage() {
             invites={invites}
             lang={lang}
             jobId={jobId}
+            disabled={!!booking}
+            onAccept={acceptQuote}
             onRefresh={async () => {
               const { data } = await supabase
                 .from("quotes")
@@ -749,6 +751,13 @@ function RequestDetailPage() {
               ) : (
                 messages.map((m) => {
                   const mine = m.sender_id === user?.id;
+                  if (m.kind === "system") {
+                    return (
+                      <div key={m.id} className="mx-auto max-w-[90%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] font-medium text-muted-foreground">
+                        {m.body}
+                      </div>
+                    );
+                  }
                   return (
                     <div
                       key={m.id}
@@ -758,6 +767,11 @@ function RequestDetailPage() {
                           : "bg-muted"
                       }`}
                     >
+                      {m.attachment_url && (
+                        <a href={m.attachment_url} target="_blank" rel="noreferrer">
+                          <img src={m.attachment_url} alt="" className="mb-1 max-h-60 rounded-lg object-cover" />
+                        </a>
+                      )}
                       {m.body}
                     </div>
                   );
@@ -765,6 +779,20 @@ function RequestDetailPage() {
               )}
             </div>
             <div className="mt-2 flex gap-2">
+              <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground">
+                {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingPhoto}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) sendPhoto(f);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </label>
               <Textarea
                 rows={1}
                 value={msgBody}
