@@ -416,12 +416,15 @@ function RequestDetailPage() {
 
         {/* Tabs */}
         <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 text-sm">
-          {(["details", "providers", "quotes", "messages"] as const).map((t) => {
+          {((booking
+            ? ["booking", "details", "quotes", "messages"]
+            : ["details", "providers", "quotes", "messages"]) as const).map((t) => {
             const labels = {
               details: L("Details", "အသေးစိတ်"),
               providers: L("Providers", "ဝန်ဆောင်မှုပေးသူ"),
               quotes: L(`Quotes (${quotes.length})`, `စျေး (${quotes.length})`),
               messages: L("Messages", "မက်ဆေ့ချ်"),
+              booking: L("Booking", "ဘွတ်ကင်"),
             };
             const active = tab === t;
             return (
@@ -437,6 +440,20 @@ function RequestDetailPage() {
             );
           })}
         </div>
+
+        {/* BOOKING TAB */}
+        {tab === "booking" && booking && (
+          <BookingPanel
+            booking={booking}
+            review={review}
+            lang={lang}
+            jobAddress={job.address}
+            onComplete={confirmCompletion}
+            onCancel={cancelBooking}
+            onReviewed={(r) => setReview(r)}
+            onOpenMessages={() => setTab("messages")}
+          />
+        )}
 
         {/* DETAILS TAB */}
         {tab === "details" && (
