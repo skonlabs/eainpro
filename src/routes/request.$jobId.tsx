@@ -55,6 +55,7 @@ type Job = {
   created_at: string;
   photo_urls: string[] | null;
   category_answers: Record<string, string> | null;
+  contact_phone?: string | null;
 };
 
 type Provider = {
