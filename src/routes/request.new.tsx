@@ -174,14 +174,19 @@ function NewRequestPage() {
     set("uploading", true);
     const photoUrls: string[] = [];
     const videoUrls: string[] = [];
+    const errors: string[] = [];
     for (const f of files) {
       const ext = f.name.split(".").pop() ?? "jpg";
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("job-photos").upload(path, f, {
         cacheControl: "3600",
         upsert: false,
+        contentType: f.type || undefined,
       });
-      if (!error) {
+      if (error) {
+        console.error("Upload failed", f.name, error);
+        errors.push(`${f.name}: ${error.message}`);
+      } else {
         const { data } = supabase.storage.from("job-photos").getPublicUrl(path);
         if (f.type.startsWith("video/")) videoUrls.push(data.publicUrl);
         else photoUrls.push(data.publicUrl);
@@ -193,6 +198,16 @@ function NewRequestPage() {
       videoUrls: [...f.videoUrls, ...videoUrls],
       uploading: false,
     }));
+    if (errors.length) {
+      setErr(
+        L(
+          `Upload failed: ${errors.join("; ")}`,
+          `တင်ရန် မအောင်မြင်ပါ — ${errors.join("; ")}`,
+        ),
+      );
+    } else {
+      setErr(null);
+    }
     e.target.value = "";
   };
 
@@ -487,6 +502,19 @@ function NewRequestPage() {
               "ဓာတ်ပုံများက ပိုကောင်းသော စျေးနှုန်း ရစေပါသည်။",
             )}
           >
+            {!user && (
+              <p className="mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
+                {L(
+                  "Sign in to upload photos — or skip and add them later.",
+                  "ဓာတ်ပုံတင်ရန် အကောင့်ဝင်ပါ — သို့မဟုတ် ကျော်ပါ။",
+                )}
+              </p>
+            )}
+            {err && (
+              <p className="mb-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
+                {err}
+              </p>
+            )}
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-8 transition hover:border-primary/50">
               {form.uploading ? (
                 <Loader2 className="mb-2 h-7 w-7 animate-spin text-primary" />
