@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,6 +92,28 @@ function NewRequestPage() {
     budget: "any",
   });
 
+  useEffect(() => {
+    setForm((current) => {
+      const nextCategory = cat ?? "";
+      const nextSubcategory = sub ?? "";
+
+      if (
+        current.category === nextCategory &&
+        current.subcategory === nextSubcategory &&
+        current.city === (initialCity ?? "yangon")
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        category: nextCategory,
+        subcategory: nextSubcategory,
+        city: initialCity ?? current.city,
+      };
+    });
+  }, [cat, sub, initialCity]);
+
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -105,7 +127,7 @@ function NewRequestPage() {
   // Build the dynamic step list based on current category
   const steps: Step[] = useMemo(() => {
     const list: Step[] = [];
-    if (!cat) list.push({ kind: "category" });
+    if (!form.category) list.push({ kind: "category" });
     if (form.category && subs.length > 0) list.push({ kind: "subcategory" });
     questions.forEach((q) => list.push({ kind: "question", questionId: q.id }));
     list.push({ kind: "urgency" });
@@ -120,7 +142,7 @@ function NewRequestPage() {
     list.push({ kind: "review" });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.category, subs.length, questions.length, cat]);
+  }, [form.category, subs.length, questions.length]);
 
   const [stepIdx, setStepIdx] = useState(0);
   const step = steps[Math.min(stepIdx, steps.length - 1)];
