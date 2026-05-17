@@ -88,12 +88,14 @@ function CategoryPage() {
         {cat.subcategories && (
           <div className="mt-5 flex flex-wrap gap-2">
             {cat.subcategories.map((s) => (
-              <span
+              <Link
                 key={s.slug}
-                className="rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-semibold text-foreground/70"
+                to="/request/new"
+                search={{ cat: cat.slug, sub: s.slug }}
+                className="rounded-full border border-border/70 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-foreground/80 transition hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
               >
                 {lang === "en" ? s.en : s.my}
-              </span>
+              </Link>
             ))}
           </div>
         )}
