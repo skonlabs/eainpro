@@ -1,0 +1,832 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import {
+  CATEGORIES,
+  CITIES,
+  CATEGORY_SUBCATEGORIES,
+  CATEGORY_QUESTIONS,
+  URGENCY_OPTIONS,
+  TIMING_OPTIONS,
+  WINDOW_OPTIONS,
+  CONTACT_OPTIONS,
+  BUDGET_OPTIONS,
+} from "@/lib/catalog";
+import {
+  ArrowLeft,
+  Check,
+  Upload,
+  X,
+  ShieldCheck,
+  Loader2,
+  Camera,
+} from "lucide-react";
+
+const searchSchema = z.object({
+  cat: z.string().optional(),
+  sub: z.string().optional(),
+  category: z.string().optional(),
+  city: z.string().optional(),
+});
+
+export const Route = createFileRoute("/request/new")({
+  validateSearch: searchSchema,
+  component: NewRequestPage,
+  head: () => ({ meta: [{ title: "Request a service — Eain Pro" }] }),
+});
+
+type StepKind =
+  | "category"
+  | "subcategory"
+  | "question"
+  | "urgency"
+  | "city"
+  | "township"
+  | "photos"
+  | "timing"
+  | "window"
+  | "contact"
+  | "budget"
+  | "description"
+  | "review";
+
+type Step = { kind: StepKind; questionId?: string };
+
+function NewRequestPage() {
+  const search = Route.useSearch();
+  const cat = search.cat ?? search.category;
+  const sub = search.sub;
+  const initialCity = search.city;
+  const { lang } = useI18n();
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    category: cat ?? "",
+    subcategory: sub ?? "",
+    description: "",
+    answers: {} as Record<string, string>,
+    urgency: "flexible" as "today" | "tomorrow" | "this_week" | "flexible",
+    city: initialCity ?? "yangon",
+    township: "",
+    area: "",
+    address: "",
+    photoUrls: [] as string[],
+    videoUrls: [] as string[],
+    uploading: false,
+    timing: "this_week",
+    window: "any" as "morning" | "afternoon" | "evening" | "any",
+    customDate: "",
+    contact: "in_app" as "in_app" | "phone" | "viber",
+    contactPhone: "",
+    budget: "any",
+  });
+
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const category = useMemo(
+    () => CATEGORIES.find((c) => c.slug === form.category),
+    [form.category],
+  );
+  const subs = CATEGORY_SUBCATEGORIES[form.category] ?? [];
+  const questions = CATEGORY_QUESTIONS[form.category] ?? [];
+
+  // Build the dynamic step list based on current category
+  const steps: Step[] = useMemo(() => {
+    const list: Step[] = [];
+    if (!cat) list.push({ kind: "category" });
+    if (form.category && subs.length > 0) list.push({ kind: "subcategory" });
+    questions.forEach((q) => list.push({ kind: "question", questionId: q.id }));
+    list.push({ kind: "urgency" });
+    list.push({ kind: "city" });
+    list.push({ kind: "township" });
+    list.push({ kind: "photos" });
+    list.push({ kind: "timing" });
+    list.push({ kind: "window" });
+    list.push({ kind: "contact" });
+    list.push({ kind: "budget" });
+    list.push({ kind: "description" });
+    list.push({ kind: "review" });
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category, subs.length, questions.length, cat]);
+
+  const [stepIdx, setStepIdx] = useState(0);
+  const step = steps[Math.min(stepIdx, steps.length - 1)];
+  const progress = ((stepIdx + 1) / steps.length) * 100;
+
+  const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
+  const goBack = () => {
+    if (stepIdx === 0) {
+      nav({ to: "/" });
+      return;
+    }
+    setStepIdx((i) => Math.max(0, i - 1));
+  };
+
+  // Per-step validation for the primary CTA
+  const canContinue = (): boolean => {
+    switch (step.kind) {
+      case "category":
+        return !!form.category;
+      case "subcategory":
+        return !!form.subcategory;
+      case "question":
+        return !!form.answers[step.questionId!];
+      case "township":
+        return form.township.trim().length > 0;
+      case "description":
+        return form.description.trim().length >= 20;
+      case "contact":
+        if (form.contact === "in_app") return true;
+        return form.contactPhone.trim().length >= 5;
+      default:
+        return true;
+    }
+  };
+
+  const isOptional = (): boolean => {
+    return (
+      step.kind === "photos" ||
+      step.kind === "budget" ||
+      step.kind === "window"
+    );
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    if (!user) {
+      setErr(L("Please sign in to upload photos.", "ဓာတ်ပုံ တင်ရန် အကောင့်ဝင်ပါ။"));
+      return;
+    }
+    set("uploading", true);
+    const photoUrls: string[] = [];
+    const videoUrls: string[] = [];
+    for (const f of files) {
+      const ext = f.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("job-photos").upload(path, f, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (!error) {
+        const { data } = supabase.storage.from("job-photos").getPublicUrl(path);
+        if (f.type.startsWith("video/")) videoUrls.push(data.publicUrl);
+        else photoUrls.push(data.publicUrl);
+      }
+    }
+    setForm((f) => ({
+      ...f,
+      photoUrls: [...f.photoUrls, ...photoUrls],
+      videoUrls: [...f.videoUrls, ...videoUrls],
+      uploading: false,
+    }));
+    e.target.value = "";
+  };
+
+  const submit = async () => {
+    setErr(null);
+    if (!user) {
+      nav({ to: "/signin", search: { redirect: "/request/new" } });
+      return;
+    }
+    setSubmitting(true);
+    const { data, error } = await supabase
+      .from("job_requests")
+      .insert({
+        customer_id: user.id,
+        category_slug: form.category,
+        subcategory_slug: form.subcategory || null,
+        description: form.description,
+        category_answers: form.answers,
+        city_slug: form.city,
+        township_text: form.township || null,
+        area: form.area || null,
+        address: form.address || null,
+        photo_urls: form.photoUrls,
+        video_urls: form.videoUrls,
+        urgency: form.urgency,
+        timing: form.timing || null,
+        preferred_date: form.customDate || null,
+        preferred_window: form.window,
+        budget_range: form.budget,
+        preferred_contact: form.contact,
+        contact_phone: form.contactPhone || null,
+      })
+      .select("id")
+      .single();
+    setSubmitting(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    nav({ to: "/request/$jobId", params: { jobId: data.id }, search: { tab: "providers" } });
+  };
+
+  // Auto-advance helper for single-select chip flows
+  const pick = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setTimeout(() => goNext(), 180);
+  };
+
+  const pickAnswer = (qid: string, val: string) => {
+    setForm((f) => ({ ...f, answers: { ...f.answers, [qid]: val } }));
+    setTimeout(() => goNext(), 180);
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-32">
+      {/* Slim progress bar */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
+          <button
+            onClick={goBack}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground transition hover:bg-accent"
+            aria-label={L("Back", "နောက်")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="flex-1">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+            {stepIdx + 1}/{steps.length}
+          </span>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-2xl px-4 pt-4 sm:px-6 sm:pt-8">
+        {renderStep()}
+      </main>
+
+      {/* Sticky footer CTA */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+      >
+        <div className="mx-auto flex max-w-2xl items-center gap-2 sm:px-6">
+          {isOptional() && step.kind !== "review" && (
+            <Button
+              variant="ghost"
+              onClick={goNext}
+              className="rounded-xl font-semibold text-muted-foreground"
+            >
+              {L("Skip", "ကျော်")}
+            </Button>
+          )}
+          <div className="flex-1" />
+          {step.kind === "review" ? (
+            <Button
+              onClick={submit}
+              disabled={submitting}
+              size="lg"
+              className="rounded-xl px-6 font-semibold shadow-lg shadow-primary/25"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {L("Sending…", "ပေးပို့နေ…")}
+                </>
+              ) : (
+                L("Find Providers", "ဝန်ဆောင်မှုပေးသူ ရှာရန်")
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={goNext}
+              disabled={!canContinue()}
+              size="lg"
+              className="rounded-xl px-8 font-semibold"
+            >
+              {L("Next", "ဆက်လုပ်")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  function renderStep() {
+    switch (step.kind) {
+      case "category":
+        return (
+          <StepShell
+            title={L("What do you need help with?", "ဘယ်ဝန်ဆောင်မှု လိုသလဲ?")}
+            hint={L("Pick one to get started.", "တစ်ခု ရွေးပါ။")}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {CATEGORIES.map((c) => (
+                <BigChoice
+                  key={c.slug}
+                  active={form.category === c.slug}
+                  onClick={() => {
+                    set("category", c.slug);
+                    set("subcategory", "");
+                    setTimeout(() => goNext(), 180);
+                  }}
+                >
+                  {L(c.en, c.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "subcategory":
+        return (
+          <StepShell
+            title={L(
+              `What kind of ${category?.en.toLowerCase()} work?`,
+              "ဘယ်လို အကူအညီ လိုသလဲ?",
+            )}
+            hint={L("Pick the closest match.", "အနီးစပ်ဆုံး ရွေးပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {subs.map((s) => (
+                <BigChoice
+                  key={s.slug}
+                  active={form.subcategory === s.slug}
+                  onClick={() => pick("subcategory", s.slug)}
+                >
+                  {L(s.en, s.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "question": {
+        const q = questions.find((x) => x.id === step.questionId);
+        if (!q) return null;
+        return (
+          <StepShell title={L(q.en, q.my)} hint={L("Tap to choose.", "နှိပ်၍ ရွေးပါ။")}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {q.options.map((opt) => (
+                <BigChoice
+                  key={opt.value}
+                  active={form.answers[q.id] === opt.value}
+                  onClick={() => pickAnswer(q.id, opt.value)}
+                >
+                  {L(opt.en, opt.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+      }
+
+      case "urgency":
+        return (
+          <StepShell
+            title={L("How soon do you need this?", "ဘယ်လောက် မြန်ဆန် လိုသလဲ?")}
+            hint={L("Helps providers prioritize.", "ဝန်ဆောင်မှုပေးသူများ ဦးစားပေးနိုင်ရန်။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {URGENCY_OPTIONS.map((u) => (
+                <BigChoice
+                  key={u.value}
+                  active={form.urgency === u.value}
+                  onClick={() => pick("urgency", u.value as typeof form.urgency)}
+                >
+                  {L(u.en, u.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "city":
+        return (
+          <StepShell
+            title={L("Which city?", "ဘယ်မြို့လဲ?")}
+            hint={L("We'll match providers nearby.", "အနီးအနား ဝန်ဆောင်မှုပေးသူ ရှာပေးပါမည်။")}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {CITIES.map((c) => (
+                <BigChoice
+                  key={c.slug}
+                  active={form.city === c.slug}
+                  onClick={() => pick("city", c.slug)}
+                >
+                  {L(c.en, c.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "township":
+        return (
+          <StepShell
+            title={L("Which township?", "ဘယ်မြို့နယ်လဲ?")}
+            hint={L(
+              "Type your township and a nearby landmark if helpful.",
+              "မြို့နယ်နှင့် နီးစပ်ရာ နေရာကို ရိုက်ထည့်ပါ။",
+            )}
+          >
+            <Input
+              autoFocus
+              placeholder={L("e.g. Bahan, Hlaing, Yankin", "ဥပမာ — ဗဟန်း")}
+              value={form.township}
+              onChange={(e) => set("township", e.target.value)}
+              className="h-12 text-base"
+            />
+            <Input
+              placeholder={L(
+                "Area / landmark (optional)",
+                "ရပ်ကွက် / မှတ်တိုင် (ရွေး)",
+              )}
+              value={form.area}
+              onChange={(e) => set("area", e.target.value)}
+              className="mt-2 h-12 text-base"
+            />
+            <Input
+              placeholder={L(
+                "Street / building / unit (optional, kept private)",
+                "လမ်း / အဆောက်အအုံ (ရွေး)",
+              )}
+              value={form.address}
+              onChange={(e) => set("address", e.target.value)}
+              className="mt-2 h-12 text-base"
+            />
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <p>
+                {L(
+                  "Your exact address is shared only after you confirm a provider.",
+                  "လိပ်စာအတိအကျကို အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+                )}
+              </p>
+            </div>
+          </StepShell>
+        );
+
+      case "photos":
+        return (
+          <StepShell
+            title={L("Add a photo or two?", "ဓာတ်ပုံ ထည့်မလား?")}
+            hint={L(
+              "Photos help providers give a more accurate price. Optional.",
+              "ဓာတ်ပုံများက ပိုကောင်းသော စျေးနှုန်း ရစေပါသည်။",
+            )}
+          >
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-8 transition hover:border-primary/50">
+              {form.uploading ? (
+                <Loader2 className="mb-2 h-7 w-7 animate-spin text-primary" />
+              ) : (
+                <Camera className="mb-2 h-7 w-7 text-muted-foreground" />
+              )}
+              <span className="text-sm font-semibold">
+                {form.uploading
+                  ? L("Uploading…", "တင်နေ…")
+                  : L("Tap to add photos", "ဓာတ်ပုံ ထည့်ရန် နှိပ်ပါ")}
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">
+                {L("JPG, PNG, or video", "JPG, PNG သို့မဟုတ် ဗီဒီယို")}
+              </span>
+              <input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={handleUpload}
+              />
+            </label>
+            {form.photoUrls.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {form.photoUrls.map((u) => (
+                  <div
+                    key={u}
+                    className="relative aspect-square overflow-hidden rounded-xl border"
+                  >
+                    <img src={u} alt="" className="h-full w-full object-cover" />
+                    <button
+                      onClick={() =>
+                        set(
+                          "photoUrls",
+                          form.photoUrls.filter((x) => x !== u),
+                        )
+                      }
+                      className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 shadow"
+                      aria-label="Remove"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </StepShell>
+        );
+
+      case "timing":
+        return (
+          <StepShell
+            title={L("When would you like this done?", "ဘယ်အချိန် ပြီးချင်ပါသလဲ?")}
+            hint={L("Pick a timeframe or a specific date.", "အချိန် သို့မဟုတ် ရက် ရွေးပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {TIMING_OPTIONS.map((t) => (
+                <BigChoice
+                  key={t.value}
+                  active={form.timing === t.value && !form.customDate}
+                  onClick={() => {
+                    set("customDate", "");
+                    pick("timing", t.value);
+                  }}
+                >
+                  {L(t.en, t.my)}
+                </BigChoice>
+              ))}
+            </div>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-muted-foreground">
+                {L("Or pick a specific date", "သို့မဟုတ် ရက်ရွေးပါ")}
+              </label>
+              <Input
+                type="date"
+                value={form.customDate}
+                onChange={(e) => set("customDate", e.target.value)}
+                className="mt-1 h-12 text-base"
+              />
+            </div>
+          </StepShell>
+        );
+
+      case "window":
+        return (
+          <StepShell
+            title={L("Any preferred time of day?", "နှစ်သက်သော အချိန် ရှိပါသလား?")}
+            hint={L("Tap one or skip.", "တစ်ခု ရွေး၍ ဆက်ပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {WINDOW_OPTIONS.map((w) => (
+                <BigChoice
+                  key={w.value}
+                  active={form.window === w.value}
+                  onClick={() => pick("window", w.value as typeof form.window)}
+                >
+                  {L(w.en, w.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "contact":
+        return (
+          <StepShell
+            title={L("How should providers reach you?", "ဘယ်လို ဆက်သွယ်ရမည်?")}
+            hint={L(
+              "Your number is only shared after you confirm a booking.",
+              "ဖုန်းနံပါတ်ကို booking အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+            )}
+          >
+            <div className="grid gap-2 sm:grid-cols-3">
+              {CONTACT_OPTIONS.map((c) => (
+                <BigChoice
+                  key={c.value}
+                  active={form.contact === c.value}
+                  onClick={() => set("contact", c.value as typeof form.contact)}
+                >
+                  {L(c.en, c.my)}
+                </BigChoice>
+              ))}
+            </div>
+            {form.contact !== "in_app" && (
+              <Input
+                className="mt-3 h-12 text-base"
+                placeholder={L("Your phone number", "ဖုန်းနံပါတ်")}
+                value={form.contactPhone}
+                onChange={(e) => set("contactPhone", e.target.value)}
+                inputMode="tel"
+              />
+            )}
+          </StepShell>
+        );
+
+      case "budget":
+        return (
+          <StepShell
+            title={L("What's your budget?", "ဘတ်ဂျက် ဘယ်လောက်လဲ?")}
+            hint={L(
+              "Optional. Helps filter out quotes that won't fit.",
+              "ရွေးနိုင်သည်။ ကိုက်ညီသော စျေးနှုန်းများ ရရှိရန်။",
+            )}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {BUDGET_OPTIONS.map((b) => (
+                <BigChoice
+                  key={b.value}
+                  active={form.budget === b.value}
+                  onClick={() => pick("budget", b.value)}
+                >
+                  {L(b.en, b.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "description":
+        return (
+          <StepShell
+            title={L("Anything else to add?", "နောက်ထပ် ပြောစရာ ရှိပါသလား?")}
+            hint={L(
+              "Describe the issue in a sentence or two. Providers use this to quote.",
+              "ပြဿနာကို တိုတိုနဲ့ ပြောပြပါ။",
+            )}
+          >
+            <Textarea
+              autoFocus
+              rows={5}
+              placeholder={L(
+                "Example: Water is leaking under the kitchen sink. Need someone to check and repair.",
+                "ဥပမာ — မီးဖိုခန်း ဇလုံအောက်တွင် ရေယိုနေပါသည်။",
+              )}
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              className="text-base"
+            />
+            <div className="mt-2 flex items-center justify-end text-xs">
+              <span
+                className={
+                  form.description.trim().length < 20
+                    ? "font-semibold text-muted-foreground"
+                    : "font-semibold text-primary"
+                }
+              >
+                {form.description.trim().length < 20
+                  ? L(
+                      `${20 - form.description.trim().length} more characters`,
+                      `${20 - form.description.trim().length} လုံး ထပ်ထည့်ပါ`,
+                    )
+                  : L("Looks good", "အဆင်ပြေပါပြီ")}
+              </span>
+            </div>
+          </StepShell>
+        );
+
+      case "review":
+        return (
+          <StepShell
+            title={L("Review and send", "ပြန်ကြည့်၍ ပေးပို့ပါ")}
+            hint={L(
+              "Providers will see this and send you quotes.",
+              "ဝန်ဆောင်မှုပေးသူများ မြင်တွေ့၍ စျေးနှုန်း ပေးပါမည်။",
+            )}
+          >
+            <div className="space-y-3 rounded-2xl border border-border bg-card p-4 text-sm">
+              <Row
+                label={L("Service", "ဝန်ဆောင်မှု")}
+                value={
+                  category
+                    ? `${lang === "en" ? category.en : category.my}${
+                        form.subcategory
+                          ? ` · ${subs.find((s) => s.slug === form.subcategory)?.[lang === "en" ? "en" : "my"] ?? ""}`
+                          : ""
+                      }`
+                    : "—"
+                }
+              />
+              <Row
+                label={L("Description", "ဖော်ပြချက်")}
+                value={form.description}
+                multiline
+              />
+              <Row
+                label={L("Location", "တည်နေရာ")}
+                value={`${CITIES.find((c) => c.slug === form.city)?.[lang === "en" ? "en" : "my"] ?? form.city}, ${form.township}${form.area ? ` · ${form.area}` : ""}`}
+              />
+              <Row
+                label={L("Photos", "ဓာတ်ပုံ")}
+                value={
+                  form.photoUrls.length
+                    ? L(`${form.photoUrls.length} attached`, `${form.photoUrls.length} ခု`)
+                    : L("None", "မရှိ")
+                }
+              />
+              <Row
+                label={L("Urgency", "အရေးပေါ်")}
+                value={
+                  URGENCY_OPTIONS.find((u) => u.value === form.urgency)?.[
+                    lang === "en" ? "en" : "my"
+                  ] ?? form.urgency
+                }
+              />
+              <Row
+                label={L("When", "ဘယ်အချိန်")}
+                value={`${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`}
+              />
+              <Row
+                label={L("Budget", "ဘတ်ဂျက်")}
+                value={
+                  BUDGET_OPTIONS.find((b) => b.value === form.budget)?.[
+                    lang === "en" ? "en" : "my"
+                  ] ?? "—"
+                }
+              />
+            </div>
+            {err && (
+              <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
+                {err}
+              </p>
+            )}
+            {!user && (
+              <p className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-foreground/80">
+                {L(
+                  "You'll be asked to sign in to send this request.",
+                  "ပေးပို့ရန် အကောင့်ဝင်ရန် လိုပါမည်။",
+                )}
+              </p>
+            )}
+          </StepShell>
+        );
+
+      default:
+        return null;
+    }
+  }
+}
+
+function StepShell({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+      {hint && <p className="mt-1.5 text-sm text-muted-foreground">{hint}</p>}
+      <div className="mt-6">{children}</div>
+    </section>
+  );
+}
+
+function BigChoice({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`group flex min-h-[60px] items-center justify-between rounded-2xl border-2 p-4 text-left text-sm font-semibold transition-all active:scale-[0.98] ${
+        active
+          ? "border-primary bg-primary/10 text-foreground shadow-sm"
+          : "border-border bg-card hover:border-primary/40 hover:bg-accent/40"
+      }`}
+    >
+      <span>{children}</span>
+      {active && (
+        <span className="ml-2 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+          <Check className="h-3 w-3" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Row({
+  label,
+  value,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div className={`grid gap-1 ${multiline ? "" : "sm:grid-cols-[120px_1fr]"}`}>
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-sm text-foreground">{value || "—"}</div>
+    </div>
+  );
+}
