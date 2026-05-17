@@ -174,14 +174,19 @@ function NewRequestPage() {
     set("uploading", true);
     const photoUrls: string[] = [];
     const videoUrls: string[] = [];
+    const errors: string[] = [];
     for (const f of files) {
       const ext = f.name.split(".").pop() ?? "jpg";
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("job-photos").upload(path, f, {
         cacheControl: "3600",
         upsert: false,
+        contentType: f.type || undefined,
       });
-      if (!error) {
+      if (error) {
+        console.error("Upload failed", f.name, error);
+        errors.push(`${f.name}: ${error.message}`);
+      } else {
         const { data } = supabase.storage.from("job-photos").getPublicUrl(path);
         if (f.type.startsWith("video/")) videoUrls.push(data.publicUrl);
         else photoUrls.push(data.publicUrl);
@@ -193,6 +198,16 @@ function NewRequestPage() {
       videoUrls: [...f.videoUrls, ...videoUrls],
       uploading: false,
     }));
+    if (errors.length) {
+      setErr(
+        L(
+          `Upload failed: ${errors.join("; ")}`,
+          `တင်ရန် မအောင်မြင်ပါ — ${errors.join("; ")}`,
+        ),
+      );
+    } else {
+      setErr(null);
+    }
     e.target.value = "";
   };
 
