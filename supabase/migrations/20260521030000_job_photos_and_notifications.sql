@@ -1,3 +1,13 @@
+-- Add missing notifications columns
+alter table public.notifications
+  add column if not exists title text,
+  add column if not exists body text,
+  add column if not exists link text,
+  add column if not exists kind text,
+  add column if not exists read_at timestamptz,
+  add column if not exists created_at timestamptz default now();
+
+-- Ensure job-photos storage bucket exists
 insert into storage.buckets (id, name, public)
 values ('job-photos', 'job-photos', true)
 on conflict (id) do update set public = true;
