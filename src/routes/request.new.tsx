@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,12 +20,12 @@ import {
 } from "@/lib/catalog";
 import {
   ArrowLeft,
-  ArrowRight,
   Check,
   Upload,
   X,
   ShieldCheck,
   Loader2,
+  Camera,
 } from "lucide-react";
 
 const searchSchema = z.object({
@@ -41,14 +41,22 @@ export const Route = createFileRoute("/request/new")({
   head: () => ({ meta: [{ title: "Request a service — Eain Pro" }] }),
 });
 
-const STEPS = [
-  { en: "Service", my: "ဝန်ဆောင်မှု" },
-  { en: "Details", my: "အသေးစိတ်" },
-  { en: "Location", my: "တည်နေရာ" },
-  { en: "Photos", my: "ဓာတ်ပုံ" },
-  { en: "Timing", my: "အချိန်" },
-  { en: "Review", my: "ပြန်ကြည့်" },
-];
+type StepKind =
+  | "category"
+  | "subcategory"
+  | "question"
+  | "urgency"
+  | "city"
+  | "township"
+  | "photos"
+  | "timing"
+  | "window"
+  | "contact"
+  | "budget"
+  | "description"
+  | "review";
+
+type Step = { kind: StepKind; questionId?: string };
 
 function NewRequestPage() {
   const search = Route.useSearch();
@@ -56,10 +64,10 @@ function NewRequestPage() {
   const sub = search.sub;
   const initialCity = search.city;
   const { lang } = useI18n();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
 
-  const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -94,15 +102,67 @@ function NewRequestPage() {
   const subs = CATEGORY_SUBCATEGORIES[form.category] ?? [];
   const questions = CATEGORY_QUESTIONS[form.category] ?? [];
 
-  const canNext = () => {
-    if (step === 1) return !!form.category;
-    if (step === 2) return form.description.trim().length >= 20;
-    if (step === 3) return !!form.city && !!form.township.trim();
-    return true;
+  // Build the dynamic step list based on current category
+  const steps: Step[] = useMemo(() => {
+    const list: Step[] = [];
+    if (!cat) list.push({ kind: "category" });
+    if (form.category && subs.length > 0) list.push({ kind: "subcategory" });
+    questions.forEach((q) => list.push({ kind: "question", questionId: q.id }));
+    list.push({ kind: "urgency" });
+    list.push({ kind: "city" });
+    list.push({ kind: "township" });
+    list.push({ kind: "photos" });
+    list.push({ kind: "timing" });
+    list.push({ kind: "window" });
+    list.push({ kind: "contact" });
+    list.push({ kind: "budget" });
+    list.push({ kind: "description" });
+    list.push({ kind: "review" });
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category, subs.length, questions.length, cat]);
+
+  const [stepIdx, setStepIdx] = useState(0);
+  const step = steps[Math.min(stepIdx, steps.length - 1)];
+  const progress = ((stepIdx + 1) / steps.length) * 100;
+
+  const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
+  const goBack = () => {
+    if (stepIdx === 0) {
+      nav({ to: "/" });
+      return;
+    }
+    setStepIdx((i) => Math.max(0, i - 1));
   };
 
-  const next = () => setStep((s) => Math.min(STEPS.length, s + 1));
-  const back = () => setStep((s) => Math.max(1, s - 1));
+  // Per-step validation for the primary CTA
+  const canContinue = (): boolean => {
+    switch (step.kind) {
+      case "category":
+        return !!form.category;
+      case "subcategory":
+        return !!form.subcategory;
+      case "question":
+        return !!form.answers[step.questionId!];
+      case "township":
+        return form.township.trim().length > 0;
+      case "description":
+        return form.description.trim().length >= 20;
+      case "contact":
+        if (form.contact === "in_app") return true;
+        return form.contactPhone.trim().length >= 5;
+      default:
+        return true;
+    }
+  };
+
+  const isOptional = (): boolean => {
+    return (
+      step.kind === "photos" ||
+      step.kind === "budget" ||
+      step.kind === "window"
+    );
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -175,255 +235,268 @@ function NewRequestPage() {
     nav({ to: "/request/$jobId", params: { jobId: data.id }, search: { tab: "providers" } });
   };
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      // Allow viewing the form unauthenticated; gate on submit.
-    }
-  }, [authLoading, user]);
+  // Auto-advance helper for single-select chip flows
+  const pick = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setTimeout(() => goNext(), 180);
+  };
 
-  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const pickAnswer = (qid: string, val: string) => {
+    setForm((f) => ({ ...f, answers: { ...f.answers, [qid]: val } }));
+    setTimeout(() => goNext(), 180);
+  };
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pb-0">
-
-      <main className="mx-auto max-w-2xl px-4 py-5 sm:px-6 sm:py-10">
-        {/* Stepper */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between gap-1">
-            {STEPS.map((s, i) => {
-              const n = i + 1;
-              const active = n === step;
-              const done = n < step;
-              return (
-                <div key={s.en} className="flex flex-1 items-center gap-1">
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                      done
-                        ? "bg-primary text-primary-foreground"
-                        : active
-                          ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                          : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {done ? <Check className="h-3.5 w-3.5" /> : n}
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div
-                      className={`h-0.5 flex-1 ${
-                        n < step ? "bg-primary" : "bg-border"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+    <div className="min-h-screen bg-background pb-32">
+      {/* Slim progress bar */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
+          <button
+            onClick={goBack}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground transition hover:bg-accent"
+            aria-label={L("Back", "နောက်")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="flex-1">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {L(`Step ${step} of ${STEPS.length}`, `အဆင့် ${step} / ${STEPS.length}`)} ·{" "}
-            <span className="text-foreground">
-              {L(STEPS[step - 1].en, STEPS[step - 1].my)}
-            </span>
-          </p>
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+            {stepIdx + 1}/{steps.length}
+          </span>
         </div>
+      </div>
 
-        {/* Step 1: Service */}
-        {step === 1 && (
-          <Section title={L("What service do you need?", "ဘယ်ဝန်ဆောင်မှု လိုသလဲ?")}>
+      <main className="mx-auto max-w-2xl px-4 pt-4 sm:px-6 sm:pt-8">
+        {renderStep()}
+      </main>
+
+      {/* Sticky footer CTA */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+      >
+        <div className="mx-auto flex max-w-2xl items-center gap-2 sm:px-6">
+          {isOptional() && step.kind !== "review" && (
+            <Button
+              variant="ghost"
+              onClick={goNext}
+              className="rounded-xl font-semibold text-muted-foreground"
+            >
+              {L("Skip", "ကျော်")}
+            </Button>
+          )}
+          <div className="flex-1" />
+          {step.kind === "review" ? (
+            <Button
+              onClick={submit}
+              disabled={submitting}
+              size="lg"
+              className="rounded-xl px-6 font-semibold shadow-lg shadow-primary/25"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {L("Sending…", "ပေးပို့နေ…")}
+                </>
+              ) : (
+                L("Find Providers", "ဝန်ဆောင်မှုပေးသူ ရှာရန်")
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={goNext}
+              disabled={!canContinue()}
+              size="lg"
+              className="rounded-xl px-8 font-semibold"
+            >
+              {L("Next", "ဆက်လုပ်")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  function renderStep() {
+    switch (step.kind) {
+      case "category":
+        return (
+          <StepShell
+            title={L("What do you need help with?", "ဘယ်ဝန်ဆောင်မှု လိုသလဲ?")}
+            hint={L("Pick one to get started.", "တစ်ခု ရွေးပါ။")}
+          >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {CATEGORIES.map((c) => (
-                <button
+                <BigChoice
                   key={c.slug}
+                  active={form.category === c.slug}
                   onClick={() => {
                     set("category", c.slug);
                     set("subcategory", "");
+                    setTimeout(() => goNext(), 180);
                   }}
-                  className={`rounded-2xl border p-3 text-left text-sm font-semibold transition ${
-                    form.category === c.slug
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
                 >
                   {L(c.en, c.my)}
-                </button>
+                </BigChoice>
               ))}
             </div>
-            {form.category && subs.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold">
-                  {L(
-                    `What ${category?.en.toLowerCase()} help do you need?`,
-                    "ဘယ်လို အကူအညီ လိုသလဲ?",
-                  )}
-                </h3>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {subs.map((s) => (
-                    <button
-                      key={s.slug}
-                      onClick={() => set("subcategory", s.slug)}
-                      className={`rounded-xl border p-3 text-left text-sm transition ${
-                        form.subcategory === s.slug
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-card hover:border-primary/40"
-                      }`}
-                    >
-                      {L(s.en, s.my)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          </StepShell>
+        );
+
+      case "subcategory":
+        return (
+          <StepShell
+            title={L(
+              `What kind of ${category?.en.toLowerCase()} work?`,
+              "ဘယ်လို အကူအညီ လိုသလဲ?",
             )}
-          </Section>
-        )}
-
-        {/* Step 2: Details */}
-        {step === 2 && (
-          <Section title={L("Tell us what you need help with", "လိုအပ်ချက် ပြောပြပါ")}>
-            <Textarea
-              rows={5}
-              placeholder={L(
-                "Example: Water is leaking under the kitchen sink. I need someone to check and repair it.",
-                "ဥပမာ — မီးဖိုခန်း ဇလုံအောက်တွင် ရေယိုနေပါသည်။ စစ်ဆေး၍ ပြုပြင်ပေးပါ။",
-              )}
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-            />
-            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                {L(
-                  "Add as much detail as you can. This helps providers give better prices.",
-                  "ပိုပြောပြလေ စျေးကောင်းရလေ ဖြစ်ပါသည်။",
-                )}
-              </span>
-              <span
-                className={
-                  form.description.trim().length < 20
-                    ? "shrink-0 font-semibold text-destructive"
-                    : "shrink-0 font-semibold text-foreground/70"
-                }
-              >
-                {form.description.trim().length}/20
-              </span>
-            </div>
-
-            {questions.map((q) => (
-              <div key={q.id} className="mt-5">
-                <h4 className="mb-2 text-sm font-semibold">{L(q.en, q.my)}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {q.options.map((opt) => {
-                    const active = form.answers[q.id] === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        onClick={() =>
-                          set("answers", { ...form.answers, [q.id]: opt.value })
-                        }
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                          active
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-card hover:border-primary/40"
-                        }`}
-                      >
-                        {L(opt.en, opt.my)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            <div className="mt-5">
-              <h4 className="mb-2 text-sm font-semibold">
-                {L("Is this urgent?", "အရေးပေါ်ပါသလား?")}
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {URGENCY_OPTIONS.map((u) => (
-                  <button
-                    key={u.value}
-                    onClick={() => set("urgency", u.value as typeof form.urgency)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      form.urgency === u.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card hover:border-primary/40"
-                    }`}
-                  >
-                    {L(u.en, u.my)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </Section>
-        )}
-
-        {/* Step 3: Location */}
-        {step === 3 && (
-          <Section title={L("Where is the service needed?", "ဘယ်နေရာ လိုသလဲ?")}>
-            <Label>{L("City", "မြို့")}</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {CITIES.map((c) => (
-                <button
-                  key={c.slug}
-                  onClick={() => set("city", c.slug)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    form.city === c.slug
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
+            hint={L("Pick the closest match.", "အနီးစပ်ဆုံး ရွေးပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {subs.map((s) => (
+                <BigChoice
+                  key={s.slug}
+                  active={form.subcategory === s.slug}
+                  onClick={() => pick("subcategory", s.slug)}
                 >
-                  {L(c.en, c.my)}
-                </button>
+                  {L(s.en, s.my)}
+                </BigChoice>
               ))}
             </div>
+          </StepShell>
+        );
 
-            <Label className="mt-4">{L("Township", "မြို့နယ်")}</Label>
+      case "question": {
+        const q = questions.find((x) => x.id === step.questionId);
+        if (!q) return null;
+        return (
+          <StepShell title={L(q.en, q.my)} hint={L("Tap to choose.", "နှိပ်၍ ရွေးပါ။")}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {q.options.map((opt) => (
+                <BigChoice
+                  key={opt.value}
+                  active={form.answers[q.id] === opt.value}
+                  onClick={() => pickAnswer(q.id, opt.value)}
+                >
+                  {L(opt.en, opt.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+      }
+
+      case "urgency":
+        return (
+          <StepShell
+            title={L("How soon do you need this?", "ဘယ်လောက် မြန်ဆန် လိုသလဲ?")}
+            hint={L("Helps providers prioritize.", "ဝန်ဆောင်မှုပေးသူများ ဦးစားပေးနိုင်ရန်။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {URGENCY_OPTIONS.map((u) => (
+                <BigChoice
+                  key={u.value}
+                  active={form.urgency === u.value}
+                  onClick={() => pick("urgency", u.value as typeof form.urgency)}
+                >
+                  {L(u.en, u.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "city":
+        return (
+          <StepShell
+            title={L("Which city?", "ဘယ်မြို့လဲ?")}
+            hint={L("We'll match providers nearby.", "အနီးအနား ဝန်ဆောင်မှုပေးသူ ရှာပေးပါမည်။")}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {CITIES.map((c) => (
+                <BigChoice
+                  key={c.slug}
+                  active={form.city === c.slug}
+                  onClick={() => pick("city", c.slug)}
+                >
+                  {L(c.en, c.my)}
+                </BigChoice>
+              ))}
+            </div>
+          </StepShell>
+        );
+
+      case "township":
+        return (
+          <StepShell
+            title={L("Which township?", "ဘယ်မြို့နယ်လဲ?")}
+            hint={L(
+              "Type your township and a nearby landmark if helpful.",
+              "မြို့နယ်နှင့် နီးစပ်ရာ နေရာကို ရိုက်ထည့်ပါ။",
+            )}
+          >
             <Input
+              autoFocus
               placeholder={L("e.g. Bahan, Hlaing, Yankin", "ဥပမာ — ဗဟန်း")}
               value={form.township}
               onChange={(e) => set("township", e.target.value)}
+              className="h-12 text-base"
             />
-
-            <Label className="mt-4">{L("Area / locality (optional)", "ရပ်ကွက် (ရွေး)")}</Label>
             <Input
-              placeholder={L("e.g. near Sule Pagoda", "ဥပမာ — ဆူးလေဘုရားအနီး")}
+              placeholder={L(
+                "Area / landmark (optional)",
+                "ရပ်ကွက် / မှတ်တိုင် (ရွေး)",
+              )}
               value={form.area}
               onChange={(e) => set("area", e.target.value)}
+              className="mt-2 h-12 text-base"
             />
-
-            <Label className="mt-4">{L("Address details (kept private)", "လိပ်စာ အသေးစိတ်")}</Label>
             <Input
-              placeholder={L("Street, building, floor, unit", "လမ်း၊ အဆောက်အအုံ၊ အခန်း")}
+              placeholder={L(
+                "Street / building / unit (optional, kept private)",
+                "လမ်း / အဆောက်အအုံ (ရွေး)",
+              )}
               value={form.address}
               onChange={(e) => set("address", e.target.value)}
+              className="mt-2 h-12 text-base"
             />
-
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <p>
                 {L(
                   "Your exact address is shared only after you confirm a provider.",
-                  "လိပ်စာအတိအကျကို ဝန်ဆောင်မှုပေးသူ အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+                  "လိပ်စာအတိအကျကို အတည်ပြုပြီးမှသာ ပြသပါမည်။",
                 )}
               </p>
             </div>
-          </Section>
-        )}
+          </StepShell>
+        );
 
-        {/* Step 4: Photos */}
-        {step === 4 && (
-          <Section
-            title={L("Add photos to get better quotes", "ပိုကောင်းသော စျေးနှုန်းအတွက် ဓာတ်ပုံ ထည့်ပါ")}
+      case "photos":
+        return (
+          <StepShell
+            title={L("Add a photo or two?", "ဓာတ်ပုံ ထည့်မလား?")}
+            hint={L(
+              "Photos help providers give a more accurate price. Optional.",
+              "ဓာတ်ပုံများက ပိုကောင်းသော စျေးနှုန်း ရစေပါသည်။",
+            )}
           >
-            <p className="mb-3 text-sm text-muted-foreground">
-              {L(
-                "Photos help providers understand the work and give a more accurate price.",
-                "ဓာတ်ပုံများက ဝန်ဆောင်မှုပေးသူများကို ပိုနားလည်စေပါသည်။",
-              )}
-            </p>
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-8 transition hover:border-primary/50">
-              <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
+              {form.uploading ? (
+                <Loader2 className="mb-2 h-7 w-7 animate-spin text-primary" />
+              ) : (
+                <Camera className="mb-2 h-7 w-7 text-muted-foreground" />
+              )}
               <span className="text-sm font-semibold">
                 {form.uploading
                   ? L("Uploading…", "တင်နေ…")
-                  : L("Tap to upload photos", "ဓာတ်ပုံ တင်ရန် နှိပ်ပါ")}
+                  : L("Tap to add photos", "ဓာတ်ပုံ ထည့်ရန် နှိပ်ပါ")}
               </span>
               <span className="mt-1 text-xs text-muted-foreground">
                 {L("JPG, PNG, or video", "JPG, PNG သို့မဟုတ် ဗီဒီယို")}
@@ -436,11 +509,13 @@ function NewRequestPage() {
                 onChange={handleUpload}
               />
             </label>
-
             {form.photoUrls.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {form.photoUrls.map((u) => (
-                  <div key={u} className="relative aspect-square overflow-hidden rounded-xl border">
+                  <div
+                    key={u}
+                    className="relative aspect-square overflow-hidden rounded-xl border"
+                  >
                     <img src={u} alt="" className="h-full w-full object-cover" />
                     <button
                       onClick={() =>
@@ -458,111 +533,166 @@ function NewRequestPage() {
                 ))}
               </div>
             )}
+          </StepShell>
+        );
 
-            <p className="mt-3 text-xs text-muted-foreground">
-              {L("You can skip this step.", "ဤအဆင့်ကို ကျော်နိုင်ပါသည်။")}
-            </p>
-          </Section>
-        )}
-
-        {/* Step 5: Timing + contact + budget */}
-        {step === 5 && (
-          <Section title={L("When do you need this?", "ဘယ်အချိန် လိုသလဲ?")}>
-            <div className="flex flex-wrap gap-2">
+      case "timing":
+        return (
+          <StepShell
+            title={L("When would you like this done?", "ဘယ်အချိန် ပြီးချင်ပါသလဲ?")}
+            hint={L("Pick a timeframe or a specific date.", "အချိန် သို့မဟုတ် ရက် ရွေးပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
               {TIMING_OPTIONS.map((t) => (
-                <button
+                <BigChoice
                   key={t.value}
-                  onClick={() => set("timing", t.value)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    form.timing === t.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
+                  active={form.timing === t.value && !form.customDate}
+                  onClick={() => {
+                    set("customDate", "");
+                    pick("timing", t.value);
+                  }}
                 >
                   {L(t.en, t.my)}
-                </button>
+                </BigChoice>
               ))}
             </div>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-muted-foreground">
+                {L("Or pick a specific date", "သို့မဟုတ် ရက်ရွေးပါ")}
+              </label>
+              <Input
+                type="date"
+                value={form.customDate}
+                onChange={(e) => set("customDate", e.target.value)}
+                className="mt-1 h-12 text-base"
+              />
+            </div>
+          </StepShell>
+        );
 
-            <Label className="mt-4">{L("Or choose a date", "သို့မဟုတ် ရက်ရွေးပါ")}</Label>
-            <Input
-              type="date"
-              value={form.customDate}
-              onChange={(e) => set("customDate", e.target.value)}
-            />
-
-            <Label className="mt-4">{L("Preferred time", "နှစ်သက်သော အချိန်")}</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
+      case "window":
+        return (
+          <StepShell
+            title={L("Any preferred time of day?", "နှစ်သက်သော အချိန် ရှိပါသလား?")}
+            hint={L("Tap one or skip.", "တစ်ခု ရွေး၍ ဆက်ပါ။")}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
               {WINDOW_OPTIONS.map((w) => (
-                <button
+                <BigChoice
                   key={w.value}
-                  onClick={() => set("window", w.value as typeof form.window)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    form.window === w.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
+                  active={form.window === w.value}
+                  onClick={() => pick("window", w.value as typeof form.window)}
                 >
                   {L(w.en, w.my)}
-                </button>
+                </BigChoice>
               ))}
             </div>
+          </StepShell>
+        );
 
-            <Label className="mt-5">
-              {L("How should providers contact you?", "ဝန်ဆောင်မှုပေးသူများ ဘယ်လို ဆက်သွယ်ရမည်?")}
-            </Label>
-            <div className="mt-1 flex flex-wrap gap-2">
+      case "contact":
+        return (
+          <StepShell
+            title={L("How should providers reach you?", "ဘယ်လို ဆက်သွယ်ရမည်?")}
+            hint={L(
+              "Your number is only shared after you confirm a booking.",
+              "ဖုန်းနံပါတ်ကို booking အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+            )}
+          >
+            <div className="grid gap-2 sm:grid-cols-3">
               {CONTACT_OPTIONS.map((c) => (
-                <button
+                <BigChoice
                   key={c.value}
+                  active={form.contact === c.value}
                   onClick={() => set("contact", c.value as typeof form.contact)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    form.contact === c.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
                 >
                   {L(c.en, c.my)}
-                </button>
+                </BigChoice>
               ))}
             </div>
             {form.contact !== "in_app" && (
               <Input
-                className="mt-2"
+                className="mt-3 h-12 text-base"
                 placeholder={L("Your phone number", "ဖုန်းနံပါတ်")}
                 value={form.contactPhone}
                 onChange={(e) => set("contactPhone", e.target.value)}
+                inputMode="tel"
               />
             )}
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {L(
-                "Your phone is shared only after you confirm a booking.",
-                "ဖုန်းနံပါတ်ကို booking အတည်ပြုပြီးမှသာ ပြသပါမည်။",
-              )}
-            </p>
+          </StepShell>
+        );
 
-            <Label className="mt-5">{L("Budget (optional)", "ဘတ်ဂျက် (ရွေး)")}</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
+      case "budget":
+        return (
+          <StepShell
+            title={L("What's your budget?", "ဘတ်ဂျက် ဘယ်လောက်လဲ?")}
+            hint={L(
+              "Optional. Helps filter out quotes that won't fit.",
+              "ရွေးနိုင်သည်။ ကိုက်ညီသော စျေးနှုန်းများ ရရှိရန်။",
+            )}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
               {BUDGET_OPTIONS.map((b) => (
-                <button
+                <BigChoice
                   key={b.value}
-                  onClick={() => set("budget", b.value)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    form.budget === b.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
+                  active={form.budget === b.value}
+                  onClick={() => pick("budget", b.value)}
                 >
                   {L(b.en, b.my)}
-                </button>
+                </BigChoice>
               ))}
             </div>
-          </Section>
-        )}
+          </StepShell>
+        );
 
-        {/* Step 6: Review */}
-        {step === 6 && (
-          <Section title={L("Review your request", "သင်၏ တောင်းဆိုချက်ကို ပြန်ကြည့်ပါ")}>
+      case "description":
+        return (
+          <StepShell
+            title={L("Anything else to add?", "နောက်ထပ် ပြောစရာ ရှိပါသလား?")}
+            hint={L(
+              "Describe the issue in a sentence or two. Providers use this to quote.",
+              "ပြဿနာကို တိုတိုနဲ့ ပြောပြပါ။",
+            )}
+          >
+            <Textarea
+              autoFocus
+              rows={5}
+              placeholder={L(
+                "Example: Water is leaking under the kitchen sink. Need someone to check and repair.",
+                "ဥပမာ — မီးဖိုခန်း ဇလုံအောက်တွင် ရေယိုနေပါသည်။",
+              )}
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              className="text-base"
+            />
+            <div className="mt-2 flex items-center justify-end text-xs">
+              <span
+                className={
+                  form.description.trim().length < 20
+                    ? "font-semibold text-muted-foreground"
+                    : "font-semibold text-primary"
+                }
+              >
+                {form.description.trim().length < 20
+                  ? L(
+                      `${20 - form.description.trim().length} more characters`,
+                      `${20 - form.description.trim().length} လုံး ထပ်ထည့်ပါ`,
+                    )
+                  : L("Looks good", "အဆင်ပြေပါပြီ")}
+              </span>
+            </div>
+          </StepShell>
+        );
+
+      case "review":
+        return (
+          <StepShell
+            title={L("Review and send", "ပြန်ကြည့်၍ ပေးပို့ပါ")}
+            hint={L(
+              "Providers will see this and send you quotes.",
+              "ဝန်ဆောင်မှုပေးသူများ မြင်တွေ့၍ စျေးနှုန်း ပေးပါမည်။",
+            )}
+          >
             <div className="space-y-3 rounded-2xl border border-border bg-card p-4 text-sm">
               <Row
                 label={L("Service", "ဝန်ဆောင်မှု")}
@@ -603,7 +733,7 @@ function NewRequestPage() {
               />
               <Row
                 label={L("When", "ဘယ်အချိန်")}
-                value={`${TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`}
+                value={`${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`}
               />
               <Row
                 label={L("Budget", "ဘတ်ဂျက်")}
@@ -619,76 +749,66 @@ function NewRequestPage() {
                 {err}
               </p>
             )}
-          </Section>
-        )}
-      </main>
+            {!user && (
+              <p className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-foreground/80">
+                {L(
+                  "You'll be asked to sign in to send this request.",
+                  "ပေးပို့ရန် အကောင့်ဝင်ရန် လိုပါမည်။",
+                )}
+              </p>
+            )}
+          </StepShell>
+        );
 
-      {/* Sticky footer nav */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:px-0 md:py-6"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
-      >
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 sm:px-6">
-          {step > 1 ? (
-            <Button variant="outline" onClick={back} className="rounded-xl">
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              {L("Back", "နောက်")}
-            </Button>
-          ) : (
-            <span />
-          )}
-          {step < STEPS.length ? (
-            <Button
-              onClick={next}
-              disabled={!canNext()}
-              className="rounded-xl font-semibold"
-            >
-              {L("Continue", "ဆက်လုပ်")}
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={submit}
-              disabled={submitting}
-              className="rounded-xl font-semibold shadow-lg shadow-primary/25"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  {L("Sending…", "ပေးပို့နေ…")}
-                </>
-              ) : (
-                L("Find Providers", "ဝန်ဆောင်မှုပေးသူ ရှာရန်")
-              )}
-            </Button>
-          )}
-        </div>
-      </div>
-
-    </div>
-  );
+      default:
+        return null;
+    }
+  }
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function StepShell({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section>
-      <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h2>
-      <div className="mt-4">{children}</div>
+    <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+      {hint && <p className="mt-1.5 text-sm text-muted-foreground">{hint}</p>}
+      <div className="mt-6">{children}</div>
     </section>
   );
 }
 
-function Label({
+function BigChoice({
+  active,
+  onClick,
   children,
-  className = "",
 }: {
+  active: boolean;
+  onClick: () => void;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <label className={`block text-xs font-semibold text-muted-foreground ${className}`}>
-      {children}
-    </label>
+    <button
+      onClick={onClick}
+      className={`group flex min-h-[60px] items-center justify-between rounded-2xl border-2 p-4 text-left text-sm font-semibold transition-all active:scale-[0.98] ${
+        active
+          ? "border-primary bg-primary/10 text-foreground shadow-sm"
+          : "border-border bg-card hover:border-primary/40 hover:bg-accent/40"
+      }`}
+    >
+      <span>{children}</span>
+      {active && (
+        <span className="ml-2 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+          <Check className="h-3 w-3" />
+        </span>
+      )}
+    </button>
   );
 }
 
