@@ -502,6 +502,19 @@ function NewRequestPage() {
               "ဓာတ်ပုံများက ပိုကောင်းသော စျေးနှုန်း ရစေပါသည်။",
             )}
           >
+            {!user && (
+              <p className="mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
+                {L(
+                  "Sign in to upload photos — or skip and add them later.",
+                  "ဓာတ်ပုံတင်ရန် အကောင့်ဝင်ပါ — သို့မဟုတ် ကျော်ပါ။",
+                )}
+              </p>
+            )}
+            {err && (
+              <p className="mb-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
+                {err}
+              </p>
+            )}
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-8 transition hover:border-primary/50">
               {form.uploading ? (
                 <Loader2 className="mb-2 h-7 w-7 animate-spin text-primary" />
