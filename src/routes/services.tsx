@@ -1,9 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/catalog";
 
 export const Route = createFileRoute("/services")({
-  component: ServicesPage,
+  component: ServicesRouteShell,
   head: () => ({
     meta: [
       { title: "All services — Eain Pro" },
@@ -11,6 +11,16 @@ export const Route = createFileRoute("/services")({
     ],
   }),
 });
+
+function ServicesRouteShell() {
+  const { pathname } = useLocation();
+
+  if (pathname !== "/services") {
+    return <Outlet />;
+  }
+
+  return <ServicesPage />;
+}
 
 function ServicesPage() {
   const { t, lang } = useI18n();
