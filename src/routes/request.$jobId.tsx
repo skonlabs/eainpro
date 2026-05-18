@@ -614,24 +614,32 @@ function RequestDetailPage() {
               )}
             </Card>
 
-            {job.photo_urls && job.photo_urls.length > 0 && (
-              <Card>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {L("Photos", "ဓာတ်ပုံ")}
-                </h3>
-                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {job.photo_urls.map((u) => (
-                    <a key={u} href={u} target="_blank" rel="noreferrer">
-                      <img
-                        src={u}
-                        alt=""
-                        className="aspect-square w-full rounded-lg border object-cover"
-                      />
-                    </a>
-                  ))}
-                </div>
-              </Card>
-            )}
+            {(() => {
+              const photos = (job.photo_urls ?? []).filter((u): u is string => !!u && u.trim().length > 0);
+              if (photos.length === 0) return null;
+              return (
+                <Card>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {L("Photos", "ဓာတ်ပုံ")}
+                  </h3>
+                  <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {photos.map((u) => (
+                      <a key={u} href={u} target="_blank" rel="noreferrer">
+                        <img
+                          src={u}
+                          alt=""
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget.parentElement as HTMLElement | null)?.remove();
+                          }}
+                          className="aspect-square w-full rounded-lg border object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })()}
 
             <Card>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
