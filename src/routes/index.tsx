@@ -1,17 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { CATEGORIES } from "@/lib/catalog";
 import {
-  Search,
-  MapPin,
-  ShieldCheck,
-  Tag,
-  MessagesSquare,
-  Star,
-  Languages,
+  Plus,
+  ChevronRight,
   Sparkles,
   Wrench,
   Plug,
@@ -29,18 +24,16 @@ import {
   Lock,
   Trees,
   Shirt,
+  Briefcase,
+  Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Eain Pro — Trusted home services in Myanmar" },
-      {
-        name: "description",
-        content:
-          "Book trusted cleaners, plumbers, electricians, AC technicians, painters and movers in Yangon, Mandalay and across Myanmar.",
-      },
+      { title: "Home — Eain Pro" },
+      { name: "description", content: "Your Eain Pro home." },
     ],
   }),
 });
@@ -51,287 +44,240 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Saw: Hammer, Brick: Hammer,
 };
 
-const POPULAR = ["cleaning", "plumbing", "electrical", "aircon", "painting", "moving", "pest"];
+type ReqRow = {
+  id: string;
+  category_slug: string;
+  area: string | null;
+  status: string;
+  created_at: string;
+};
+
+const STATUS_TINT: Record<string, string> = {
+  open: "bg-amber-100 text-amber-700",
+  matched: "bg-sky-100 text-sky-700",
+  booked: "bg-emerald-100 text-emerald-700",
+  in_progress: "bg-violet-100 text-violet-700",
+  completed: "bg-muted text-muted-foreground",
+  cancelled: "bg-muted text-muted-foreground",
+};
 
 function Index() {
-  const { t, lang } = useI18n();
-  const [query, setQuery] = useState("");
-  const [city, setCity] = useState("yangon");
-  const [open, setOpen] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const navigate = useNavigate();
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const { lang } = useI18n();
+  const { user, roles, loading: authLoading } = useAuth();
+  const nav = useNavigate();
+  const [rows, setRows] = useState<ReqRow[] | null>(null);
 
-  const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return CATEGORIES.filter((c) =>
-      c.en.toLowerCase().includes(q) || c.my.toLowerCase().includes(q) || c.slug.includes(q),
-    ).slice(0, 6);
-  }, [query]);
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const isProvider = roles.includes("provider");
+  const isAdmin = roles.includes("admin");
 
+  // Unauthenticated → sign in
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+    if (authLoading) return;
+    if (!user) nav({ to: "/signin", search: { redirect: "/" } });
+  }, [authLoading, user, nav]);
 
-  const go = (slug: string) => {
-    setOpen(false);
-    navigate({ to: "/request/new", search: { category: slug } });
-  };
+  // Load active requests for customers
+  useEffect(() => {
+    if (!user || isProvider || isAdmin) return;
+    (async () => {
+      const { data } = await supabase
+        .from("job_requests")
+        .select("id, category_slug, area, status, created_at")
+        .eq("customer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      setRows((data ?? []) as ReqRow[]);
+    })();
+  }, [user, isProvider, isAdmin]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="grid min-h-[40vh] place-items-center text-sm text-muted-foreground">
+        {L("Loading…", "ခဏစောင့်ပါ…")}
+      </div>
+    );
+  }
+
+  const firstName =
+    (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    user.email?.split("@")[0] ||
+    L("there", "မိတ်ဆွေ");
+
+  // Provider home
+  if (isProvider) {
+    return (
+      <div className="space-y-4">
+        <Greeting name={firstName} sub={L("Manage your jobs.", "သင်၏ အလုပ်များကို စီမံပါ။")} />
+        <Link
+          to="/provider/dashboard"
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-soft transition hover:border-primary/50"
+        >
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Briefcase className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="font-semibold">{L("Open jobs", "ပွင့်နေသော အလုပ်များ")}</div>
+              <div className="text-xs text-muted-foreground">
+                {L("View invitations & send quotes", "ဖိတ်ကြားမှုများ ကြည့်ရန်")}
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+      </div>
+    );
+  }
+
+  // Admin home
+  if (isAdmin) {
+    return (
+      <div className="space-y-4">
+        <Greeting name={firstName} sub={L("Admin overview.", "Admin ခြုံငုံကြည့်ရှုမှု")} />
+        <Link
+          to="/admin"
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-soft transition hover:border-primary/50"
+        >
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Shield className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="font-semibold">{L("Open admin", "Admin ဖွင့်ရန်")}</div>
+              <div className="text-xs text-muted-foreground">
+                {L("Users, jobs, settings", "အသုံးပြုသူ၊ အလုပ်၊ ဆက်တင်")}
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+      </div>
+    );
+  }
+
+  // Customer home
+  const popular = CATEGORIES.slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0">
+    <div className="space-y-5">
+      <Greeting name={firstName} sub={L("What can we help with today?", "ဘာကို ကူညီပေးရမလဲ?")} />
 
-
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-secondary/70 via-background to-background" />
-        <div className="absolute -left-20 -top-20 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -right-20 top-40 -z-10 h-72 w-72 rounded-full bg-accent/15 blur-3xl" />
-        <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              {t("hero_title").split(/(Myanmar|မြန်မာ)/).map((part, i) =>
-                part === "Myanmar" || part === "မြန်မာ" ? (
-                  <span key={i} className="text-primary">{part}</span>
-                ) : (
-                  <span key={i}>{part}</span>
-                ),
-              )}
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-[15px] font-medium leading-relaxed text-muted-foreground sm:mt-5 sm:text-lg">
-              {t("hero_sub")}
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="mx-auto mt-7 max-w-3xl rounded-3xl border border-border/60 bg-card p-4 shadow-elevated sm:mt-10 sm:p-6">
-            <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto]">
-              <div className="relative" ref={wrapRef}>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setOpen(true);
-                    setActiveIdx(0);
-                  }}
-                  onFocus={() => query && setOpen(true)}
-                  onKeyDown={(e) => {
-                    if (!open || suggestions.length === 0) return;
-                    if (e.key === "ArrowDown") {
-                      e.preventDefault();
-                      setActiveIdx((i) => (i + 1) % suggestions.length);
-                    } else if (e.key === "ArrowUp") {
-                      e.preventDefault();
-                      setActiveIdx((i) => (i - 1 + suggestions.length) % suggestions.length);
-                    } else if (e.key === "Enter") {
-                      e.preventDefault();
-                      go(suggestions[activeIdx].slug);
-                    } else if (e.key === "Escape") {
-                      setOpen(false);
-                    }
-                  }}
-                  placeholder={t("search_placeholder")}
-                  role="combobox"
-                  aria-expanded={open && suggestions.length > 0}
-                  aria-autocomplete="list"
-                  className="h-12 rounded-2xl border-transparent bg-muted/60 pl-10 font-medium placeholder:text-muted-foreground/70 focus-visible:bg-card"
-                />
-                {open && suggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-elevated animate-in fade-in slide-in-from-top-1">
-                    <ul role="listbox" className="max-h-72 overflow-y-auto py-1">
-                      {suggestions.map((c, i) => {
-                        const Icon = ICONS[c.icon] ?? Hammer;
-                        return (
-                          <li key={c.slug} role="option" aria-selected={i === activeIdx}>
-                            <button
-                              type="button"
-                              onMouseEnter={() => setActiveIdx(i)}
-                              onClick={() => go(c.slug)}
-                              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
-                                i === activeIdx ? "bg-primary/10" : "bg-transparent"
-                              }`}
-                            >
-                              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                                <Icon className="h-4 w-4" />
-                              </span>
-                              <span className="font-semibold text-foreground">
-                                {lang === "en" ? c.en : c.my}
-                              </span>
-                              <span className="ml-auto text-xs text-muted-foreground">
-                                {lang === "en" ? "View pros" : "ကြည့်ရန်"}
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  aria-label={t("city")}
-                  className="h-12 w-full appearance-none rounded-2xl border border-transparent bg-muted/60 pl-10 pr-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {CITIES.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {lang === "en" ? c.en : c.my}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                size="lg"
-                onClick={() => {
-                  setOpen(false);
-                  const cat = suggestions.length > 0 ? suggestions[0].slug : "";
-                  if (cat) {
-                    navigate({ to: "/request/new", search: { category: cat, city } });
-                  } else {
-                    navigate({ to: "/services" });
-                  }
-                }}
-                className="h-12 w-full rounded-2xl font-bold shadow-lg shadow-primary/25 sm:w-auto"
-              >
-                {t("cta_find")}
-              </Button>
-            </div>
-
-            {/* Popular chips */}
-            <div className="mt-5">
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                {t("popular")}
-              </div>
-              <div className="flex flex-wrap gap-2">
-              {POPULAR.map((slug) => {
-                const c = CATEGORIES.find((x) => x.slug === slug);
-                if (!c) return null;
-                return (
-                  <Link
-                    key={slug}
-                    to="/services/$category"
-                    params={{ category: slug }}
-                    className="rounded-full border border-border/70 bg-muted/40 px-3.5 py-1.5 text-xs font-semibold text-foreground/75 transition hover:border-primary hover:bg-card hover:text-primary"
-                  >
-                    {lang === "en" ? c.en : c.my}
-                  </Link>
-                );
-              })}
-              </div>
-            </div>
-          </div>
-
-          {/* Trust badges */}
-          <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-3 text-xs sm:grid-cols-5 sm:text-sm">
-            {[
-              { i: ShieldCheck, k: "trust_verified" as const, tint: "bg-primary/10 text-primary" },
-              { i: Tag, k: "trust_pricing" as const, tint: "bg-amber-100 text-amber-700" },
-              { i: MessagesSquare, k: "trust_chat" as const, tint: "bg-sky-100 text-sky-700" },
-              { i: Star, k: "trust_reviews" as const, tint: "bg-violet-100 text-violet-700" },
-              { i: Languages, k: "trust_support" as const, tint: "bg-rose-100 text-rose-700" },
-            ].map(({ i: Icon, k, tint }) => (
-              <div
-                key={k}
-                className="flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card/70 p-3 backdrop-blur"
-              >
-                <span className={`grid h-8 w-8 place-items-center rounded-lg ${tint}`}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="font-semibold text-foreground/90">{t(k)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CATEGORIES */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
-        <div className="mb-5 flex items-end justify-between sm:mb-8">
+      {/* Primary CTA */}
+      <Link to="/request/new" search={{ category: "" }} className="block">
+        <div className="flex items-center justify-between rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg shadow-primary/25 transition active:scale-[0.99]">
           <div>
-            <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
-              {t("categories")}
-            </h2>
-            <Link
-              to="/guided"
-              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
-            >
-              {lang === "en" ? "Not sure? Help me choose →" : "မသိသေးဘူးလား? ကူညီပေးမည် →"}
-            </Link>
+            <div className="text-base font-bold">{L("Book a service", "ဝန်ဆောင်မှု ဘွတ်ကင်လုပ်ရန်")}</div>
+            <div className="text-xs text-primary-foreground/80">
+              {L("3 quick steps to get matched", "အဆင့် ၃ ဆင့်ဖြင့် ပွဲစား")}
+            </div>
           </div>
-          <Link to="/services" className="text-sm font-medium text-primary hover:underline">
-            {lang === "en" ? "See all" : "အားလုံးကြည့်ရန်"}
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-white/15">
+            <Plus className="h-5 w-5" />
+          </span>
+        </div>
+      </Link>
+
+      {/* Active requests */}
+      <section>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-sm font-bold tracking-tight">
+            {L("Active requests", "လက်ရှိ တောင်းဆိုမှုများ")}
+          </h2>
+          <Link to="/my-requests" className="text-xs font-semibold text-primary">
+            {L("See all", "အားလုံး")}
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {CATEGORIES.slice(0, 12).map((c) => {
+        {rows === null ? (
+          <div className="rounded-2xl border border-border bg-card p-4 text-xs text-muted-foreground">
+            {L("Loading…", "ခဏစောင့်ပါ…")}
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+            <div className="text-sm font-semibold">{L("No requests yet", "တောင်းဆိုမှု မရှိသေးပါ")}</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {L("Book your first service above.", "ပထမဆုံး ဝန်ဆောင်မှု ဘွတ်ကင်လုပ်ပါ။")}
+            </div>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {rows.map((r) => {
+              const cat = CATEGORIES.find((c) => c.slug === r.category_slug);
+              const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to="/request/$jobId"
+                    params={{ jobId: r.id }}
+                    className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
+                  >
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">
+                        {cat ? (lang === "en" ? cat.en : cat.my) : r.category_slug}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {r.area ?? L("Any area", "နေရာအားလုံး")}
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${STATUS_TINT[r.status] ?? "bg-muted text-muted-foreground"}`}>
+                      {r.status}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* Browse categories */}
+      <section>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-sm font-bold tracking-tight">
+            {L("Browse services", "ဝန်ဆောင်မှု ရှာရန်")}
+          </h2>
+          <Link to="/services" className="text-xs font-semibold text-primary">
+            {L("All", "အားလုံး")}
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {popular.map((c) => {
             const Icon = ICONS[c.icon] ?? Hammer;
             return (
               <Link
                 key={c.slug}
                 to="/services/$category"
                 params={{ category: c.slug }}
-                className="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-soft"
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
               >
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" />
-                </div>
-                <div className="text-sm font-semibold">
+                </span>
+                <span className="text-center text-[11px] font-semibold leading-tight">
                   {lang === "en" ? c.en : c.my}
-                </div>
+                </span>
               </Link>
             );
           })}
         </div>
       </section>
+    </div>
+  );
+}
 
-      {/* HOW IT WORKS */}
-      <section className="border-t border-border/40 bg-gradient-to-b from-secondary/50 to-background">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
-          <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
-            {t("how_it_works")}
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[t("step1"), t("step2"), t("step3"), t("step4")].map((label, i) => (
-              <div key={i} className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/25">
-                  {i + 1}
-                </div>
-                <div className="mt-4 text-base font-semibold leading-snug">{label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground shadow-elevated sm:flex-row sm:p-8">
-            <div>
-              <div className="text-lg font-bold sm:text-xl">
-                {lang === "en" ? "Are you a service professional?" : "သင်က ဝန်ဆောင်မှုပေးသူလား?"}
-              </div>
-              <p className="mt-1 text-sm text-primary-foreground/80">
-                {lang === "en"
-                  ? "Grow your business with new customers across Myanmar."
-                  : "မြန်မာတစ်နိုင်ငံလုံးမှ ဖောက်သည်အသစ်များဖြင့် သင့်လုပ်ငန်းကို ချဲ့ထွင်ပါ။"}
-              </p>
-            </div>
-            <Link to="/signup" search={{ as: "provider" }}>
-              <Button size="lg" variant="secondary" className="rounded-2xl font-bold">
-                {t("cta_join")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-
+function Greeting({ name, sub }: { name: string; sub: string }) {
+  return (
+    <div className="px-1">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Hi
+      </div>
+      <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{name}</h1>
+      <p className="mt-0.5 text-sm text-muted-foreground">{sub}</p>
     </div>
   );
 }
