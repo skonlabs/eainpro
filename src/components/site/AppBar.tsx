@@ -1,0 +1,91 @@
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { NotificationBell } from "@/components/site/NotificationBell";
+
+// Routes that act as tab roots — no back button on these.
+const TAB_ROOTS = new Set([
+  "/",
+  "/services",
+  "/providers",
+  "/my-requests",
+  "/account",
+  "/provider/dashboard",
+  "/admin",
+]);
+
+const TITLES: Record<string, { en: string; my: string }> = {
+  "/": { en: "Home", my: "ပင်မ" },
+  "/services": { en: "Services", my: "ဝန်ဆောင်မှု" },
+  "/providers": { en: "Pros", my: "ပညာရှင်များ" },
+  "/my-requests": { en: "My Requests", my: "ကျွန်ုပ်၏ တောင်းဆို" },
+  "/account": { en: "Account", my: "အကောင့်" },
+  "/request/new": { en: "New Request", my: "တောင်းဆို အသစ်" },
+  "/provider/dashboard": { en: "Jobs", my: "အလုပ်" },
+  "/provider/onboarding": { en: "Get Started", my: "စတင်ရန်" },
+  "/admin": { en: "Admin", my: "Admin" },
+  "/signin": { en: "Sign in", my: "ဝင်ရောက်" },
+  "/signup": { en: "Sign up", my: "အကောင့်ဖွင့်" },
+  "/reset-password": { en: "Reset Password", my: "လျှို့ဝှက်နံပါတ်ပြန်" },
+  "/guided": { en: "Help Me Choose", my: "ကူညီပေးမည်" },
+};
+
+function titleFor(pathname: string, lang: "en" | "my") {
+  if (TITLES[pathname]) return TITLES[pathname][lang];
+  // dynamic routes
+  if (pathname.startsWith("/services/")) return lang === "en" ? "Service" : "ဝန်ဆောင်မှု";
+  if (pathname.startsWith("/p/")) return lang === "en" ? "Provider" : "ပညာရှင်";
+  if (pathname.startsWith("/request/")) return lang === "en" ? "Request" : "တောင်းဆို";
+  if (pathname.startsWith("/jobs/")) return lang === "en" ? "Job" : "အလုပ်";
+  return "Eain Pro";
+}
+
+export function AppBar() {
+  const { lang, setLang } = useI18n();
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const router = useRouter();
+
+  const isRoot = TAB_ROOTS.has(pathname);
+  const title = titleFor(pathname, lang);
+
+  return (
+    <header
+      className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="mx-auto flex h-12 max-w-screen-md items-center gap-2 px-3 sm:h-14 sm:px-4">
+        {isRoot ? (
+          <Link to="/" className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground text-sm font-extrabold">
+              E
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.history.back()}
+            aria-label="Back"
+            className="grid h-9 w-9 place-items-center rounded-full text-foreground/80 hover:bg-secondary"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        <h1 className="flex-1 truncate text-base font-bold tracking-tight sm:text-lg">
+          {title}
+        </h1>
+
+        <button
+          onClick={() => setLang(lang === "en" ? "my" : "en")}
+          className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary"
+          aria-label="Toggle language"
+        >
+          {lang === "en" ? "မြန်" : "EN"}
+        </button>
+        {user && <NotificationBell />}
+      </div>
+    </header>
+  );
+}
