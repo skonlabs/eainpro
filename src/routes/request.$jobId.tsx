@@ -1536,9 +1536,11 @@ function BookingPanel({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button variant="outline" onClick={onOpenMessages} className="flex-1 rounded-xl">
           <MessageCircle className="mr-2 h-4 w-4" />
-          {L("Message provider", "မက်ဆေ့ပို့")}
+          {role === "customer"
+            ? L("Message provider", "ပညာရှင်ထံ မက်ဆေ့ပို့")
+            : L("Message customer", "ဖောက်သည်ထံ မက်ဆေ့ပို့")}
         </Button>
-        {inFlight && (
+        {inFlight && role === "customer" && (
           <>
             <Button
               onClick={async () => {
@@ -1582,7 +1584,46 @@ function BookingPanel({
             </Button>
           </>
         )}
-        {isCompleted && !review && (
+        {inFlight && role === "provider" && (
+          <>
+            {!booking.provider_confirmed_at && booking.scheduled_at && (
+              <Button onClick={onProviderConfirmTime} className="flex-1 rounded-xl">
+                <Check className="mr-2 h-4 w-4" />
+                {L("Confirm time", "အချိန် အတည်ပြု")}
+              </Button>
+            )}
+            {booking.status === "accepted" && (
+              <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
+                {L("On the way", "လမ်းပေါ်")}
+              </Button>
+            )}
+            {(booking.status === "accepted" || booking.status === "on_the_way") && (
+              <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
+                {L("Start job", "စတင်")}
+              </Button>
+            )}
+            <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
+              <Check className="mr-2 h-4 w-4" />
+              {L("Mark complete", "ပြီးဆုံးပြီ")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewWhen(
+                  booking.scheduled_at
+                    ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                    : "",
+                );
+                setShowReschedule(true);
+              }}
+              className="rounded-xl"
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {L("Reschedule", "ပြန်ညှိ")}
+            </Button>
+          </>
+        )}
+        {isCompleted && role === "customer" && !review && (
           <Button onClick={() => setShowReview(true)} className="flex-1 rounded-xl">
             <Star className="mr-2 h-4 w-4" />
             {L("Leave a review", "သုံးသပ်ချက် ပေး")}
