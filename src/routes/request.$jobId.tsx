@@ -1798,8 +1798,45 @@ function BookingPanel({
             ? L("Message provider", "ပညာရှင်ထံ မက်ဆေ့ပို့")
             : L("Message customer", "ဖောက်သည်ထံ မက်ဆေ့ပို့")}
         </Button>
+        {/* Schedule / confirm time — both roles */}
+        {inFlight && needsScheduling && (
+          <Button
+            onClick={() => {
+              setNewWhen("");
+              setShowReschedule(true);
+            }}
+            className="flex-1 rounded-xl"
+          >
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {L("Schedule visit", "လည်ပတ်ချိန် ညှိရန်")}
+          </Button>
+        )}
+        {inFlight && pendingTime && awaitingMyConfirmation && (
+          <Button onClick={onConfirmTime} className="flex-1 rounded-xl">
+            <Check className="mr-2 h-4 w-4" />
+            {L("Confirm time", "အချိန် အတည်ပြု")}
+          </Button>
+        )}
+        {inFlight && pendingTime && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setNewWhen(
+                booking.scheduled_at
+                  ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                  : "",
+              );
+              setShowReschedule(true);
+            }}
+            className="rounded-xl"
+          >
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {L("Propose new time", "အချိန် အသစ် တင်ပြ")}
+          </Button>
+        )}
         {inFlight && role === "customer" && (
           <>
+            {bothConfirmed && (
             <Button
               onClick={async () => {
                 setConfirmingComplete(true);
@@ -1817,6 +1854,8 @@ function BookingPanel({
               )}
               {L("Mark complete", "ပြီးဆုံးပြီ")}
             </Button>
+            )}
+            {bothConfirmed && (
             <Button
               variant="outline"
               onClick={() => {
@@ -1832,6 +1871,7 @@ function BookingPanel({
               <CalendarClock className="mr-2 h-4 w-4" />
               {L("Reschedule", "ပြန်ညှိ")}
             </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowCancel(true)}
@@ -1844,26 +1884,22 @@ function BookingPanel({
         )}
         {inFlight && role === "provider" && (
           <>
-            {!booking.provider_confirmed_at && booking.scheduled_at && (
-              <Button onClick={onProviderConfirmTime} className="flex-1 rounded-xl">
-                <Check className="mr-2 h-4 w-4" />
-                {L("Confirm time", "အချိန် အတည်ပြု")}
-              </Button>
-            )}
-            {booking.status === "accepted" && (
+            {bothConfirmed && booking.status === "accepted" && (
               <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
                 {L("On the way", "လမ်းပေါ်")}
               </Button>
             )}
-            {(booking.status === "accepted" || booking.status === "on_the_way") && (
+            {bothConfirmed && (booking.status === "accepted" || booking.status === "on_the_way") && (
               <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
                 {L("Start job", "စတင်")}
               </Button>
             )}
+            {bothConfirmed && (
             <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
               <Check className="mr-2 h-4 w-4" />
               {L("Mark complete", "ပြီးဆုံးပြီ")}
             </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => {
