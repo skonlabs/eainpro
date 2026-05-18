@@ -1635,7 +1635,7 @@ function BookingPanel({
   onCancel,
   onReschedule,
   onProviderAdvance,
-  onProviderConfirmTime,
+  onConfirmTime,
   onToggleFavorite,
   isFavorite,
   onReviewed,
@@ -1650,7 +1650,7 @@ function BookingPanel({
   onCancel: (reason: string) => Promise<void>;
   onReschedule: (iso: string) => Promise<void>;
   onProviderAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
-  onProviderConfirmTime: () => Promise<void>;
+  onConfirmTime: () => Promise<void>;
   onToggleFavorite: () => Promise<void> | void;
   isFavorite: boolean;
   onReviewed: (r: Review) => void;
