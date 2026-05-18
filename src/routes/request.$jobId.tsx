@@ -1900,6 +1900,7 @@ function BookingPanel({
               {L("Mark complete", "ပြီးဆုံးပြီ")}
             </Button>
             )}
+            {bothConfirmed && (
             <Button
               variant="outline"
               onClick={() => {
@@ -1915,6 +1916,7 @@ function BookingPanel({
               <CalendarClock className="mr-2 h-4 w-4" />
               {L("Reschedule", "ပြန်ညှိ")}
             </Button>
+            )}
           </>
         )}
         {isCompleted && role === "customer" && !review && (
