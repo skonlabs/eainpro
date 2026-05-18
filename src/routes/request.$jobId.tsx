@@ -641,9 +641,12 @@ function RequestDetailPage() {
             review={review}
             lang={lang}
             jobAddress={job.address}
+            role={isCustomer ? "customer" : "provider"}
             onComplete={confirmCompletion}
             onCancel={cancelBooking}
             onReschedule={reschedule}
+            onProviderAdvance={providerAdvance}
+            onProviderConfirmTime={providerConfirmTime}
             onToggleFavorite={() => toggleFavorite(booking.provider_id)}
             isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
