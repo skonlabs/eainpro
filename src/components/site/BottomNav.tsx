@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, UserCircle } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, MessageSquare, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -38,14 +38,15 @@ export function BottomNav() {
     : isProvider
       ? [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-          { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
-          { to: "/provider/onboarding", icon: UserCircle, en: "Profile", my: "ပရိုဖိုင်" },
+            { to: "/provider/dashboard", icon: Briefcase, en: "My Jobs", my: "အလုပ်" },
+            { to: "/messages", icon: MessageSquare, en: "Messages", my: "မက်ဆေ့ဂျ်", primary: true },
+            { to: "/provider/calendar", icon: Calendar, en: "My Calendar", my: "ပြက္ခဒိန်" },
           { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
         ]
       : user
         ? [
             { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-            { to: "/my-requests", icon: ClipboardList, en: "My Jobs", my: "ကျွန်ုပ်" },
+            { to: "/my-requests", icon: ClipboardList, en: "My Requests", my: "တောင်းဆို" },
             { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
             { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်", search: { cat: "", city: "" } },
             { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
