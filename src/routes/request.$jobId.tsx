@@ -299,73 +299,7 @@ function RequestDetailPage() {
       nav({ to: "/signin", search: { redirect: `/request/${jobId}` } });
       return;
     }
-    let cancelled = false;
-    (async () => {
-      const [jr, ir, qr, mr, br] = await Promise.all([
-        supabase.from("job_requests").select("*").eq("id", jobId).maybeSingle(),
-        supabase
-          .from("request_invitations")
-          .select(
-            "id, provider_id, status, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId),
-        supabase
-          .from("quotes")
-          .select(
-            "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("messages")
-          .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
-          .eq("job_id", jobId)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("bookings")
-          .select(
-            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId)
-          .maybeSingle(),
-      ]);
-      if (cancelled) return;
-      const nextJob = (jr.data as Job | null) ?? null;
-      const nextInvites = (ir.data as unknown as Invite[]) ?? [];
-      const nextQuotes = (qr.data as unknown as Quote[]) ?? [];
-      const nextMessages = (mr.data as Message[]) ?? [];
-      const nextBooking = (br.data as unknown as Booking | null) ?? null;
-      let nextReview: Review | null = null;
-      if (nextJob) setJob(nextJob);
-      setInvites(nextInvites);
-      setQuotes(nextQuotes);
-      setMessages(nextMessages);
-      if (nextBooking) {
-        setBooking(nextBooking);
-        const { data: rv } = await supabase
-          .from("reviews")
-          .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
-          .eq("booking_id", nextBooking.id)
-          .maybeSingle();
-        if (cancelled) return;
-        if (rv) {
-          nextReview = rv as Review;
-          setReview(nextReview);
-        }
-      }
-      pageCache.set<Snapshot>(cacheKey, {
-        job: nextJob,
-        quotes: nextQuotes,
-        messages: nextMessages,
-        invites: nextInvites,
-        booking: nextBooking,
-        review: nextReview,
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, user, jobId, nav, cacheKey]);
+  }, [authLoading, user, jobId, nav]);
 
   // Realtime: messages, quotes, bookings
   useEffect(() => {
