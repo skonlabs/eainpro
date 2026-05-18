@@ -162,7 +162,7 @@ function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <Link to="/jobs/$jobId" params={{ jobId: j.id }}>
+                <Link to="/request/$jobId" params={{ jobId: j.id }}>
                   <Button size="sm" variant="outline">
                     {myQuotes[j.id]
                       ? lang === "en"
