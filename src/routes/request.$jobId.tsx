@@ -1389,6 +1389,7 @@ function QuotesTab({
   onToggleFavorite,
   onRefresh,
   onInvite,
+  onGoBooking,
 }: {
   quotes: Quote[];
   invites: Invite[];
@@ -1401,6 +1402,7 @@ function QuotesTab({
   onToggleFavorite: (providerId: string) => Promise<void> | void;
   onRefresh: () => Promise<void>;
   onInvite: () => void;
+  onGoBooking?: () => void;
 }) {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [compare, setCompare] = useState<Set<string>>(new Set());
@@ -1448,6 +1450,28 @@ function QuotesTab({
 
   return (
     <div className="mt-5">
+      {disabled && onGoBooking && (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <div className="text-sm font-semibold">
+                {L("Quote accepted", "စျေး လက်ခံပြီး")}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {L(
+                  "Go to the Booking tab to schedule or reschedule the visit.",
+                  "လည်ပတ်ချိန် ညှိရန် Booking တက်ဘ်သို့ သွားပါ။",
+                )}
+              </div>
+            </div>
+          </div>
+          <Button onClick={onGoBooking} className="rounded-xl shrink-0">
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {L("Schedule visit", "လည်ပတ်ချိန် ညှိရန်")}
+          </Button>
+        </div>
+      )}
       {compare.size >= 2 && (
         <div className="mb-3 flex justify-end">
           <Button
