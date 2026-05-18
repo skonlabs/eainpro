@@ -50,7 +50,11 @@ export function NotificationBell() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         (payload) => {
-          setItems((cur) => [payload.new as Notif, ...cur].slice(0, 20));
+          setItems((cur) => {
+            const n = payload.new as Notif;
+            if (cur.some((x) => x.id === n.id)) return cur;
+            return [n, ...cur].slice(0, 20);
+          });
         },
       )
       .subscribe();

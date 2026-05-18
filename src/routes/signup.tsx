@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { Loader2, Mail } from "lucide-react";
 
 const searchSchema = z.object({
@@ -23,6 +25,7 @@ function SignUpPage() {
   const { as, redirect } = Route.useSearch();
   const { lang } = useI18n();
   const nav = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -31,6 +34,13 @@ function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const L = (en: string, my: string) => (lang === "en" ? en : my);
+
+  useEffect(() => {
+    if (!authLoading && user && !needsConfirm) {
+      const dest = role === "provider" ? "/provider/onboarding" : "/";
+      nav({ to: safeRedirect(redirect, dest), replace: true });
+    }
+  }, [authLoading, user, role, redirect, nav, needsConfirm]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
