@@ -24,6 +24,14 @@ type Job = {
   created_at: string;
 };
 
+type ActiveBooking = {
+  id: string;
+  job_id: string;
+  status: string;
+  scheduled_at: string | null;
+  amount: number | null;
+};
+
 function DashboardPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
@@ -31,6 +39,7 @@ function DashboardPage() {
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [provider, setProvider] = useState<{ is_verified: boolean } | null>(null);
   const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>({});
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,6 +83,14 @@ function DashboardPage() {
       const m: Record<string, { amount: number; status: string }> = {};
       (qs ?? []).forEach((q) => (m[q.job_id] = { amount: Number(q.amount), status: q.status }));
       setMyQuotes(m);
+
+      const { data: bs } = await supabase
+        .from("bookings")
+        .select("id, job_id, status, scheduled_at, amount")
+        .eq("provider_id", user.id)
+        .in("status", ["accepted", "on_the_way", "started", "in_progress"])
+        .order("scheduled_at", { ascending: true });
+      setActiveBookings((bs ?? []) as ActiveBooking[]);
     })();
   }, [loading, user, nav]);
 
@@ -110,6 +127,37 @@ function DashboardPage() {
         )}
 
         {err && <p className="mt-4 text-sm text-destructive">{err}</p>}
+
+        {activeBookings.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              {lang === "en" ? "Active bookings" : "လုပ်ဆောင်နေသော ဘွတ်ကင်"}
+            </h2>
+            <ul className="space-y-2">
+              {activeBookings.map((b) => (
+                <li key={b.id} className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 text-sm">
+                      <div className="font-semibold capitalize">{b.status.replace("_", " ")}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {b.scheduled_at
+                          ? new Date(b.scheduled_at).toLocaleString(lang === "en" ? "en" : "my-MM")
+                          : lang === "en" ? "Time TBD" : "အချိန် ညှိရန်"}
+                        {b.amount ? ` · ${Number(b.amount).toLocaleString()} MMK` : ""}
+                      </div>
+                    </div>
+                    <Link to="/request/$jobId" params={{ jobId: b.job_id }}>
+                      <Button size="sm">
+                        {lang === "en" ? "Open" : "ဖွင့်"}
+                      </Button>
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {!jobs && !err && (
           <ul className="mt-6 space-y-3">
             {[0, 1, 2].map((i) => (
@@ -162,7 +210,7 @@ function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <Link to="/jobs/$jobId" params={{ jobId: j.id }}>
+                <Link to="/request/$jobId" params={{ jobId: j.id }}>
                   <Button size="sm" variant="outline">
                     {myQuotes[j.id]
                       ? lang === "en"

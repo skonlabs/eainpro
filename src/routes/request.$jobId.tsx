@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
+import { QuoteForm } from "@/components/jobs/QuoteForm";
 import {
   BadgeCheck,
   Star,
@@ -152,6 +153,13 @@ function RequestDetailPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
+
+  // Role detection — same screen for customer & provider, different controls.
+  const isCustomer = !!user && !!job && job.customer_id === user.id;
+  const myQuote = quotes.find((q) => q.provider_id === user?.id) ?? null;
+  const myInvite = invites.find((i) => i.provider_id === user?.id) ?? null;
+  const myBooking = booking && booking.provider_id === user?.id ? booking : null;
+  const isProvider = !!user && !!job && !isCustomer && (!!myQuote || !!myInvite || !!myBooking);
 
   useEffect(() => {
     if (authLoading) return;
@@ -466,9 +474,58 @@ function RequestDetailPage() {
       job_id: jobId,
       sender_id: user.id,
       kind: "system",
-      body: `Customer proposed new time: ${new Date(newAt).toLocaleString()}`,
+      body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
     });
     toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
+  };
+
+  // Provider-side booking actions.
+  const providerAdvance = async (status: "on_the_way" | "started" | "completed") => {
+    if (!booking || !user) return;
+    const patch: Record<string, unknown> = { status };
+    if (status === "completed") {
+      patch.provider_confirmed_at = new Date().toISOString();
+    }
+    const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (status === "completed") {
+      await supabase.from("job_requests").update({ status: "completed" }).eq("id", jobId);
+    }
+    setBooking({ ...booking, status, ...(status === "completed" ? { provider_confirmed_at: patch.provider_confirmed_at as string } : {}) });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body:
+        status === "on_the_way" ? "Provider is on the way" :
+        status === "started" ? "Provider has started the job" :
+        "Provider marked the job complete",
+    });
+    toast.success(lang === "en" ? "Status updated" : "အခြေအနေ ပြောင်းပြီး");
+  };
+
+  const providerConfirmTime = async () => {
+    if (!booking || !user) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("bookings")
+      .update({ provider_confirmed_at: now })
+      .eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setBooking({ ...booking, provider_confirmed_at: now });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
+    });
+    toast.success(lang === "en" ? "Time confirmed" : "အချိန် အတည်ပြုပြီး");
   };
 
   const toggleFavorite = async (providerId: string) => {
@@ -540,14 +597,25 @@ function RequestDetailPage() {
 
         {/* Tabs */}
         <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 text-sm">
-          {(booking
-            ? (["booking", "details", "quotes", "messages"] as const)
-            : (["details", "providers", "quotes", "messages"] as const)
-          ).map((t) => {
+          {(() => {
+            // Customers see "providers" tab; providers don't.
+            // Providers see the quotes tab labeled as their own quote panel.
+            const tabs: Array<"details" | "providers" | "quotes" | "messages" | "booking"> =
+              isCustomer
+                ? booking
+                  ? ["booking", "details", "quotes", "messages"]
+                  : ["details", "providers", "quotes", "messages"]
+                : booking
+                  ? ["booking", "details", "quotes", "messages"]
+                  : ["details", "quotes", "messages"];
+            return tabs;
+          })().map((t) => {
             const labels = {
               details: L("Details", "အသေးစိတ်"),
               providers: L("Providers", "ဝန်ဆောင်မှုပေးသူ"),
-              quotes: L(`Quotes (${quotes.length})`, `စျေး (${quotes.length})`),
+              quotes: isCustomer
+                ? L(`Quotes (${quotes.length})`, `စျေး (${quotes.length})`)
+                : L("Your quote", "သင်၏ စျေး"),
               messages: L("Messages", "မက်ဆေ့ချ်"),
               booking: L("Booking", "ဘွတ်ကင်"),
             };
@@ -573,9 +641,12 @@ function RequestDetailPage() {
             review={review}
             lang={lang}
             jobAddress={job.address}
+            role={isCustomer ? "customer" : "provider"}
             onComplete={confirmCompletion}
             onCancel={cancelBooking}
             onReschedule={reschedule}
+            onProviderAdvance={providerAdvance}
+            onProviderConfirmTime={providerConfirmTime}
             onToggleFavorite={() => toggleFavorite(booking.provider_id)}
             isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
@@ -672,7 +743,7 @@ function RequestDetailPage() {
         )}
 
         {/* PROVIDERS TAB */}
-        {tab === "providers" && (
+        {tab === "providers" && isCustomer && (
           <div className="mt-5">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
@@ -873,7 +944,7 @@ function RequestDetailPage() {
         )}
 
         {/* QUOTES TAB */}
-        {tab === "quotes" && (
+        {tab === "quotes" && isCustomer && (
           <QuotesTab
             quotes={quotes}
             invites={invites}
@@ -896,6 +967,72 @@ function RequestDetailPage() {
             }}
             onInvite={() => setTab("providers")}
           />
+        )}
+
+        {/* QUOTES TAB — provider view: send / update own quote */}
+        {tab === "quotes" && !isCustomer && (
+          <div className="mt-5 space-y-4">
+            {myQuote && (
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">
+                    {L("Your current quote", "သင်၏ စျေး")}
+                  </div>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase">
+                    {myQuote.status}
+                  </span>
+                </div>
+                <div className="mt-2 text-2xl font-extrabold">
+                  {myQuote.amount.toLocaleString()}{" "}
+                  <span className="text-xs font-medium text-muted-foreground">MMK</span>
+                </div>
+                {myQuote.earliest_at && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {L("Earliest:", "အစောဆုံး:")} {new Date(myQuote.earliest_at).toLocaleString(lang === "en" ? "en" : "my-MM")}
+                  </p>
+                )}
+                {myQuote.notes && <p className="mt-2 text-xs">{myQuote.notes}</p>}
+              </div>
+            )}
+            {!booking && myQuote?.status !== "accepted" && (
+              <QuoteForm
+                jobId={jobId}
+                existing={
+                  myQuote
+                    ? {
+                        amount: myQuote.amount,
+                        price_type: myQuote.price_type,
+                        earliest_at: myQuote.earliest_at,
+                        duration_min: myQuote.duration_min,
+                        included: myQuote.included,
+                        not_included: myQuote.not_included,
+                        warranty: myQuote.warranty,
+                        cancellation_policy: myQuote.cancellation_policy,
+                        expires_at: myQuote.expires_at,
+                        notes: myQuote.notes,
+                      }
+                    : undefined
+                }
+                onSubmitted={async () => {
+                  const { data } = await supabase
+                    .from("quotes")
+                    .select(
+                      "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+                    )
+                    .eq("job_id", jobId)
+                    .order("created_at", { ascending: false });
+                  if (data) setQuotes(data as unknown as Quote[]);
+                  toast.success(lang === "en" ? "Quote sent" : "စျေး ပေးပို့ပြီး");
+                }}
+              />
+            )}
+            {booking && booking.provider_id !== user?.id && (
+              <EmptyState
+                title={L("Job already booked", "အလုပ် ဘွတ်ကင်ထားပြီး")}
+                message={L("This customer accepted another provider's quote.", "အခြားပညာရှင်ကို ရွေးပြီးပါပြီ။")}
+              />
+            )}
+          </div>
         )}
 
         {/* MESSAGES TAB */}
@@ -1277,9 +1414,12 @@ function BookingPanel({
   review,
   lang,
   jobAddress,
+  role,
   onComplete,
   onCancel,
   onReschedule,
+  onProviderAdvance,
+  onProviderConfirmTime,
   onToggleFavorite,
   isFavorite,
   onReviewed,
@@ -1289,9 +1429,12 @@ function BookingPanel({
   review: Review | null;
   lang: "en" | "my";
   jobAddress: string | null;
+  role: "customer" | "provider";
   onComplete: () => Promise<void>;
   onCancel: (reason: string) => Promise<void>;
   onReschedule: (iso: string) => Promise<void>;
+  onProviderAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
+  onProviderConfirmTime: () => Promise<void>;
   onToggleFavorite: () => Promise<void> | void;
   isFavorite: boolean;
   onReviewed: (r: Review) => void;
@@ -1393,9 +1536,11 @@ function BookingPanel({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button variant="outline" onClick={onOpenMessages} className="flex-1 rounded-xl">
           <MessageCircle className="mr-2 h-4 w-4" />
-          {L("Message provider", "မက်ဆေ့ပို့")}
+          {role === "customer"
+            ? L("Message provider", "ပညာရှင်ထံ မက်ဆေ့ပို့")
+            : L("Message customer", "ဖောက်သည်ထံ မက်ဆေ့ပို့")}
         </Button>
-        {inFlight && (
+        {inFlight && role === "customer" && (
           <>
             <Button
               onClick={async () => {
@@ -1439,7 +1584,46 @@ function BookingPanel({
             </Button>
           </>
         )}
-        {isCompleted && !review && (
+        {inFlight && role === "provider" && (
+          <>
+            {!booking.provider_confirmed_at && booking.scheduled_at && (
+              <Button onClick={onProviderConfirmTime} className="flex-1 rounded-xl">
+                <Check className="mr-2 h-4 w-4" />
+                {L("Confirm time", "အချိန် အတည်ပြု")}
+              </Button>
+            )}
+            {booking.status === "accepted" && (
+              <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
+                {L("On the way", "လမ်းပေါ်")}
+              </Button>
+            )}
+            {(booking.status === "accepted" || booking.status === "on_the_way") && (
+              <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
+                {L("Start job", "စတင်")}
+              </Button>
+            )}
+            <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
+              <Check className="mr-2 h-4 w-4" />
+              {L("Mark complete", "ပြီးဆုံးပြီ")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewWhen(
+                  booking.scheduled_at
+                    ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                    : "",
+                );
+                setShowReschedule(true);
+              }}
+              className="rounded-xl"
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {L("Reschedule", "ပြန်ညှိ")}
+            </Button>
+          </>
+        )}
+        {isCompleted && role === "customer" && !review && (
           <Button onClick={() => setShowReview(true)} className="flex-1 rounded-xl">
             <Star className="mr-2 h-4 w-4" />
             {L("Leave a review", "သုံးသပ်ချက် ပေး")}
