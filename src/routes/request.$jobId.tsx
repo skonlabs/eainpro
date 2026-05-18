@@ -638,24 +638,30 @@ function RequestDetailPage() {
     toast.success(lang === "en" ? "Status updated" : "အခြေအနေ ပြောင်းပြီး");
   };
 
-  const providerConfirmTime = async () => {
-    if (!booking || !user) return;
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("bookings")
-      .update({ provider_confirmed_at: now })
-      .eq("id", booking.id);
+  const confirmTime = async () => {
+    if (!booking || !user || !booking.scheduled_at) return;
+    const role: "customer" | "provider" = isCustomer ? "customer" : "provider";
+    const patch: Record<string, unknown> =
+      role === "customer"
+        ? { time_confirmed_by_customer: true }
+        : { time_confirmed_by_provider: true, provider_confirmed_at: new Date().toISOString() };
+    const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setBooking({ ...booking, provider_confirmed_at: now });
+    setBooking({
+      ...booking,
+      ...(role === "customer"
+        ? { time_confirmed_by_customer: true }
+        : { time_confirmed_by_provider: true, provider_confirmed_at: new Date().toISOString() }),
+    });
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
-      recipient_id: booking.customer_id,
+      recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
-      body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
+      body: `${isCustomer ? "Customer" : "Provider"} confirmed the time: ${new Date(booking.scheduled_at).toLocaleString()}`,
     });
     toast.success(lang === "en" ? "Time confirmed" : "အချိန် အတည်ပြုပြီး");
   };
