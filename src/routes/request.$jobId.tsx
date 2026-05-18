@@ -576,21 +576,35 @@ function RequestDetailPage() {
 
   const reschedule = async (newAt: string) => {
     if (!booking || !user) return;
+    const role: "customer" | "provider" = isCustomer ? "customer" : "provider";
+    const patch = {
+      scheduled_at: newAt,
+      rescheduled_at: new Date().toISOString(),
+      time_proposed_by: role,
+      time_confirmed_by_customer: role === "customer",
+      time_confirmed_by_provider: role === "provider",
+    };
     const { error } = await supabase
       .from("bookings")
-      .update({ scheduled_at: newAt, rescheduled_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", booking.id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setBooking({ ...booking, scheduled_at: newAt });
+    setBooking({
+      ...booking,
+      scheduled_at: newAt,
+      time_proposed_by: role,
+      time_confirmed_by_customer: role === "customer",
+      time_confirmed_by_provider: role === "provider",
+    });
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
       recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
-      body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
+      body: `${isCustomer ? "Customer" : "Provider"} proposed a new time: ${new Date(newAt).toLocaleString()} — awaiting confirmation.`,
     });
     toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
   };
