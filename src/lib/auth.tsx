@@ -16,6 +16,7 @@ type AuthCtx = {
   session: Session | null;
   roles: AppRole[];
   loading: boolean;
+  rolesReady: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
 };
@@ -25,11 +26,16 @@ const Ctx = createContext<AuthCtx | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  // loading = true until the initial session check + roles fetch both complete.
+  // rolesReady tracks whether the roles slice is current for the active session.
   const [loading, setLoading] = useState(true);
+  const [rolesReady, setRolesReady] = useState(false);
 
-  const loadRoles = async (userId: string | undefined) => {
+  const loadRoles = async (userId: string | undefined): Promise<void> => {
+    setRolesReady(false);
     if (!userId) {
       setRoles([]);
+      setRolesReady(true);
       return;
     }
     const { data } = await supabase
@@ -37,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("role")
       .eq("user_id", userId);
     setRoles((data ?? []).map((r) => r.role as AppRole));
+    setRolesReady(true);
   };
 
   useEffect(() => {
@@ -63,12 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       roles,
       loading,
+      rolesReady,
       signOut: async () => {
         await supabase.auth.signOut();
       },
       refreshRoles: () => loadRoles(session?.user?.id),
     }),
-    [session, roles, loading],
+    [session, roles, loading, rolesReady],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

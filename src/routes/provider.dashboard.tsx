@@ -67,34 +67,39 @@ export const providerDashboardQuery = (userId: string) =>
       ]);
       const cats = (svcRows ?? []).map((r) => r.category_slug);
       const cities = (areaRows ?? []).map((r) => r.city_slug);
+
+      // Build the jobs query first (depends on cats/cities), then fire it
+      // in parallel with the quotes + bookings fetches so all three resolve
+      // together instead of sequentially.
+      let jobsQuery = supabase
+        .from("job_requests")
+        .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
+        .in("status", ["open", "quoted"])
+        .order("created_at", { ascending: false });
+      if (cats.length > 0) jobsQuery = jobsQuery.in("category_slug", cats);
+      if (cities.length > 0) jobsQuery = jobsQuery.in("city_slug", cities);
+
+      const [jobRes, quotesRes, bookingsRes] = await Promise.all([
+        cats.length > 0 ? jobsQuery : Promise.resolve({ data: [], error: null }),
+        supabase.from("quotes").select("job_id, amount, status").eq("provider_id", userId),
+        supabase
+          .from("bookings")
+          .select("id, job_id, status, scheduled_at, amount")
+          .eq("provider_id", userId)
+          .in("status", ["accepted", "on_the_way", "started", "in_progress"])
+          .order("scheduled_at", { ascending: true }),
+      ]);
+
       let jobs: Job[] = [];
       let error: string | null = null;
-      if (cats.length > 0) {
-        let q = supabase
-          .from("job_requests")
-          .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
-          .in("status", ["open", "quoted"])
-          .in("category_slug", cats)
-          .order("created_at", { ascending: false });
-        if (cities.length > 0) q = q.in("city_slug", cities);
-        const { data, error: e } = await q;
-        if (e) error = e.message;
-        else jobs = (data ?? []) as Job[];
-      }
+      if (jobRes.error) error = jobRes.error.message;
+      else jobs = (jobRes.data ?? []) as Job[];
 
-      const { data: qs } = await supabase
-        .from("quotes")
-        .select("job_id, amount, status")
-        .eq("provider_id", userId);
       const myQuotes: Record<string, { amount: number; status: string }> = {};
-      (qs ?? []).forEach((q) => (myQuotes[q.job_id] = { amount: Number(q.amount), status: q.status }));
+      ((quotesRes.data ?? []) as { job_id: string; amount: number; status: string }[])
+        .forEach((q) => (myQuotes[q.job_id] = { amount: Number(q.amount), status: q.status }));
 
-      const { data: bs } = await supabase
-        .from("bookings")
-        .select("id, job_id, status, scheduled_at, amount")
-        .eq("provider_id", userId)
-        .in("status", ["accepted", "on_the_way", "started", "in_progress"])
-        .order("scheduled_at", { ascending: true });
+      const bs = bookingsRes.data;
 
       return {
         jobs,

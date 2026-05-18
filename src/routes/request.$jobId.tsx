@@ -270,28 +270,30 @@ function RequestDetailPage() {
   }, [isCustomer, booking, quotes, invites]);
 
   // Active peer (the OTHER party in the visible thread).
-  const activePeerId: string | null = isProvider
-    ? job?.customer_id ?? null
-    : peerId ?? booking?.provider_id ?? peerList[0]?.id ?? null;
+  // Customers choose from a peerList; everyone else always talks to the job's
+  // customer — even if isProvider hasn't resolved yet (e.g. roles still loading,
+  // or a provider browsing before quoting).
+  const activePeerId: string | null = isCustomer
+    ? peerId ?? booking?.provider_id ?? peerList[0]?.id ?? null
+    : job?.customer_id ?? null;
 
-  // Filter messages to the active thread only. Legacy rows (recipient_id
-  // null) are only shown when there is a single peer overall — otherwise
-  // we cannot safely attribute them.
-  const totalPeerCount = peerList.length;
+  // Filter messages to the active thread only.
   const visibleMessages: Message[] = useMemo(() => {
     if (!user || !activePeerId) return [];
     return messages.filter((m) => {
       if (m.recipient_id) {
+        // New-style directed messages.
         return (
           (m.sender_id === user.id && m.recipient_id === activePeerId) ||
           (m.sender_id === activePeerId && m.recipient_id === user.id)
         );
       }
-      // Legacy null-recipient row.
-      if (isProvider) return m.sender_id === user.id || m.sender_id === activePeerId;
-      return totalPeerCount <= 1 && (m.sender_id === user.id || m.sender_id === activePeerId);
+      // Legacy null-recipient row: activePeerId already scopes to the right
+      // peer, so showing any message whose sender is one of the two parties
+      // is safe regardless of how many peers exist.
+      return m.sender_id === user.id || m.sender_id === activePeerId;
     });
-  }, [user, activePeerId, messages, isProvider, totalPeerCount]);
+  }, [user, activePeerId, messages]);
 
   useEffect(() => {
     if (authLoading) return;

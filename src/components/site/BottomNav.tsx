@@ -1,11 +1,20 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, UserCircle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
+type NavItem = {
+  to: string;
+  icon: typeof Home;
+  en: string;
+  my: string;
+  primary?: boolean;
+  search?: Record<string, string>;
+};
+
 export function BottomNav() {
   const { lang } = useI18n();
-  const { user, roles } = useAuth();
+  const { user, roles, loading, rolesReady } = useAuth();
   const { pathname } = useLocation();
 
   const isProvider = roles.includes("provider");
@@ -14,16 +23,14 @@ export function BottomNav() {
   // Hide on flows that have their own fixed bottom action bar to avoid overlap.
   if (pathname.startsWith("/request/new")) return null;
 
-  const items: Array<{
-    to: "/" | "/services" | "/request/new" | "/providers" | "/signin" | "/my-requests" | "/account" | "/provider/dashboard" | "/admin";
-    icon: typeof Home;
-    en: string;
-    my: string;
-    primary?: boolean;
-  }> = isAdmin
+  // While auth (including roles) is still resolving, don't render nav to avoid
+  // flashing the wrong set of items (e.g. guest nav briefly for a signed-in user).
+  if (loading || !rolesReady) return null;
+
+  const items: NavItem[] = isAdmin
     ? [
         { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-        { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+        { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်", search: { cat: "", city: "" } },
         { to: "/admin", icon: Shield, en: "Admin", my: "Admin", primary: true },
         { to: "/my-requests", icon: Briefcase, en: "Requests", my: "တောင်းဆို" },
         { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
@@ -32,7 +39,7 @@ export function BottomNav() {
       ? [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
           { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
-          { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+          { to: "/provider/onboarding", icon: UserCircle, en: "Profile", my: "ပရိုဖိုင်" },
           { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
         ]
       : user
@@ -40,14 +47,14 @@ export function BottomNav() {
             { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
             { to: "/my-requests", icon: ClipboardList, en: "My Jobs", my: "ကျွန်ုပ်" },
             { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
-            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်", search: { cat: "", city: "" } },
             { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
           ]
         : [
             { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
             { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
             { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
-            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်", search: { cat: "", city: "" } },
             { to: "/signin", icon: User, en: "Sign in", my: "ဝင်ရောက်" },
           ];
 
@@ -67,7 +74,8 @@ export function BottomNav() {
           return (
             <li key={it.to} className="flex-1">
               <Link
-                to={it.to}
+                to={it.to as "/"}
+                search={it.search as Record<string, never>}
                 className={`flex flex-col items-center justify-end gap-1 py-1.5 text-[10px] font-semibold transition-colors ${
                   active ? "text-primary" : "text-muted-foreground/70"
                 }`}
