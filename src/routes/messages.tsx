@@ -96,17 +96,28 @@ function MessagesPage() {
       const jobMap = new Map((jobs ?? []).map((j) => [j.id, j as { id: string; category_slug: string; customer_id: string }]));
       const provMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? null]));
 
+      // Look up real names for non-provider peers (customers) via profiles
+      const customerPeerIds = peerIds.filter((id) => !provMap.has(id));
+      const { data: profs } = customerPeerIds.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", customerPeerIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const profMap = new Map((profs ?? []).map((p) => [p.id, p.full_name ?? null]));
+
       const list: Thread[] = [];
       for (const [key, arr] of grouped) {
         const [jobId, peerId] = key.split("::");
         const last = arr[0]; // already DESC
         const job = jobMap.get(jobId);
         const isProviderPeer = provMap.has(peerId);
-        const peerName = isProviderPeer
-          ? provMap.get(peerId) ?? (lang === "en" ? "Provider" : "ပညာရှင်")
+        const fallback = isProviderPeer
+          ? lang === "en"
+            ? "Provider"
+            : "ပညာရှင်"
           : lang === "en"
             ? "Customer"
             : "ဖောက်သည်";
+        const realName = isProviderPeer ? provMap.get(peerId) ?? null : profMap.get(peerId) ?? null;
+        const peerName = (realName && realName.trim()) || fallback;
         list.push({
           jobId,
           peerId,
