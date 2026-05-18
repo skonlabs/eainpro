@@ -15,6 +15,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as MyRequestsRouteImport } from './routes/my-requests'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as GuidedRouteImport } from './routes/guided'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -24,6 +25,7 @@ import { Route as RequestNewRouteImport } from './routes/request.new'
 import { Route as RequestJobIdRouteImport } from './routes/request.$jobId'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
+import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 
@@ -55,6 +57,11 @@ const ProvidersRoute = ProvidersRouteImport.update({
 const MyRequestsRoute = MyRequestsRouteImport.update({
   id: '/my-requests',
   path: '/my-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidedRoute = GuidedRouteImport.update({
@@ -102,6 +109,11 @@ const ProviderDashboardRoute = ProviderDashboardRouteImport.update({
   path: '/provider/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProviderCalendarRoute = ProviderCalendarRouteImport.update({
+  id: '/provider/calendar',
+  path: '/provider/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PProviderIdRoute = PProviderIdRouteImport.update({
   id: '/p/$providerId',
   path: '/p/$providerId',
@@ -118,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
+  '/messages': typeof MessagesRoute
   '/my-requests': typeof MyRequestsRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -126,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/p/$providerId': typeof PProviderIdRoute
+  '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/request/$jobId': typeof RequestJobIdRoute
@@ -137,6 +151,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
+  '/messages': typeof MessagesRoute
   '/my-requests': typeof MyRequestsRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -145,6 +160,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/p/$providerId': typeof PProviderIdRoute
+  '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/request/$jobId': typeof RequestJobIdRoute
@@ -157,6 +173,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/guided': typeof GuidedRoute
+  '/messages': typeof MessagesRoute
   '/my-requests': typeof MyRequestsRoute
   '/providers': typeof ProvidersRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -165,6 +182,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/p/$providerId': typeof PProviderIdRoute
+  '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
   '/request/$jobId': typeof RequestJobIdRoute
@@ -178,6 +196,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
+    | '/messages'
     | '/my-requests'
     | '/providers'
     | '/reset-password'
@@ -186,6 +205,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/jobs/$jobId'
     | '/p/$providerId'
+    | '/provider/calendar'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/request/$jobId'
@@ -197,6 +217,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
+    | '/messages'
     | '/my-requests'
     | '/providers'
     | '/reset-password'
@@ -205,6 +226,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/jobs/$jobId'
     | '/p/$providerId'
+    | '/provider/calendar'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/request/$jobId'
@@ -216,6 +238,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/guided'
+    | '/messages'
     | '/my-requests'
     | '/providers'
     | '/reset-password'
@@ -224,6 +247,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/jobs/$jobId'
     | '/p/$providerId'
+    | '/provider/calendar'
     | '/provider/dashboard'
     | '/provider/onboarding'
     | '/request/$jobId'
@@ -236,6 +260,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   GuidedRoute: typeof GuidedRoute
+  MessagesRoute: typeof MessagesRoute
   MyRequestsRoute: typeof MyRequestsRoute
   ProvidersRoute: typeof ProvidersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -244,6 +269,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   PProviderIdRoute: typeof PProviderIdRoute
+  ProviderCalendarRoute: typeof ProviderCalendarRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
   RequestJobIdRoute: typeof RequestJobIdRoute
@@ -292,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/my-requests'
       fullPath: '/my-requests'
       preLoaderRoute: typeof MyRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guided': {
@@ -357,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/provider/calendar': {
+      id: '/provider/calendar'
+      path: '/provider/calendar'
+      fullPath: '/provider/calendar'
+      preLoaderRoute: typeof ProviderCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/p/$providerId': {
       id: '/p/$providerId'
       path: '/p/$providerId'
@@ -391,6 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   GuidedRoute: GuidedRoute,
+  MessagesRoute: MessagesRoute,
   MyRequestsRoute: MyRequestsRoute,
   ProvidersRoute: ProvidersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -399,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   PProviderIdRoute: PProviderIdRoute,
+  ProviderCalendarRoute: ProviderCalendarRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
   RequestJobIdRoute: RequestJobIdRoute,
@@ -407,3 +449,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
