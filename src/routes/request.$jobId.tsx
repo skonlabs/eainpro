@@ -795,6 +795,36 @@ function RequestDetailPage() {
         {/* DETAILS TAB */}
         {tab === "details" && (
           <div className="mt-5 space-y-4">
+            {!isCustomer && booking && booking.provider_id === user?.id && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <div className="text-sm font-semibold">
+                      {booking.scheduled_at
+                        ? L("Manage visit schedule", "လည်ပတ်ချိန် စီမံရန်")
+                        : L("Schedule the visit", "လည်ပတ်ချိန် ညှိရန်")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {booking.scheduled_at
+                        ? L(
+                            "Open Booking to confirm, reschedule, or review the proposed time.",
+                            "Booking တက်ဘ်တွင် အတည်ပြုရန်၊ အချိန်ပြန်ညှိရန် သို့မဟုတ် တင်ပြထားသော အချိန်ကို ကြည့်ရှုနိုင်သည်။",
+                          )
+                        : L(
+                            "Open Booking to propose the first visit time for the homeowner.",
+                            "အိမ်ရှင်အတွက် ပထမဆုံး လည်ပတ်ချိန် တင်ပြရန် Booking တက်ဘ်ကို ဖွင့်ပါ။",
+                          )}
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={() => setTab("booking")} className="rounded-xl shrink-0">
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  {booking.scheduled_at ? L("Open booking", "ဘွတ်ကင် ဖွင့်ရန်") : L("Schedule visit", "လည်ပတ်ချိန် ညှိရန်")}
+                </Button>
+              </div>
+            )}
+
             <Card>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {L("What you need", "လိုအပ်ချက်")}
