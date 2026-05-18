@@ -47,26 +47,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Listener FIRST (per Supabase guidance), then getSession.
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    let lastUserId: string | null | undefined = undefined;
+    let lastToken: string | null | undefined = undefined;
+
+    const apply = (s: Session | null) => {
+      const nextUserId = s?.user?.id ?? null;
+      const nextToken = s?.access_token ?? null;
+      // Skip no-op updates so consumers don't re-render / re-fetch when
+      // Supabase emits INITIAL_SESSION + TOKEN_REFRESHED with the same user.
+      if (nextUserId === lastUserId && nextToken === lastToken) return;
+      const userChanged = nextUserId !== lastUserId;
+      lastUserId = nextUserId;
+      lastToken = nextToken;
       setSession(s);
-      // Defer Supabase calls outside the callback to avoid deadlocks.
-      setTimeout(() => {
-        loadRoles(s?.user?.id);
-      }, 0);
-    });
+      if (userChanged) {
+        setTimeout(() => {
+          loadRoles(nextUserId ?? undefined);
+        }, 0);
+      }
+    };
+
+    // Listener FIRST (per Supabase guidance), then getSession.
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s));
 
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      apply(data.session);
       loadRoles(data.session?.user?.id).finally(() => setLoading(false));
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Stabilise the user reference: only change identity when the user id flips.
+  const userId = session?.user?.id ?? null;
+  const user = useMemo(() => session?.user ?? null, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const value: AuthCtx = useMemo(
     () => ({
-      user: session?.user ?? null,
+      user,
       session,
       roles,
       loading,
@@ -76,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       refreshRoles: () => loadRoles(session?.user?.id),
     }),
-    [session, roles, loading, rolesReady],
+    [user, session, roles, loading, rolesReady],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
