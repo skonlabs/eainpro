@@ -173,6 +173,41 @@ function RequestDetailPage() {
     !isCustomer &&
     (roles.includes("provider") || !!myQuote || !!myInvite || !!myBooking);
 
+  // Build the list of conversation peers for the customer. A peer is any
+  // provider who has interacted with this job (invited, quoted, or booked).
+  const peerList: Provider[] = (() => {
+    if (!isCustomer) return [];
+    const map = new Map<string, Provider>();
+    if (booking?.provider) map.set(booking.provider.id, booking.provider);
+    for (const q of quotes) if (q.provider) map.set(q.provider.id, q.provider);
+    for (const i of invites) if (i.provider) map.set(i.provider.id, i.provider);
+    return Array.from(map.values());
+  })();
+
+  // Active peer (the OTHER party in the visible thread).
+  const activePeerId: string | null = isProvider
+    ? job?.customer_id ?? null
+    : peerId ?? (booking ? booking.provider_id : (peerList.length === 1 ? peerList[0].id : null));
+
+  // Filter messages to the active thread only. Legacy rows (recipient_id
+  // null) are only shown when there is a single peer overall — otherwise
+  // we cannot safely attribute them.
+  const totalPeerCount = peerList.length;
+  const visibleMessages: Message[] = (() => {
+    if (!user || !activePeerId) return [];
+    return messages.filter((m) => {
+      if (m.recipient_id) {
+        return (
+          (m.sender_id === user.id && m.recipient_id === activePeerId) ||
+          (m.sender_id === activePeerId && m.recipient_id === user.id)
+        );
+      }
+      // Legacy null-recipient row.
+      if (isProvider) return m.sender_id === user.id || m.sender_id === activePeerId;
+      return totalPeerCount <= 1 && (m.sender_id === user.id || m.sender_id === activePeerId);
+    });
+  })();
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
