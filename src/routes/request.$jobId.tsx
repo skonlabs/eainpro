@@ -92,6 +92,7 @@ type Message = {
   created_at: string;
   attachment_url?: string | null;
   kind?: string | null;
+  recipient_id?: string | null;
 };
 
 type Invite = {
