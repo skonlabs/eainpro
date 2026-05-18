@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { pageCache } from "@/lib/page-cache";
 import { Clock, MapPin, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -32,14 +33,23 @@ type ActiveBooking = {
   amount: number | null;
 };
 
+type DashSnapshot = {
+  jobs: Job[];
+  provider: { is_verified: boolean } | null;
+  myQuotes: Record<string, { amount: number; status: string }>;
+  activeBookings: ActiveBooking[];
+};
+
 function DashboardPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();
-  const [jobs, setJobs] = useState<Job[] | null>(null);
-  const [provider, setProvider] = useState<{ is_verified: boolean } | null>(null);
-  const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>({});
-  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
+  const cacheKey = user ? `dashboard:${user.id}` : null;
+  const seed = cacheKey ? pageCache.get<DashSnapshot>(cacheKey) : undefined;
+  const [jobs, setJobs] = useState<Job[] | null>(seed?.jobs ?? null);
+  const [provider, setProvider] = useState<{ is_verified: boolean } | null>(seed?.provider ?? null);
+  const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>(seed?.myQuotes ?? {});
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>(seed?.activeBookings ?? []);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +71,7 @@ function DashboardPage() {
       ]);
       const cats = (svcRows ?? []).map((r) => r.category_slug);
       const cities = (areaRows ?? []).map((r) => r.city_slug);
+      let nextJobs: Job[] = [];
       if (cats.length === 0) {
         setJobs([]);
       } else {
@@ -73,7 +84,10 @@ function DashboardPage() {
         if (cities.length > 0) q = q.in("city_slug", cities);
         const { data, error } = await q;
         if (error) setErr(error.message);
-        else setJobs(data as Job[]);
+        else {
+          nextJobs = (data ?? []) as Job[];
+          setJobs(nextJobs);
+        }
       }
 
       const { data: qs } = await supabase
@@ -90,9 +104,18 @@ function DashboardPage() {
         .eq("provider_id", user.id)
         .in("status", ["accepted", "on_the_way", "started", "in_progress"])
         .order("scheduled_at", { ascending: true });
-      setActiveBookings((bs ?? []) as ActiveBooking[]);
+      const bks = (bs ?? []) as ActiveBooking[];
+      setActiveBookings(bks);
+      if (cacheKey) {
+        pageCache.set<DashSnapshot>(cacheKey, {
+          jobs: nextJobs,
+          provider: prov,
+          myQuotes: m,
+          activeBookings: bks,
+        });
+      }
     })();
-  }, [loading, user, nav]);
+  }, [loading, user, nav, cacheKey]);
 
   const catName = (s: string) => {
     const c = CATEGORIES.find((x) => x.slug === s);

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
 import { QuoteForm } from "@/components/jobs/QuoteForm";
+import { pageCache } from "@/lib/page-cache";
 import {
   BadgeCheck,
   Star,
@@ -137,13 +138,23 @@ function RequestDetailPage() {
   const { user, roles, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
-  const [job, setJob] = useState<Job | null>(null);
+  type Snapshot = {
+    job: Job | null;
+    quotes: Quote[];
+    messages: Message[];
+    invites: Invite[];
+    booking: Booking | null;
+    review: Review | null;
+  };
+  const cacheKey = `request:${jobId}`;
+  const seed = pageCache.get<Snapshot>(cacheKey);
+  const [job, setJob] = useState<Job | null>(seed?.job ?? null);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [review, setReview] = useState<Review | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>(seed?.quotes ?? []);
+  const [messages, setMessages] = useState<Message[]>(seed?.messages ?? []);
+  const [invites, setInvites] = useState<Invite[]>(seed?.invites ?? []);
+  const [booking, setBooking] = useState<Booking | null>(seed?.booking ?? null);
+  const [review, setReview] = useState<Review | null>(seed?.review ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -175,14 +186,14 @@ function RequestDetailPage() {
 
   // Build the list of conversation peers for the customer. A peer is any
   // provider who has interacted with this job (invited, quoted, or booked).
-  const peerList: Provider[] = (() => {
+  const peerList: Provider[] = useMemo(() => {
     if (!isCustomer) return [];
     const map = new Map<string, Provider>();
     if (booking?.provider) map.set(booking.provider.id, booking.provider);
     for (const q of quotes) if (q.provider) map.set(q.provider.id, q.provider);
     for (const i of invites) if (i.provider) map.set(i.provider.id, i.provider);
     return Array.from(map.values());
-  })();
+  }, [isCustomer, booking, quotes, invites]);
 
   // Active peer (the OTHER party in the visible thread).
   const activePeerId: string | null = isProvider
@@ -193,7 +204,7 @@ function RequestDetailPage() {
   // null) are only shown when there is a single peer overall — otherwise
   // we cannot safely attribute them.
   const totalPeerCount = peerList.length;
-  const visibleMessages: Message[] = (() => {
+  const visibleMessages: Message[] = useMemo(() => {
     if (!user || !activePeerId) return [];
     return messages.filter((m) => {
       if (m.recipient_id) {
@@ -206,7 +217,7 @@ function RequestDetailPage() {
       if (isProvider) return m.sender_id === user.id || m.sender_id === activePeerId;
       return totalPeerCount <= 1 && (m.sender_id === user.id || m.sender_id === activePeerId);
     });
-  })();
+  }, [user, activePeerId, messages, isProvider, totalPeerCount]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -245,25 +256,42 @@ function RequestDetailPage() {
           .maybeSingle(),
       ]);
       if (cancelled) return;
-      if (jr.data) setJob(jr.data as Job);
-      if (ir.data) setInvites(ir.data as unknown as Invite[]);
-      if (qr.data) setQuotes(qr.data as unknown as Quote[]);
-      if (mr.data) setMessages(mr.data as Message[]);
-      if (br.data) {
-        const b = br.data as unknown as Booking;
-        setBooking(b);
+      const nextJob = (jr.data as Job | null) ?? null;
+      const nextInvites = (ir.data as unknown as Invite[]) ?? [];
+      const nextQuotes = (qr.data as unknown as Quote[]) ?? [];
+      const nextMessages = (mr.data as Message[]) ?? [];
+      const nextBooking = (br.data as unknown as Booking | null) ?? null;
+      let nextReview: Review | null = null;
+      if (nextJob) setJob(nextJob);
+      setInvites(nextInvites);
+      setQuotes(nextQuotes);
+      setMessages(nextMessages);
+      if (nextBooking) {
+        setBooking(nextBooking);
         const { data: rv } = await supabase
           .from("reviews")
           .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
-          .eq("booking_id", b.id)
+          .eq("booking_id", nextBooking.id)
           .maybeSingle();
-        if (rv) setReview(rv as Review);
+        if (cancelled) return;
+        if (rv) {
+          nextReview = rv as Review;
+          setReview(nextReview);
+        }
       }
+      pageCache.set<Snapshot>(cacheKey, {
+        job: nextJob,
+        quotes: nextQuotes,
+        messages: nextMessages,
+        invites: nextInvites,
+        booking: nextBooking,
+        review: nextReview,
+      });
     })();
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, jobId, nav]);
+  }, [authLoading, user, jobId, nav, cacheKey]);
 
   // Realtime: messages, quotes, bookings
   useEffect(() => {

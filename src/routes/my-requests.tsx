@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { pageCache } from "@/lib/page-cache";
 import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
 
 export const Route = createFileRoute("/my-requests")({
@@ -27,7 +28,10 @@ function MyRequestsPage() {
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const cacheKey = user ? `my-requests:${user.id}` : null;
+  const [rows, setRows] = useState<Row[] | null>(
+    () => (cacheKey ? pageCache.get<Row[]>(cacheKey) ?? null : null),
+  );
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -45,6 +49,7 @@ function MyRequestsPage() {
         .order("created_at", { ascending: false });
       if (!jobs) {
         setRows([]);
+        if (cacheKey) pageCache.set(cacheKey, []);
         return;
       }
       const ids = jobs.map((j) => j.id);
@@ -56,15 +61,15 @@ function MyRequestsPage() {
       const qc = new Map<string, number>();
       (inv ?? []).forEach((r) => ic.set(r.job_id, (ic.get(r.job_id) ?? 0) + 1));
       (qs ?? []).forEach((r) => qc.set(r.job_id, (qc.get(r.job_id) ?? 0) + 1));
-      setRows(
-        jobs.map((j) => ({
+      const next: Row[] = jobs.map((j) => ({
           ...j,
           invite_count: ic.get(j.id) ?? 0,
           quote_count: qc.get(j.id) ?? 0,
-        })),
-      );
+      }));
+      setRows(next);
+      if (cacheKey) pageCache.set(cacheKey, next);
     })();
-  }, [authLoading, user, nav]);
+  }, [authLoading, user, nav, cacheKey]);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
