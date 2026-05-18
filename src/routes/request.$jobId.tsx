@@ -370,47 +370,50 @@ function RequestDetailPage() {
     if (acceptingId) return;
     setAcceptingId(q.id);
     try {
-    // Mark quote accepted
-    await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
-    // Decline others
-    await supabase
-      .from("quotes")
-      .update({ status: "declined" })
-      .eq("job_id", jobId)
-      .neq("id", q.id)
-      .eq("status", "pending");
-    // Create booking
-    const { data: b } = await supabase
-      .from("bookings")
-      .insert({
+      // Create booking first — if this fails, do not flip quote state
+      const { data: b, error: bookErr } = await supabase
+        .from("bookings")
+        .insert({
+          job_id: jobId,
+          quote_id: q.id,
+          customer_id: user.id,
+          provider_id: q.provider_id,
+          amount: q.amount,
+          scheduled_at: q.earliest_at,
+          customer_phone: job.contact_phone ?? null,
+          status: "accepted",
+        })
+        .select(
+          "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+        )
+        .maybeSingle();
+      if (bookErr || !b) {
+        toast.error(bookErr?.message ?? (lang === "en" ? "Could not create booking" : "ဘွတ်ကင် မဖန်တီးနိုင်ပါ"));
+        return;
+      }
+      // Now flip quote states
+      await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
+      await supabase
+        .from("quotes")
+        .update({ status: "declined" })
+        .eq("job_id", jobId)
+        .neq("id", q.id)
+        .eq("status", "pending");
+      await supabase.from("job_requests").update({ status: "accepted" }).eq("id", jobId);
+      // Update local state, then switch tab once booking is set
+      setBooking(b as unknown as Booking);
+      setJob((j) => (j ? { ...j, status: "accepted" } : j));
+      await supabase.from("messages").insert({
         job_id: jobId,
-        quote_id: q.id,
-        customer_id: user.id,
-        provider_id: q.provider_id,
-        amount: q.amount,
-        scheduled_at: q.earliest_at,
-        customer_phone: job.contact_phone ?? null,
-        status: "accepted",
-      })
-      .select(
-        "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-      )
-      .maybeSingle();
-    if (b) setBooking(b as unknown as Booking);
-    await supabase.from("job_requests").update({ status: "accepted" }).eq("id", jobId);
-    setJob((j) => (j ? { ...j, status: "accepted" } : j));
-    // System message
-    await supabase.from("messages").insert({
-      job_id: jobId,
-      sender_id: user.id,
-      kind: "system",
-      body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
-    });
-    setTab("booking");
-    toast.success(
-      lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
-      { description: lang === "en" ? "Contact details are now shared with the provider." : "ဆက်သွယ်ရန် အချက်အလက် မျှဝေပြီး။" },
-    );
+        sender_id: user.id,
+        kind: "system",
+        body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
+      });
+      setTab("booking");
+      toast.success(
+        lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
+        { description: lang === "en" ? "Contact details are now shared with the provider." : "ဆက်သွယ်ရန် အချက်အလက် မျှဝေပြီး။" },
+      );
     } finally {
       setAcceptingId(null);
     }
