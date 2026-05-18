@@ -4,12 +4,16 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
 import { Star, BadgeCheck } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { z } from "zod";
+
+const searchSchema = z.object({
+  cat: z.string().optional().default(""),
+  city: z.string().optional().default(""),
+});
 
 export const Route = createFileRoute("/providers")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    cat: typeof s.cat === "string" ? s.cat : "",
-    city: typeof s.city === "string" ? s.city : "",
-  }),
+  validateSearch: searchSchema,
   component: ProvidersPage,
 });
 
@@ -36,6 +40,8 @@ function ProvidersPage() {
       const { data } = await supabase
         .from("providers")
         .select("id, business_name, rating_avg, rating_count, jobs_completed, is_verified, provider_services(category_slug), provider_service_areas(city_slug)")
+        .eq("is_verified", true)
+        .eq("is_suspended", false)
         .order("rating_avg", { ascending: false });
       setRows((data ?? []) as unknown as Row[]);
     })();
@@ -69,35 +75,68 @@ function ProvidersPage() {
           </select>
         </div>
 
-        {!rows && <p className="mt-6 text-sm text-muted-foreground">{lang === "en" ? "Loading…" : "တင်နေသည်…"}</p>}
+        {!rows && (
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <li key={i} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <div className="mt-2 flex gap-1">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
         {rows && filtered.length === 0 && (
-          <p className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            {lang === "en" ? "No verified providers match yet." : "ကိုက်ညီသော ဝန်ဆောင်မှုပေးသူ မရှိသေးပါ။"}
-          </p>
+          <div className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              {lang === "en" ? "No verified providers match your filters yet." : "ကိုက်ညီသော ဝန်ဆောင်မှုပေးသူ မရှိသေးပါ။"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "en" ? "Try clearing your filters or check back later." : "စစ်ဆေးချက် ဖျက်ပြီး မကြာမီ ပြန်ကြည့်ပါ။"}
+            </p>
+          </div>
         )}
         <ul className="mt-6 grid gap-3 sm:grid-cols-2">
           {filtered.map((r) => (
             <li key={r.id}>
-              <Link to="/p/$providerId" params={{ providerId: r.id }} className="block rounded-xl border border-border bg-card p-4 transition hover:border-primary/60">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{r.business_name ?? "Provider"}</span>
-                    {r.is_verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+              <Link to="/p/$providerId" params={{ providerId: r.id }} className="block rounded-2xl border border-border/60 bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-soft">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                    {(r.business_name ?? "P").slice(0, 1)}
                   </div>
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                    {r.rating_avg.toFixed(1)}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {r.provider_services.slice(0, 4).map((s) => {
-                    const c = CATEGORIES.find((x) => x.slug === s.category_slug);
-                    return (
-                      <span key={s.category_slug} className="rounded-full bg-secondary px-2 py-0.5 text-[10px]">
-                        {c ? (lang === "en" ? c.en : c.my) : s.category_slug}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold">{r.business_name ?? "Provider"}</span>
+                      {r.is_verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-primary text-primary" />
+                        {r.rating_avg.toFixed(1)} ({r.rating_count})
                       </span>
-                    );
-                  })}
+                      <span>{r.jobs_completed} {lang === "en" ? "jobs" : "အလုပ်"}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {r.provider_services.slice(0, 4).map((s) => {
+                        const c = CATEGORIES.find((x) => x.slug === s.category_slug);
+                        return (
+                          <span key={s.category_slug} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium">
+                            {c ? (lang === "en" ? c.en : c.my) : s.category_slug}
+                          </span>
+                        );
+                      })}
+                      {r.provider_services.length > 4 && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                          +{r.provider_services.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </Link>
             </li>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -35,13 +35,21 @@ export function BottomNav() {
           { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
           { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
         ]
-      : [
-          { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-          { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
-          { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
-          { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
-          { to: user ? "/account" : "/signin", icon: User, en: user ? "Account" : "Sign in", my: user ? "အကောင့်" : "ဝင်ရောက်" },
-        ];
+      : user
+        ? [
+            { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
+            { to: "/my-requests", icon: ClipboardList, en: "My Jobs", my: "ကျွန်ုပ်" },
+            { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
+            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+            { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
+          ]
+        : [
+            { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
+            { to: "/services", icon: LayoutGrid, en: "Services", my: "ဝန်ဆောင်" },
+            { to: "/request/new", icon: PlusCircle, en: "Request", my: "တောင်းရန်", primary: true },
+            { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်" },
+            { to: "/signin", icon: User, en: "Sign in", my: "ဝင်ရောက်" },
+          ];
 
   return (
     <nav

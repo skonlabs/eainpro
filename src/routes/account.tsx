@@ -387,7 +387,7 @@ function AccountPage() {
                     "ယုံကြည်ရသော ပညာရှင်များကို သိမ်းပါ။",
                   )}
                 </p>
-                <Link to="/providers" className="mt-4 inline-block">
+                <Link to="/providers" search={{ cat: "", city: "" }} className="mt-4 inline-block">
                   <Button size="sm" variant="outline">
                     {L("Browse providers", "ပညာရှင်များ ရှာရန်")}
                   </Button>

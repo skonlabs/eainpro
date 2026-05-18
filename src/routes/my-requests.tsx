@@ -41,6 +41,7 @@ function MyRequestsPage() {
       const { data: jobs } = await supabase
         .from("job_requests")
         .select("id, category_slug, city_slug, area, status, created_at")
+        .eq("customer_id", user.id)
         .order("created_at", { ascending: false });
       if (!jobs) {
         setRows([]);
