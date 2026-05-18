@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/signin")({
 function SignInPage() {
   const { lang } = useI18n();
   const { redirect } = Route.useSearch();
+  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -31,7 +32,7 @@ function SignInPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
-    window.location.href = safeRedirect(redirect, "/");
+    nav({ to: safeRedirect(redirect, "/") });
   };
 
   return (
