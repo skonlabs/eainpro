@@ -198,7 +198,7 @@ function RequestDetailPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
-          .select("id, sender_id, body, created_at, attachment_url, kind")
+          .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
           .eq("job_id", jobId)
           .order("created_at", { ascending: true }),
         supabase
