@@ -660,7 +660,7 @@ function RequestDetailPage() {
                 />
                 <Field
                   label={L("Created", "ဖန်တီးခဲ့သည်")}
-                  value={new Date(job.created_at).toLocaleString(lang === "en" ? "en" : "my")}
+                  value={new Date(job.created_at).toLocaleString(lang === "en" ? "en" : "my-MM")}
                 />
               </dl>
             </Card>
@@ -1360,7 +1360,7 @@ function BookingPanel({
             label={L("When", "အချိန်")}
             value={
               booking.scheduled_at
-                ? new Date(booking.scheduled_at).toLocaleString(lang === "en" ? "en" : "my")
+                ? new Date(booking.scheduled_at).toLocaleString(lang === "en" ? "en" : "my-MM")
                 : L("To be agreed in chat", "ချတ်တွင် ညှိနှိုင်းရန်")
             }
           />
