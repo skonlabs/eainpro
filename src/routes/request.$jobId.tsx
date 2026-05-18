@@ -1104,6 +1104,7 @@ function RequestDetailPage() {
               if (data) setQuotes(data as unknown as Quote[]);
             }}
             onInvite={() => setTab("providers")}
+            onGoBooking={() => setTab("booking")}
           />
         )}
 
