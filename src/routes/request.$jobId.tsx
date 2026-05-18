@@ -133,7 +133,7 @@ function RequestDetailPage() {
   const { jobId } = Route.useParams();
   const { tab = "details" } = Route.useSearch();
   const { lang } = useI18n();
-  const { user, loading: authLoading } = useAuth();
+  const { user, roles, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -159,7 +159,15 @@ function RequestDetailPage() {
   const myQuote = quotes.find((q) => q.provider_id === user?.id) ?? null;
   const myInvite = invites.find((i) => i.provider_id === user?.id) ?? null;
   const myBooking = booking && booking.provider_id === user?.id ? booking : null;
-  const isProvider = !!user && !!job && !isCustomer && (!!myQuote || !!myInvite || !!myBooking);
+  // A user is treated as a provider on this screen if they have the
+  // provider role, OR they already have an invite/quote/booking on this job.
+  // This lets a verified provider open a job from their dashboard and quote
+  // even before they've been invited.
+  const isProvider =
+    !!user &&
+    !!job &&
+    !isCustomer &&
+    (roles.includes("provider") || !!myQuote || !!myInvite || !!myBooking);
 
   useEffect(() => {
     if (authLoading) return;
@@ -415,12 +423,6 @@ function RequestDetailPage() {
       // Update local state, then switch tab once booking is set
       setBooking(b as unknown as Booking);
       setJob((j) => (j ? { ...j, status: "accepted" } : j));
-      await supabase.from("messages").insert({
-        job_id: jobId,
-        sender_id: user.id,
-        kind: "system",
-        body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
-      });
       setTab("booking");
       toast.success(
         lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
