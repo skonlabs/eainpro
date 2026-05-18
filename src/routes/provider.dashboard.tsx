@@ -24,6 +24,14 @@ type Job = {
   created_at: string;
 };
 
+type ActiveBooking = {
+  id: string;
+  job_id: string;
+  status: string;
+  scheduled_at: string | null;
+  amount: number | null;
+};
+
 function DashboardPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
@@ -31,6 +39,7 @@ function DashboardPage() {
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [provider, setProvider] = useState<{ is_verified: boolean } | null>(null);
   const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>({});
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,6 +83,14 @@ function DashboardPage() {
       const m: Record<string, { amount: number; status: string }> = {};
       (qs ?? []).forEach((q) => (m[q.job_id] = { amount: Number(q.amount), status: q.status }));
       setMyQuotes(m);
+
+      const { data: bs } = await supabase
+        .from("bookings")
+        .select("id, job_id, status, scheduled_at, amount")
+        .eq("provider_id", user.id)
+        .in("status", ["accepted", "on_the_way", "started", "in_progress"])
+        .order("scheduled_at", { ascending: true });
+      setActiveBookings((bs ?? []) as ActiveBooking[]);
     })();
   }, [loading, user, nav]);
 
