@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
 import { QuoteForm } from "@/components/jobs/QuoteForm";
+import { pageCache } from "@/lib/page-cache";
 import {
   BadgeCheck,
   Star,
@@ -137,13 +138,23 @@ function RequestDetailPage() {
   const { user, roles, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
-  const [job, setJob] = useState<Job | null>(null);
+  type Snapshot = {
+    job: Job | null;
+    quotes: Quote[];
+    messages: Message[];
+    invites: Invite[];
+    booking: Booking | null;
+    review: Review | null;
+  };
+  const cacheKey = `request:${jobId}`;
+  const seed = pageCache.get<Snapshot>(cacheKey);
+  const [job, setJob] = useState<Job | null>(seed?.job ?? null);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [review, setReview] = useState<Review | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>(seed?.quotes ?? []);
+  const [messages, setMessages] = useState<Message[]>(seed?.messages ?? []);
+  const [invites, setInvites] = useState<Invite[]>(seed?.invites ?? []);
+  const [booking, setBooking] = useState<Booking | null>(seed?.booking ?? null);
+  const [review, setReview] = useState<Review | null>(seed?.review ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -245,25 +256,42 @@ function RequestDetailPage() {
           .maybeSingle(),
       ]);
       if (cancelled) return;
-      if (jr.data) setJob(jr.data as Job);
-      if (ir.data) setInvites(ir.data as unknown as Invite[]);
-      if (qr.data) setQuotes(qr.data as unknown as Quote[]);
-      if (mr.data) setMessages(mr.data as Message[]);
-      if (br.data) {
-        const b = br.data as unknown as Booking;
-        setBooking(b);
+      const nextJob = (jr.data as Job | null) ?? null;
+      const nextInvites = (ir.data as unknown as Invite[]) ?? [];
+      const nextQuotes = (qr.data as unknown as Quote[]) ?? [];
+      const nextMessages = (mr.data as Message[]) ?? [];
+      const nextBooking = (br.data as unknown as Booking | null) ?? null;
+      let nextReview: Review | null = null;
+      if (nextJob) setJob(nextJob);
+      setInvites(nextInvites);
+      setQuotes(nextQuotes);
+      setMessages(nextMessages);
+      if (nextBooking) {
+        setBooking(nextBooking);
         const { data: rv } = await supabase
           .from("reviews")
           .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
-          .eq("booking_id", b.id)
+          .eq("booking_id", nextBooking.id)
           .maybeSingle();
-        if (rv) setReview(rv as Review);
+        if (cancelled) return;
+        if (rv) {
+          nextReview = rv as Review;
+          setReview(nextReview);
+        }
       }
+      pageCache.set<Snapshot>(cacheKey, {
+        job: nextJob,
+        quotes: nextQuotes,
+        messages: nextMessages,
+        invites: nextInvites,
+        booking: nextBooking,
+        review: nextReview,
+      });
     })();
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, jobId, nav]);
+  }, [authLoading, user, jobId, nav, cacheKey]);
 
   // Realtime: messages, quotes, bookings
   useEffect(() => {
