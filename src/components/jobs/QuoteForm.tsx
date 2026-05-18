@@ -67,6 +67,10 @@ export function QuoteForm({
       setErr(L("Amount is too large", "ပမာဏ ကြီးလွန်း"));
       return;
     }
+    if (!earliestAt) {
+      setErr(L("Pick the earliest time you can start", "အစောဆုံး စတင်နိုင်သော အချိန် ရွေးပါ"));
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.from("quotes").upsert(
       {
