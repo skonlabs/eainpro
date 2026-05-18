@@ -784,7 +784,7 @@ function RequestDetailPage() {
             onCancel={cancelBooking}
             onReschedule={reschedule}
             onProviderAdvance={providerAdvance}
-            onProviderConfirmTime={providerConfirmTime}
+            onConfirmTime={confirmTime}
             onToggleFavorite={() => toggleFavorite(booking.provider_id)}
             isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
