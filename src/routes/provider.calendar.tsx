@@ -16,6 +16,8 @@ type Row = {
   status: string;
   scheduled_at: string | null;
   amount: number | null;
+  time_confirmed_by_customer?: boolean | null;
+  time_confirmed_by_provider?: boolean | null;
   job: {
     id: string;
     category_slug: string;
@@ -60,7 +62,7 @@ function CalendarPage() {
       const { data } = await supabase
         .from("bookings")
         .select(
-          "id, job_id, status, scheduled_at, amount, job:job_requests(id, category_slug, city_slug, address, description)",
+          "id, job_id, status, scheduled_at, amount, time_confirmed_by_customer, time_confirmed_by_provider, job:job_requests(id, category_slug, city_slug, address, description)",
         )
         .eq("provider_id", user.id)
         .in("status", ["accepted", "on_the_way", "started", "in_progress", "completed"])
@@ -71,18 +73,21 @@ function CalendarPage() {
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
-  const { upcoming, past, unscheduled } = useMemo(() => {
+  const { upcoming, past, unscheduled, pending } = useMemo(() => {
     const u: Row[] = [];
     const p: Row[] = [];
     const n: Row[] = [];
+    const pend: Row[] = [];
     const now = Date.now();
     for (const r of rows ?? []) {
+      const confirmed = !!r.time_confirmed_by_customer && !!r.time_confirmed_by_provider;
       if (!r.scheduled_at) n.push(r);
+      else if (!confirmed && r.status !== "completed") pend.push(r);
       else if (new Date(r.scheduled_at).getTime() >= now - 6 * 3600_000) u.push(r);
       else p.push(r);
     }
     p.reverse();
-    return { upcoming: u, past: p, unscheduled: n };
+    return { upcoming: u, past: p, unscheduled: n, pending: pend };
   }, [rows]);
 
   // Group upcoming bookings by day
@@ -195,6 +200,15 @@ function CalendarPage() {
             {L("Awaiting scheduling", "အချိန် မသတ်မှတ်ရသေး")}
           </h2>
           <div className="space-y-2">{unscheduled.map(renderRow)}</div>
+        </section>
+      )}
+
+      {pending.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-amber-600">
+            {L("Pending confirmation", "အတည်ပြုရန် စောင့်ဆိုင်း")}
+          </h2>
+          <div className="space-y-2">{pending.map(renderRow)}</div>
         </section>
       )}
 

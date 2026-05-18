@@ -121,6 +121,9 @@ type Booking = {
   provider_confirmed_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  time_confirmed_by_customer?: boolean | null;
+  time_confirmed_by_provider?: boolean | null;
+  time_proposed_by?: "customer" | "provider" | null;
   provider?: Provider | null;
 };
 
@@ -170,7 +173,7 @@ export const requestSnapshotQuery = (jobId: string) =>
         supabase
           .from("bookings")
           .select(
-            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
           )
           .eq("job_id", jobId)
           .maybeSingle(),
@@ -343,7 +346,7 @@ function RequestDetailPage() {
           const { data } = await supabase
             .from("bookings")
             .select(
-              "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+              "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
             )
             .eq("job_id", jobId)
             .maybeSingle();
@@ -507,11 +510,14 @@ function RequestDetailPage() {
           provider_id: q.provider_id,
           amount: q.amount,
           scheduled_at: q.earliest_at,
+          time_proposed_by: q.earliest_at ? "provider" : null,
+          time_confirmed_by_provider: !!q.earliest_at,
+          time_confirmed_by_customer: false,
           customer_phone: job.contact_phone ?? null,
           status: "accepted",
         })
         .select(
-          "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
         )
         .maybeSingle();
       if (bookErr || !b) {
@@ -570,21 +576,35 @@ function RequestDetailPage() {
 
   const reschedule = async (newAt: string) => {
     if (!booking || !user) return;
+    const role: "customer" | "provider" = isCustomer ? "customer" : "provider";
+    const patch = {
+      scheduled_at: newAt,
+      rescheduled_at: new Date().toISOString(),
+      time_proposed_by: role,
+      time_confirmed_by_customer: role === "customer",
+      time_confirmed_by_provider: role === "provider",
+    };
     const { error } = await supabase
       .from("bookings")
-      .update({ scheduled_at: newAt, rescheduled_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", booking.id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setBooking({ ...booking, scheduled_at: newAt });
+    setBooking({
+      ...booking,
+      scheduled_at: newAt,
+      time_proposed_by: role,
+      time_confirmed_by_customer: role === "customer",
+      time_confirmed_by_provider: role === "provider",
+    });
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
       recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
-      body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
+      body: `${isCustomer ? "Customer" : "Provider"} proposed a new time: ${new Date(newAt).toLocaleString()} — awaiting confirmation.`,
     });
     toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
   };
@@ -618,24 +638,30 @@ function RequestDetailPage() {
     toast.success(lang === "en" ? "Status updated" : "အခြေအနေ ပြောင်းပြီး");
   };
 
-  const providerConfirmTime = async () => {
-    if (!booking || !user) return;
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("bookings")
-      .update({ provider_confirmed_at: now })
-      .eq("id", booking.id);
+  const confirmTime = async () => {
+    if (!booking || !user || !booking.scheduled_at) return;
+    const role: "customer" | "provider" = isCustomer ? "customer" : "provider";
+    const patch: Record<string, unknown> =
+      role === "customer"
+        ? { time_confirmed_by_customer: true }
+        : { time_confirmed_by_provider: true, provider_confirmed_at: new Date().toISOString() };
+    const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setBooking({ ...booking, provider_confirmed_at: now });
+    setBooking({
+      ...booking,
+      ...(role === "customer"
+        ? { time_confirmed_by_customer: true }
+        : { time_confirmed_by_provider: true, provider_confirmed_at: new Date().toISOString() }),
+    });
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
-      recipient_id: booking.customer_id,
+      recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
-      body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
+      body: `${isCustomer ? "Customer" : "Provider"} confirmed the time: ${new Date(booking.scheduled_at).toLocaleString()}`,
     });
     toast.success(lang === "en" ? "Time confirmed" : "အချိန် အတည်ပြုပြီး");
   };
@@ -758,7 +784,7 @@ function RequestDetailPage() {
             onCancel={cancelBooking}
             onReschedule={reschedule}
             onProviderAdvance={providerAdvance}
-            onProviderConfirmTime={providerConfirmTime}
+            onConfirmTime={confirmTime}
             onToggleFavorite={() => toggleFavorite(booking.provider_id)}
             isFavorite={favorites.has(booking.provider_id)}
             onReviewed={(r: Review) => setReview(r)}
@@ -1609,7 +1635,7 @@ function BookingPanel({
   onCancel,
   onReschedule,
   onProviderAdvance,
-  onProviderConfirmTime,
+  onConfirmTime,
   onToggleFavorite,
   isFavorite,
   onReviewed,
@@ -1624,7 +1650,7 @@ function BookingPanel({
   onCancel: (reason: string) => Promise<void>;
   onReschedule: (iso: string) => Promise<void>;
   onProviderAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
-  onProviderConfirmTime: () => Promise<void>;
+  onConfirmTime: () => Promise<void>;
   onToggleFavorite: () => Promise<void> | void;
   isFavorite: boolean;
   onReviewed: (r: Review) => void;
@@ -1642,30 +1668,72 @@ function BookingPanel({
   const isCancelled = booking.status === "cancelled";
   const isCompleted = booking.status === "completed";
   const inFlight = ["accepted", "on_the_way", "started", "in_progress"].includes(booking.status);
+  const bothConfirmed =
+    !!booking.scheduled_at && !!booking.time_confirmed_by_customer && !!booking.time_confirmed_by_provider;
+  const myConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_customer : !!booking.time_confirmed_by_provider;
+  const otherConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_provider : !!booking.time_confirmed_by_customer;
+  const awaitingMyConfirmation = !!booking.scheduled_at && !myConfirmed;
+  const awaitingTheirConfirmation = !!booking.scheduled_at && myConfirmed && !otherConfirmed;
+  const needsScheduling = inFlight && !booking.scheduled_at;
+  const pendingTime = inFlight && !!booking.scheduled_at && !bothConfirmed;
 
   return (
     <div className="mt-5 space-y-4">
       {/* Status banner */}
-      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-          {isCompleted
-            ? L("Service completed", "ဝန်ဆောင်မှု ပြီးဆုံး")
-            : isCancelled
-              ? L("Booking cancelled", "ဘွတ်ကင် ပယ်ဖျက်")
-              : L("Booking confirmed", "ဘွတ်ကင် အတည်ပြုပြီး")}
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {isCompleted
-            ? L("Thank you. You can rate your provider below.", "ကျေးဇူးတင်ပါသည်။")
-            : isCancelled
-              ? booking.cancel_reason || L("This booking was cancelled.", "ဤဘွတ်ကင်ကို ပယ်ဖျက်ခဲ့သည်။")
-              : L(
-                  "Your address and phone have been shared with the provider.",
-                  "သင်၏ လိပ်စာနှင့် ဖုန်းကို ဝန်ဆောင်မှုပေးသူသို့ မျှဝေပြီးပါပြီ။",
-                )}
-        </p>
-      </div>
+      {(() => {
+        const isPending = pendingTime || needsScheduling;
+        const tone = isCompleted
+          ? "border-emerald-500/30 from-emerald-500/10"
+          : isCancelled
+            ? "border-destructive/30 from-destructive/10"
+            : isPending
+              ? "border-amber-500/40 from-amber-500/10"
+              : "border-primary/30 from-primary/10";
+        const title = isCompleted
+          ? L("Service completed", "ဝန်ဆောင်မှု ပြီးဆုံး")
+          : isCancelled
+            ? L("Booking cancelled", "ဘွတ်ကင် ပယ်ဖျက်")
+            : needsScheduling
+              ? L("Schedule the visit", "လည်ပတ်ချိန် ညှိရန်")
+              : pendingTime
+                ? L("Pending Confirmation", "အတည်ပြုရန် စောင့်ဆိုင်း")
+                : L("Booking confirmed", "ဘွတ်ကင် အတည်ပြုပြီး");
+        const sub = isCompleted
+          ? L("Thank you. You can rate your provider below.", "ကျေးဇူးတင်ပါသည်။")
+          : isCancelled
+            ? booking.cancel_reason || L("This booking was cancelled.", "ဤဘွတ်ကင်ကို ပယ်ဖျက်ခဲ့သည်။")
+            : needsScheduling
+              ? L(
+                  "Propose a time to lock in the visit. Both sides must agree.",
+                  "လည်ပတ်ချိန် တင်ပြပါ။ နှစ်ဖက်စလုံး သဘောတူရန် လိုပါသည်။",
+                )
+              : pendingTime
+                ? awaitingMyConfirmation
+                  ? L(
+                      `The ${booking.time_proposed_by === "customer" ? "customer" : "provider"} proposed ${new Date(booking.scheduled_at as string).toLocaleString()}. Confirm or propose another time.`,
+                      "တင်ပြထားသော အချိန်ကို အတည်ပြုပါ သို့မဟုတ် အသစ် တင်ပြပါ။",
+                    )
+                  : L(
+                      `Waiting for the ${role === "customer" ? "provider" : "customer"} to confirm ${new Date(booking.scheduled_at as string).toLocaleString()}.`,
+                      "တစ်ဖက်မှ အတည်ပြုရန် စောင့်ဆိုင်းနေသည်။",
+                    )
+                : L(
+                    "Your address and phone have been shared with the provider.",
+                    "သင်၏ လိပ်စာနှင့် ဖုန်းကို ဝန်ဆောင်မှုပေးသူသို့ မျှဝေပြီးပါပြီ။",
+                  );
+        const Icon = isPending ? CalendarClock : isCancelled ? AlertTriangle : CheckCircle2;
+        return (
+          <div className={`rounded-2xl border bg-gradient-to-br to-transparent p-4 ${tone}`}>
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Icon className={`h-4 w-4 ${isPending ? "text-amber-600" : "text-primary"}`} />
+              {title}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+          </div>
+        );
+      })()}
 
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
@@ -1730,8 +1798,45 @@ function BookingPanel({
             ? L("Message provider", "ပညာရှင်ထံ မက်ဆေ့ပို့")
             : L("Message customer", "ဖောက်သည်ထံ မက်ဆေ့ပို့")}
         </Button>
+        {/* Schedule / confirm time — both roles */}
+        {inFlight && needsScheduling && (
+          <Button
+            onClick={() => {
+              setNewWhen("");
+              setShowReschedule(true);
+            }}
+            className="flex-1 rounded-xl"
+          >
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {L("Schedule visit", "လည်ပတ်ချိန် ညှိရန်")}
+          </Button>
+        )}
+        {inFlight && pendingTime && awaitingMyConfirmation && (
+          <Button onClick={onConfirmTime} className="flex-1 rounded-xl">
+            <Check className="mr-2 h-4 w-4" />
+            {L("Confirm time", "အချိန် အတည်ပြု")}
+          </Button>
+        )}
+        {inFlight && pendingTime && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setNewWhen(
+                booking.scheduled_at
+                  ? new Date(booking.scheduled_at).toISOString().slice(0, 16)
+                  : "",
+              );
+              setShowReschedule(true);
+            }}
+            className="rounded-xl"
+          >
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {L("Propose new time", "အချိန် အသစ် တင်ပြ")}
+          </Button>
+        )}
         {inFlight && role === "customer" && (
           <>
+            {bothConfirmed && (
             <Button
               onClick={async () => {
                 setConfirmingComplete(true);
@@ -1749,6 +1854,8 @@ function BookingPanel({
               )}
               {L("Mark complete", "ပြီးဆုံးပြီ")}
             </Button>
+            )}
+            {bothConfirmed && (
             <Button
               variant="outline"
               onClick={() => {
@@ -1764,6 +1871,7 @@ function BookingPanel({
               <CalendarClock className="mr-2 h-4 w-4" />
               {L("Reschedule", "ပြန်ညှိ")}
             </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowCancel(true)}
@@ -1776,26 +1884,23 @@ function BookingPanel({
         )}
         {inFlight && role === "provider" && (
           <>
-            {!booking.provider_confirmed_at && booking.scheduled_at && (
-              <Button onClick={onProviderConfirmTime} className="flex-1 rounded-xl">
-                <Check className="mr-2 h-4 w-4" />
-                {L("Confirm time", "အချိန် အတည်ပြု")}
-              </Button>
-            )}
-            {booking.status === "accepted" && (
+            {bothConfirmed && booking.status === "accepted" && (
               <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
                 {L("On the way", "လမ်းပေါ်")}
               </Button>
             )}
-            {(booking.status === "accepted" || booking.status === "on_the_way") && (
+            {bothConfirmed && (booking.status === "accepted" || booking.status === "on_the_way") && (
               <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
                 {L("Start job", "စတင်")}
               </Button>
             )}
+            {bothConfirmed && (
             <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
               <Check className="mr-2 h-4 w-4" />
               {L("Mark complete", "ပြီးဆုံးပြီ")}
             </Button>
+            )}
+            {bothConfirmed && (
             <Button
               variant="outline"
               onClick={() => {
@@ -1811,6 +1916,7 @@ function BookingPanel({
               <CalendarClock className="mr-2 h-4 w-4" />
               {L("Reschedule", "ပြန်ညှိ")}
             </Button>
+            )}
           </>
         )}
         {isCompleted && role === "customer" && !review && (
