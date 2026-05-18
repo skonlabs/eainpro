@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { pageCache } from "@/lib/page-cache";
 import { Clock, MapPin, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -38,43 +38,38 @@ type DashSnapshot = {
   provider: { is_verified: boolean } | null;
   myQuotes: Record<string, { amount: number; status: string }>;
   activeBookings: ActiveBooking[];
+  needsOnboarding: boolean;
+  error: string | null;
 };
 
-function DashboardPage() {
-  const { lang } = useI18n();
-  const { user, loading } = useAuth();
-  const nav = useNavigate();
-  const cacheKey = user ? `dashboard:${user.id}` : null;
-  const seed = cacheKey ? pageCache.get<DashSnapshot>(cacheKey) : undefined;
-  const [jobs, setJobs] = useState<Job[] | null>(seed?.jobs ?? null);
-  const [provider, setProvider] = useState<{ is_verified: boolean } | null>(seed?.provider ?? null);
-  const [myQuotes, setMyQuotes] = useState<Record<string, { amount: number; status: string }>>(seed?.myQuotes ?? {});
-  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>(seed?.activeBookings ?? []);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (loading) return;
-    if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/dashboard" } });
-    (async () => {
+export const providerDashboardQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["provider-dashboard", userId],
+    queryFn: async (): Promise<DashSnapshot> => {
+      const empty: DashSnapshot = {
+        jobs: [],
+        provider: null,
+        myQuotes: {},
+        activeBookings: [],
+        needsOnboarding: false,
+        error: null,
+      };
       const { data: prov } = await supabase
         .from("providers")
         .select("is_verified")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle();
-      if (!prov) return void nav({ to: "/provider/onboarding" });
-      setProvider(prov);
+      if (!prov) return { ...empty, needsOnboarding: true };
 
-      // Match jobs to provider's own service categories AND service-area cities.
       const [{ data: svcRows }, { data: areaRows }] = await Promise.all([
-        supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
-        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+        supabase.from("provider_services").select("category_slug").eq("provider_id", userId),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", userId),
       ]);
       const cats = (svcRows ?? []).map((r) => r.category_slug);
       const cities = (areaRows ?? []).map((r) => r.city_slug);
-      let nextJobs: Job[] = [];
-      if (cats.length === 0) {
-        setJobs([]);
-      } else {
+      let jobs: Job[] = [];
+      let error: string | null = null;
+      if (cats.length > 0) {
         let q = supabase
           .from("job_requests")
           .select("id, category_slug, description, city_slug, address, urgency, status, created_at")
@@ -82,40 +77,63 @@ function DashboardPage() {
           .in("category_slug", cats)
           .order("created_at", { ascending: false });
         if (cities.length > 0) q = q.in("city_slug", cities);
-        const { data, error } = await q;
-        if (error) setErr(error.message);
-        else {
-          nextJobs = (data ?? []) as Job[];
-          setJobs(nextJobs);
-        }
+        const { data, error: e } = await q;
+        if (e) error = e.message;
+        else jobs = (data ?? []) as Job[];
       }
 
       const { data: qs } = await supabase
         .from("quotes")
         .select("job_id, amount, status")
-        .eq("provider_id", user.id);
-      const m: Record<string, { amount: number; status: string }> = {};
-      (qs ?? []).forEach((q) => (m[q.job_id] = { amount: Number(q.amount), status: q.status }));
-      setMyQuotes(m);
+        .eq("provider_id", userId);
+      const myQuotes: Record<string, { amount: number; status: string }> = {};
+      (qs ?? []).forEach((q) => (myQuotes[q.job_id] = { amount: Number(q.amount), status: q.status }));
 
       const { data: bs } = await supabase
         .from("bookings")
         .select("id, job_id, status, scheduled_at, amount")
-        .eq("provider_id", user.id)
+        .eq("provider_id", userId)
         .in("status", ["accepted", "on_the_way", "started", "in_progress"])
         .order("scheduled_at", { ascending: true });
-      const bks = (bs ?? []) as ActiveBooking[];
-      setActiveBookings(bks);
-      if (cacheKey) {
-        pageCache.set<DashSnapshot>(cacheKey, {
-          jobs: nextJobs,
-          provider: prov,
-          myQuotes: m,
-          activeBookings: bks,
-        });
-      }
-    })();
-  }, [loading, user, nav, cacheKey]);
+
+      return {
+        jobs,
+        provider: prov,
+        myQuotes,
+        activeBookings: (bs ?? []) as ActiveBooking[],
+        needsOnboarding: false,
+        error,
+      };
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+
+function DashboardPage() {
+  const { lang } = useI18n();
+  const { user, loading } = useAuth();
+  const nav = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      nav({ to: "/signin", search: { redirect: "/provider/dashboard" } });
+    }
+  }, [loading, user, nav]);
+
+  const { data } = useQuery({
+    ...providerDashboardQuery(user?.id ?? ""),
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (data?.needsOnboarding) nav({ to: "/provider/onboarding" });
+  }, [data?.needsOnboarding, nav]);
+
+  const jobs = data?.jobs ?? null;
+  const provider = data?.provider ?? null;
+  const myQuotes = data?.myQuotes ?? {};
+  const activeBookings = data?.activeBookings ?? [];
+  const err = data?.error ?? null;
 
   const catName = (s: string) => {
     const c = CATEGORIES.find((x) => x.slug === s);
