@@ -1196,42 +1196,75 @@ function RequestDetailPage() {
             )}
             {activePeerId && (
             <>
-            <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
+            {(() => {
+              const peer = peerList.find((p) => p.id === activePeerId);
+              const peerName = isCustomer
+                ? peer?.business_name ?? L("Provider", "ပညာရှင်")
+                : L("Customer", "ဖောက်သည်");
+              const initial = (peerName ?? "?").trim().slice(0, 1).toUpperCase();
+              return (
+                <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    {initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{peerName}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {L("Job conversation", "အလုပ်စကားပြောခန်း")}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="mt-2 flex flex-col gap-2 overflow-y-auto rounded-2xl border border-border bg-muted/30 p-3" style={{ maxHeight: "55vh", minHeight: "240px" }}>
               {visibleMessages.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  {L("No messages yet.", "မက်ဆေ့ မရှိသေး။")}
+                <p className="my-auto py-6 text-center text-sm text-muted-foreground">
+                  {L("No messages yet. Say hi 👋", "မက်ဆေ့ မရှိသေး။ နှုတ်ဆက်လိုက်ပါ 👋")}
                 </p>
               ) : (
-                visibleMessages.map((m) => {
+                visibleMessages.map((m, idx) => {
                   const mine = m.sender_id === user?.id;
                   if (m.kind === "system") {
                     return (
-                      <div key={m.id} className="mx-auto max-w-[90%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] font-medium text-muted-foreground">
+                      <div key={m.id} className="mx-auto max-w-[90%] rounded-lg bg-background/80 px-3 py-1.5 text-center text-[11px] font-medium text-muted-foreground">
                         {m.body}
                       </div>
                     );
                   }
+                  const prev = visibleMessages[idx - 1];
+                  const showTime =
+                    !prev ||
+                    new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000;
+                  const time = new Date(m.created_at).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  });
                   return (
-                    <div
-                      key={m.id}
-                      className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                        mine
-                          ? "ml-auto bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
-                    >
-                      {m.attachment_url && (
-                        <a href={m.attachment_url} target="_blank" rel="noreferrer">
-                          <img src={m.attachment_url} alt="" className="mb-1 max-h-60 rounded-lg object-cover" />
-                        </a>
+                    <div key={m.id} className="flex flex-col">
+                      {showTime && (
+                        <div className="my-1 text-center text-[10px] text-muted-foreground">{time}</div>
                       )}
-                      {m.body}
+                      <div
+                        className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                          mine
+                            ? "ml-auto rounded-br-md bg-primary text-primary-foreground"
+                            : "mr-auto rounded-bl-md bg-card text-foreground border border-border"
+                        }`}
+                      >
+                        {m.attachment_url && (
+                          <a href={m.attachment_url} target="_blank" rel="noreferrer">
+                            <img src={m.attachment_url} alt="" className="mb-1 max-h-60 rounded-lg object-cover" />
+                          </a>
+                        )}
+                        {m.body && <div className="whitespace-pre-wrap break-words">{m.body}</div>}
+                      </div>
                     </div>
                   );
                 })
               )}
+              <div ref={messagesEndRef} />
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex items-end gap-2">
               <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground">
                 {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
                 <input
@@ -1250,6 +1283,12 @@ function RequestDetailPage() {
                 rows={1}
                 value={msgBody}
                 onChange={(e) => setMsgBody(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
                 placeholder={L("Type a message", "မက်ဆေ့ ရိုက်ပါ")}
                 className="flex-1 resize-none"
               />
