@@ -514,6 +514,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
       body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
     });
@@ -539,6 +540,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: booking.customer_id,
       kind: "system",
       body:
         status === "on_the_way" ? "Provider is on the way" :
@@ -563,6 +565,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: booking.customer_id,
       kind: "system",
       body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
     });
