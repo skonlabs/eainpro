@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS } from "@/lib/catalog";
+import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -596,16 +596,21 @@ function RequestDetailPage() {
               </h3>
               <p className="mt-2 whitespace-pre-wrap text-sm">{job.description || "—"}</p>
               {job.category_answers && Object.keys(job.category_answers).length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {Object.entries(job.category_answers).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/70"
-                    >
-                      {v}
-                    </span>
-                  ))}
-                </div>
+                <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {Object.entries(job.category_answers).map(([k, v]) => {
+                    const qs = CATEGORY_QUESTIONS[job.category_slug] ?? [];
+                    const q = qs.find((x) => x.id === k);
+                    const opt = q?.options.find((o) => o.value === v);
+                    const label = q ? (lang === "en" ? q.en : q.my) : k;
+                    const value = opt ? (lang === "en" ? opt.en : opt.my) : v;
+                    return (
+                      <div key={k} className="rounded-lg border border-border bg-muted/40 px-3 py-2">
+                        <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
               )}
             </Card>
 
