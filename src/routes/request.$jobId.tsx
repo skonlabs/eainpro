@@ -1091,13 +1091,50 @@ function RequestDetailPage() {
                 )}
               </p>
             </div>
+            {isCustomer && peerList.length > 1 && (
+              <div className="mb-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {peerList.map((p) => {
+                  const active = (activePeerId ?? "") === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setPeerId(p.id)}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground/80 hover:border-primary/50"
+                      }`}
+                    >
+                      {p.business_name ?? L("Provider", "ပညာရှင်")}
+                      {p.is_verified && <BadgeCheck className="ml-1 inline h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {isCustomer && peerList.length === 0 && (
+              <EmptyState
+                title={L("No providers yet", "ပညာရှင် မရှိသေး")}
+                message={L(
+                  "Invite providers or wait for quotes to start a conversation.",
+                  "ပညာရှင်များကို ဖိတ်ပါ။ သို့မဟုတ် quote စောင့်ပါ။",
+                )}
+              />
+            )}
+            {isCustomer && peerList.length > 0 && !activePeerId && (
+              <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
+                {L("Select a provider above to view the conversation.", "စကားပြောရန် ပညာရှင်တစ်ဦးကို ရွေးပါ။")}
+              </p>
+            )}
+            {activePeerId && (
+            <>
             <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
-              {messages.length === 0 ? (
+              {visibleMessages.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   {L("No messages yet.", "မက်ဆေ့ မရှိသေး။")}
                 </p>
               ) : (
-                messages.map((m) => {
+                visibleMessages.map((m) => {
                   const mine = m.sender_id === user?.id;
                   if (m.kind === "system") {
                     return (
@@ -1152,6 +1189,8 @@ function RequestDetailPage() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+            </>
+            )}
           </div>
         )}
       </main>
