@@ -941,7 +941,7 @@ function RequestDetailPage() {
         )}
 
         {/* QUOTES TAB */}
-        {tab === "quotes" && (
+        {tab === "quotes" && isCustomer && (
           <QuotesTab
             quotes={quotes}
             invites={invites}
@@ -964,6 +964,72 @@ function RequestDetailPage() {
             }}
             onInvite={() => setTab("providers")}
           />
+        )}
+
+        {/* QUOTES TAB — provider view: send / update own quote */}
+        {tab === "quotes" && !isCustomer && (
+          <div className="mt-5 space-y-4">
+            {myQuote && (
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">
+                    {L("Your current quote", "သင်၏ စျေး")}
+                  </div>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase">
+                    {myQuote.status}
+                  </span>
+                </div>
+                <div className="mt-2 text-2xl font-extrabold">
+                  {myQuote.amount.toLocaleString()}{" "}
+                  <span className="text-xs font-medium text-muted-foreground">MMK</span>
+                </div>
+                {myQuote.earliest_at && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {L("Earliest:", "အစောဆုံး:")} {new Date(myQuote.earliest_at).toLocaleString(lang === "en" ? "en" : "my-MM")}
+                  </p>
+                )}
+                {myQuote.notes && <p className="mt-2 text-xs">{myQuote.notes}</p>}
+              </div>
+            )}
+            {!booking && myQuote?.status !== "accepted" && (
+              <QuoteForm
+                jobId={jobId}
+                existing={
+                  myQuote
+                    ? {
+                        amount: myQuote.amount,
+                        price_type: myQuote.price_type,
+                        earliest_at: myQuote.earliest_at,
+                        duration_min: myQuote.duration_min,
+                        included: myQuote.included,
+                        not_included: myQuote.not_included,
+                        warranty: myQuote.warranty,
+                        cancellation_policy: myQuote.cancellation_policy,
+                        expires_at: myQuote.expires_at,
+                        notes: myQuote.notes,
+                      }
+                    : undefined
+                }
+                onSubmitted={async () => {
+                  const { data } = await supabase
+                    .from("quotes")
+                    .select(
+                      "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+                    )
+                    .eq("job_id", jobId)
+                    .order("created_at", { ascending: false });
+                  if (data) setQuotes(data as unknown as Quote[]);
+                  toast.success(lang === "en" ? "Quote sent" : "စျေး ပေးပို့ပြီး");
+                }}
+              />
+            )}
+            {booking && booking.provider_id !== user?.id && (
+              <EmptyState
+                title={L("Job already booked", "အလုပ် ဘွတ်ကင်ထားပြီး")}
+                message={L("This customer accepted another provider's quote.", "အခြားပညာရှင်ကို ရွေးပြီးပါပြီ။")}
+              />
+            )}
+          </div>
         )}
 
         {/* MESSAGES TAB */}
