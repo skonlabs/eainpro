@@ -1,4 +1,4 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
@@ -14,6 +14,21 @@ const TAB_ROOTS = new Set([
   "/provider/dashboard",
   "/admin",
 ]);
+
+// Sensible parent fallbacks when there's no browser history (e.g. user opened
+// a deep link directly). Keep these in sync with TAB_ROOTS above.
+function parentFor(pathname: string): string {
+  if (pathname.startsWith("/services/")) return "/services";
+  if (pathname.startsWith("/p/")) return "/providers";
+  if (pathname.startsWith("/request/new")) return "/";
+  if (pathname.startsWith("/request/")) return "/my-requests";
+  if (pathname.startsWith("/jobs/")) return "/provider/dashboard";
+  if (pathname === "/provider/onboarding") return "/account";
+  if (pathname === "/guided") return "/";
+  if (pathname === "/signup" || pathname === "/reset-password") return "/signin";
+  if (pathname === "/signin") return "/";
+  return "/";
+}
 
 const TITLES: Record<string, { en: string; my: string }> = {
   "/": { en: "Home", my: "ပင်မ" },
@@ -46,9 +61,20 @@ export function AppBar() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const router = useRouter();
+  const navigate = useNavigate();
 
   const isRoot = TAB_ROOTS.has(pathname);
   const title = titleFor(pathname, lang);
+
+  const goBack = () => {
+    // If there's prior history within this session, use it; otherwise fall
+    // back to a sensible parent route so deep links don't strand users.
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      navigate({ to: parentFor(pathname) });
+    }
+  };
 
   return (
     <header
@@ -65,7 +91,7 @@ export function AppBar() {
         ) : (
           <button
             type="button"
-            onClick={() => router.history.back()}
+            onClick={goBack}
             aria-label="Back"
             className="grid h-9 w-9 place-items-center rounded-full text-foreground/80 hover:bg-secondary"
           >

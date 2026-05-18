@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
-import { Star, BadgeCheck, ArrowLeft, PlusCircle } from "lucide-react";
+import { Star, BadgeCheck, PlusCircle } from "lucide-react";
 
 export const Route = createFileRoute("/services/$category")({
   component: CategoryPage,
@@ -59,14 +59,7 @@ function CategoryPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-12">
-        <Link
-          to="/services"
-          className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> {t("nav_services")}
-        </Link>
-
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               {lang === "en" ? cat.en : cat.my}
