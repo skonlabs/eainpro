@@ -303,9 +303,15 @@ function RequestDetailPage() {
 
   const sendInvites = async () => {
     if (!selected.size) return;
+    await inviteProviderIds(Array.from(selected));
+    setSelected(new Set());
+  };
+
+  const inviteProviderIds = async (ids: string[]) => {
+    if (!ids.length) return;
     setSending(true);
     setErr(null);
-    const rows = Array.from(selected).map((pid) => ({ job_id: jobId, provider_id: pid }));
+    const rows = ids.map((pid) => ({ job_id: jobId, provider_id: pid }));
     const { error } = await supabase
       .from("request_invitations")
       .upsert(rows, { onConflict: "job_id,provider_id" });
@@ -322,7 +328,6 @@ function RequestDetailPage() {
         )
         .eq("job_id", jobId);
       setInvites((refreshed ?? []) as unknown as Invite[]);
-      setSelected(new Set());
       setShowSuccess(true);
     } else {
       setErr(error.message);
