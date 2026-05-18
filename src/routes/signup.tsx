@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/signup")({
 function SignUpPage() {
   const { as, redirect } = Route.useSearch();
   const { lang } = useI18n();
+  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -47,7 +48,7 @@ function SignUpPage() {
       return;
     }
     const defaultDest = role === "provider" ? "/provider/onboarding" : "/";
-    window.location.href = safeRedirect(redirect, defaultDest);
+    nav({ to: safeRedirect(redirect, defaultDest) });
   };
 
   if (needsConfirm) {
