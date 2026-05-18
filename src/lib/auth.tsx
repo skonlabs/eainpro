@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -56,16 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const value: AuthCtx = {
-    user: session?.user ?? null,
-    session,
-    roles,
-    loading,
-    signOut: async () => {
-      await supabase.auth.signOut();
-    },
-    refreshRoles: () => loadRoles(session?.user?.id),
-  };
+  const value: AuthCtx = useMemo(
+    () => ({
+      user: session?.user ?? null,
+      session,
+      roles,
+      loading,
+      signOut: async () => {
+        await supabase.auth.signOut();
+      },
+      refreshRoles: () => loadRoles(session?.user?.id),
+    }),
+    [session, roles, loading],
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
