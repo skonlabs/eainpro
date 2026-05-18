@@ -49,6 +49,7 @@ function MyRequestsPage() {
         .order("created_at", { ascending: false });
       if (!jobs) {
         setRows([]);
+        if (cacheKey) pageCache.set(cacheKey, []);
         return;
       }
       const ids = jobs.map((j) => j.id);
