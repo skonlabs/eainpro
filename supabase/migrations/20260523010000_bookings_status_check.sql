@@ -1,24 +1,12 @@
--- Defensive: ensure bookings.status accepts every value the app writes.
--- The original bookings table may have a legacy CHECK constraint that omits
--- 'on_the_way', 'started', or 'in_progress'. Drop any existing check on
--- status and re-create it with the full allowed set.
-do $$
-declare _con text;
-begin
-  for _con in
-    select conname
-    from pg_constraint c
-    join pg_class t on t.oid = c.conrelid
-    where t.relname = 'bookings'
-      and c.contype = 'c'
-      and pg_get_constraintdef(c.oid) ilike '%status%'
-  loop
-    execute format('alter table public.bookings drop constraint %I', _con);
-  end loop;
-end $$;
-
-alter table public.bookings
-  add constraint bookings_status_check
-  check (status in (
-    'pending','accepted','on_the_way','started','in_progress','completed','cancelled'
-  ));
+-- bookings.status is the enum public.job_status_t. Ensure every value the
+-- app writes exists in the enum. ALTER TYPE ... ADD VALUE must run outside
+-- a transaction block in older Postgres, but Supabase migrations wrap each
+-- file in a transaction; 'IF NOT EXISTS' makes this safe and idempotent on
+-- PG12+.
+alter type public.job_status_t add value if not exists 'pending';
+alter type public.job_status_t add value if not exists 'accepted';
+alter type public.job_status_t add value if not exists 'on_the_way';
+alter type public.job_status_t add value if not exists 'started';
+alter type public.job_status_t add value if not exists 'in_progress';
+alter type public.job_status_t add value if not exists 'completed';
+alter type public.job_status_t add value if not exists 'cancelled';
