@@ -5,7 +5,8 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Zap } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/provider/dashboard")({
   component: DashboardPage,
@@ -110,7 +111,20 @@ function DashboardPage() {
 
         {err && <p className="mt-4 text-sm text-destructive">{err}</p>}
         {!jobs && !err && (
-          <p className="mt-6 text-sm text-muted-foreground">{lang === "en" ? "Loading…" : "တင်နေသည်…"}</p>
+          <ul className="mt-6 space-y-3">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                  <Skeleton className="h-8 w-24 rounded-md" />
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
         {jobs && jobs.length === 0 && (
           <p className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
@@ -133,10 +147,19 @@ function DashboardPage() {
                       <MapPin className="h-3 w-3" />
                       {cityName(j.city_slug)}
                     </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {j.urgency}
-                    </span>
+                    {j.urgency === "today" ? (
+                      <span className="inline-flex items-center gap-1 font-semibold text-destructive">
+                        <Zap className="h-3 w-3" />
+                        {lang === "en" ? "Urgent" : "အရေးပေါ်"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {j.urgency === "tomorrow" ? (lang === "en" ? "1–2 days" : "၁-၂ ရက်")
+                          : j.urgency === "flexible" ? (lang === "en" ? "Flexible" : "ပြောင်းလဲနိုင်")
+                          : j.urgency}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Link to="/jobs/$jobId" params={{ jobId: j.id }}>

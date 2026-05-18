@@ -256,9 +256,17 @@ function Index() {
       {/* CATEGORIES */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="mb-5 flex items-end justify-between sm:mb-8">
-          <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
-            {t("categories")}
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight sm:text-3xl">
+              {t("categories")}
+            </h2>
+            <Link
+              to="/guided"
+              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+            >
+              {lang === "en" ? "Not sure? Help me choose →" : "မသိသေးဘူးလား? ကူညီပေးမည် →"}
+            </Link>
+          </div>
           <Link to="/services" className="text-sm font-medium text-primary hover:underline">
             {lang === "en" ? "See all" : "အားလုံးကြည့်ရန်"}
           </Link>

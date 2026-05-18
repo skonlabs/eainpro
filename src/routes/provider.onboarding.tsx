@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/provider/onboarding")({
   component: OnboardingPage,
@@ -195,11 +197,10 @@ function OnboardingPage() {
                   onChange={(e) => setYears(Number(e.target.value))}
                 />
               </div>
-              <label className="mt-6 flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+              <label className="mt-6 flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
                   checked={supportsUrgent}
-                  onChange={(e) => setSupportsUrgent(e.target.checked)}
+                  onCheckedChange={(v) => setSupportsUrgent(!!v)}
                 />
                 {lang === "en" ? "Accept urgent same-day jobs" : "အရေးပေါ် တနေ့တည်း လက်ခံ"}
               </label>
@@ -270,11 +271,12 @@ function OnboardingPage() {
           {err && <p className="text-sm text-destructive">{err}</p>}
 
           <Button type="submit" disabled={saving} className="w-full">
-            {saving
-              ? "…"
-              : lang === "en"
-                ? "Save and continue"
-                : "သိမ်းပြီး ဆက်လုပ်ရန်"}
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {lang === "en" ? "Saving…" : "သိမ်းနေ…"}
+              </>
+            ) : lang === "en" ? "Save and continue" : "သိမ်းပြီး ဆက်လုပ်ရန်"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             {lang === "en"

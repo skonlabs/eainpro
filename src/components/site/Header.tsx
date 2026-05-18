@@ -26,7 +26,7 @@ export function Header() {
           <Link to="/services" className="text-foreground/80 hover:text-foreground">
             {t("nav_services")}
           </Link>
-          <Link to="/providers" className="text-foreground/80 hover:text-foreground">
+          <Link to="/providers" search={{ cat: "", city: "" }} className="text-foreground/80 hover:text-foreground">
             {t("nav_providers")}
           </Link>
           {user && (

@@ -474,10 +474,19 @@ function RequestDetailPage() {
       return n;
     });
     if (isFav) {
-      await supabase.from("favorites").delete().eq("customer_id", user.id).eq("provider_id", providerId);
+      const { error } = await supabase.from("favorites").delete().eq("customer_id", user.id).eq("provider_id", providerId);
+      if (error) {
+        setFavorites((s) => { const n = new Set(s); n.add(providerId); return n; });
+        toast.error(error.message);
+      }
     } else {
-      await supabase.from("favorites").insert({ customer_id: user.id, provider_id: providerId });
-      toast.success(lang === "en" ? "Saved to favorites" : "နှစ်သက်ရာ သိမ်းပြီး");
+      const { error } = await supabase.from("favorites").insert({ customer_id: user.id, provider_id: providerId });
+      if (error) {
+        setFavorites((s) => { const n = new Set(s); n.delete(providerId); return n; });
+        toast.error(error.message);
+      } else {
+        toast.success(lang === "en" ? "Saved to favorites" : "နှစ်သက်ရာ သိမ်းပြီး");
+      }
     }
   };
 
@@ -959,7 +968,7 @@ function Field({ label, value }: { label: string; value: string }) {
 
 function StatusBadge({ status, lang }: { status: string; lang: "en" | "my" }) {
   const map: Record<string, { en: string; my: string; cls: string }> = {
-    open: { en: "Draft", my: "မူကြမ်း", cls: "bg-muted text-foreground" },
+    open: { en: "Looking for providers", my: "ပညာရှင် ရှာနေ", cls: "bg-muted text-foreground/70" },
     quoted: { en: "Quotes coming", my: "စျေး စောင့်နေ", cls: "bg-primary/10 text-primary" },
     accepted: { en: "Provider selected", my: "ရွေးပြီး", cls: "bg-primary text-primary-foreground" },
     on_the_way: { en: "On the way", my: "လမ်းပေါ်", cls: "bg-primary text-primary-foreground" },
@@ -1102,6 +1111,11 @@ function QuotesTab({
             {q.notes && (
               <p className="mt-2 line-clamp-3 text-xs text-foreground/70">{q.notes}</p>
             )}
+            {q.expires_at && new Date(q.expires_at) < new Date() && q.status === "pending" && (
+              <p className="mt-1 text-[10px] font-semibold text-amber-600">
+                {L("Quote expired", "စျေး သက်တမ်းကုန်")}
+              </p>
+            )}
             <div className="mt-3 flex items-center gap-2">
               <Checkbox
                 checked={compare.has(q.id)}
@@ -1111,7 +1125,7 @@ function QuotesTab({
                 {L("Compare", "နှိုင်းယှဉ်")}
               </span>
               <div className="ml-auto flex gap-1.5">
-                {q.status === "pending" ? (
+                {q.status === "pending" && !(q.expires_at && new Date(q.expires_at) < new Date()) ? (
                   <>
                     <button
                       type="button"

@@ -157,6 +157,14 @@ function JobDetailPage() {
 
   const advanceStatus = async (s: "on_the_way" | "started" | "completed" | "cancelled") => {
     if (!booking) return;
+    if (s === "cancelled") {
+      const ok = window.confirm(
+        lang === "en"
+          ? "Cancel this booking? This action cannot be undone."
+          : "ဘွတ်ကင် ပယ်ဖျက်မလား? ဤလုပ်ဆောင်မှုကို ပြောင်းလဲ၍ မရပါ။",
+      );
+      if (!ok) return;
+    }
     await supabase.from("bookings").update({ status: s }).eq("id", booking.id);
     if (s === "completed" || s === "cancelled") {
       await supabase.from("job_requests").update({ status: s }).eq("id", jobId);
