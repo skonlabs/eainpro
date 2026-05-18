@@ -795,7 +795,7 @@ function RequestDetailPage() {
         {/* DETAILS TAB */}
         {tab === "details" && (
           <div className="mt-5 space-y-4">
-            {!isCustomer && booking && booking.provider_id === user?.id && (
+            {booking && (booking.provider_id === user?.id || booking.customer_id === user?.id) && (
               <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
