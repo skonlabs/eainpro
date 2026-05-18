@@ -92,6 +92,7 @@ type Message = {
   created_at: string;
   attachment_url?: string | null;
   kind?: string | null;
+  recipient_id?: string | null;
 };
 
 type Invite = {
@@ -151,6 +152,9 @@ function RequestDetailPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  // Currently-selected conversation peer (the OTHER party). For providers
+  // this is always the customer; for customers this is the chosen provider.
+  const [peerId, setPeerId] = useState<string | null>(null);
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -168,6 +172,41 @@ function RequestDetailPage() {
     !!job &&
     !isCustomer &&
     (roles.includes("provider") || !!myQuote || !!myInvite || !!myBooking);
+
+  // Build the list of conversation peers for the customer. A peer is any
+  // provider who has interacted with this job (invited, quoted, or booked).
+  const peerList: Provider[] = (() => {
+    if (!isCustomer) return [];
+    const map = new Map<string, Provider>();
+    if (booking?.provider) map.set(booking.provider.id, booking.provider);
+    for (const q of quotes) if (q.provider) map.set(q.provider.id, q.provider);
+    for (const i of invites) if (i.provider) map.set(i.provider.id, i.provider);
+    return Array.from(map.values());
+  })();
+
+  // Active peer (the OTHER party in the visible thread).
+  const activePeerId: string | null = isProvider
+    ? job?.customer_id ?? null
+    : peerId ?? (booking ? booking.provider_id : (peerList.length === 1 ? peerList[0].id : null));
+
+  // Filter messages to the active thread only. Legacy rows (recipient_id
+  // null) are only shown when there is a single peer overall — otherwise
+  // we cannot safely attribute them.
+  const totalPeerCount = peerList.length;
+  const visibleMessages: Message[] = (() => {
+    if (!user || !activePeerId) return [];
+    return messages.filter((m) => {
+      if (m.recipient_id) {
+        return (
+          (m.sender_id === user.id && m.recipient_id === activePeerId) ||
+          (m.sender_id === activePeerId && m.recipient_id === user.id)
+        );
+      }
+      // Legacy null-recipient row.
+      if (isProvider) return m.sender_id === user.id || m.sender_id === activePeerId;
+      return totalPeerCount <= 1 && (m.sender_id === user.id || m.sender_id === activePeerId);
+    });
+  })();
 
   useEffect(() => {
     if (authLoading) return;
@@ -194,7 +233,7 @@ function RequestDetailPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
-          .select("id, sender_id, body, created_at, attachment_url, kind")
+          .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
           .eq("job_id", jobId)
           .order("created_at", { ascending: true }),
         supabase
@@ -352,19 +391,19 @@ function RequestDetailPage() {
   };
 
   const sendMessage = async () => {
-    if (!msgBody.trim() || !user) return;
+    if (!msgBody.trim() || !user || !activePeerId) return;
     const body = msgBody.trim();
     setMsgBody("");
     const { data } = await supabase
       .from("messages")
-      .insert({ job_id: jobId, sender_id: user.id, body, kind: "text" })
-      .select("id, sender_id, body, created_at, attachment_url, kind")
+      .insert({ job_id: jobId, sender_id: user.id, recipient_id: activePeerId, body, kind: "text" })
+      .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
       .single();
     if (data) setMessages((m) => [...m, data as Message]);
   };
 
   const sendPhoto = async (file: File) => {
-    if (!user) return;
+    if (!user || !activePeerId) return;
     setUploadingPhoto(true);
     try {
       const ext = file.name.split(".").pop() ?? "jpg";
@@ -374,8 +413,8 @@ function RequestDetailPage() {
       const { data: pu } = supabase.storage.from("job-photos").getPublicUrl(path);
       const { data } = await supabase
         .from("messages")
-        .insert({ job_id: jobId, sender_id: user.id, attachment_url: pu.publicUrl, kind: "image" })
-        .select("id, sender_id, body, created_at, attachment_url, kind")
+        .insert({ job_id: jobId, sender_id: user.id, recipient_id: activePeerId, attachment_url: pu.publicUrl, kind: "image" })
+        .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
         .single();
       if (data) setMessages((m) => [...m, data as Message]);
     } catch (e: unknown) {
@@ -475,6 +514,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: isCustomer ? booking.provider_id : booking.customer_id,
       kind: "system",
       body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
     });
@@ -500,6 +540,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: booking.customer_id,
       kind: "system",
       body:
         status === "on_the_way" ? "Provider is on the way" :
@@ -524,6 +565,7 @@ function RequestDetailPage() {
     await supabase.from("messages").insert({
       job_id: jobId,
       sender_id: user.id,
+      recipient_id: booking.customer_id,
       kind: "system",
       body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
     });
@@ -1049,13 +1091,50 @@ function RequestDetailPage() {
                 )}
               </p>
             </div>
+            {isCustomer && peerList.length > 1 && (
+              <div className="mb-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {peerList.map((p) => {
+                  const active = (activePeerId ?? "") === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setPeerId(p.id)}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground/80 hover:border-primary/50"
+                      }`}
+                    >
+                      {p.business_name ?? L("Provider", "ပညာရှင်")}
+                      {p.is_verified && <BadgeCheck className="ml-1 inline h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {isCustomer && peerList.length === 0 && (
+              <EmptyState
+                title={L("No providers yet", "ပညာရှင် မရှိသေး")}
+                message={L(
+                  "Invite providers or wait for quotes to start a conversation.",
+                  "ပညာရှင်များကို ဖိတ်ပါ။ သို့မဟုတ် quote စောင့်ပါ။",
+                )}
+              />
+            )}
+            {isCustomer && peerList.length > 0 && !activePeerId && (
+              <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
+                {L("Select a provider above to view the conversation.", "စကားပြောရန် ပညာရှင်တစ်ဦးကို ရွေးပါ။")}
+              </p>
+            )}
+            {activePeerId && (
+            <>
             <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
-              {messages.length === 0 ? (
+              {visibleMessages.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   {L("No messages yet.", "မက်ဆေ့ မရှိသေး။")}
                 </p>
               ) : (
-                messages.map((m) => {
+                visibleMessages.map((m) => {
                   const mine = m.sender_id === user?.id;
                   if (m.kind === "system") {
                     return (
@@ -1110,6 +1189,8 @@ function RequestDetailPage() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+            </>
+            )}
           </div>
         )}
       </main>
