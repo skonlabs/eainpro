@@ -138,9 +138,6 @@ function JobDetailPage() {
   const acceptQuote = async (q: Quote, paymentMethod: "cash" | "wallet" | "online" = "cash") => {
     if (!user || !job) return;
     setErr(null);
-    const { error: qErr } = await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
-    if (qErr) return setErr(qErr.message);
-    await supabase.from("quotes").update({ status: "declined" }).eq("job_id", jobId).neq("id", q.id).eq("status", "pending");
     const { error: bErr } = await supabase.from("bookings").insert({
       job_id: job.id,
       quote_id: q.id,
@@ -151,6 +148,9 @@ function JobDetailPage() {
       status: "accepted",
     });
     if (bErr) return setErr(bErr.message);
+    const { error: qErr } = await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
+    if (qErr) return setErr(qErr.message);
+    await supabase.from("quotes").update({ status: "declined" }).eq("job_id", jobId).neq("id", q.id).eq("status", "pending");
     await supabase.from("job_requests").update({ status: "accepted" }).eq("id", job.id);
     refresh();
   };
