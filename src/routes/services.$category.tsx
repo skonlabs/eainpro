@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
-import { Star, BadgeCheck, ArrowLeft, PlusCircle } from "lucide-react";
+import { Star, BadgeCheck, PlusCircle } from "lucide-react";
 
 export const Route = createFileRoute("/services/$category")({
   component: CategoryPage,

@@ -10,7 +10,6 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
 import {
-  ArrowLeft,
   BadgeCheck,
   Star,
   Clock,
