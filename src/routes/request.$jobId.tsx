@@ -391,19 +391,19 @@ function RequestDetailPage() {
   };
 
   const sendMessage = async () => {
-    if (!msgBody.trim() || !user) return;
+    if (!msgBody.trim() || !user || !activePeerId) return;
     const body = msgBody.trim();
     setMsgBody("");
     const { data } = await supabase
       .from("messages")
-      .insert({ job_id: jobId, sender_id: user.id, body, kind: "text" })
-      .select("id, sender_id, body, created_at, attachment_url, kind")
+      .insert({ job_id: jobId, sender_id: user.id, recipient_id: activePeerId, body, kind: "text" })
+      .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
       .single();
     if (data) setMessages((m) => [...m, data as Message]);
   };
 
   const sendPhoto = async (file: File) => {
-    if (!user) return;
+    if (!user || !activePeerId) return;
     setUploadingPhoto(true);
     try {
       const ext = file.name.split(".").pop() ?? "jpg";
@@ -413,8 +413,8 @@ function RequestDetailPage() {
       const { data: pu } = supabase.storage.from("job-photos").getPublicUrl(path);
       const { data } = await supabase
         .from("messages")
-        .insert({ job_id: jobId, sender_id: user.id, attachment_url: pu.publicUrl, kind: "image" })
-        .select("id, sender_id, body, created_at, attachment_url, kind")
+        .insert({ job_id: jobId, sender_id: user.id, recipient_id: activePeerId, attachment_url: pu.publicUrl, kind: "image" })
+        .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
         .single();
       if (data) setMessages((m) => [...m, data as Message]);
     } catch (e: unknown) {
