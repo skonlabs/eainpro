@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { pageCache } from "@/lib/page-cache";
 import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
 
 export const Route = createFileRoute("/my-requests")({
@@ -24,34 +24,16 @@ type Row = {
   quote_count: number;
 };
 
-function MyRequestsPage() {
-  const { lang } = useI18n();
-  const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
-  const cacheKey = user ? `my-requests:${user.id}` : null;
-  const [rows, setRows] = useState<Row[] | null>(
-    () => (cacheKey ? pageCache.get<Row[]>(cacheKey) ?? null : null),
-  );
-
-  const L = (en: string, my: string) => (lang === "en" ? en : my);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      nav({ to: "/signin", search: { redirect: "/my-requests" } });
-      return;
-    }
-    (async () => {
+export const myRequestsQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["my-requests", userId],
+    queryFn: async (): Promise<Row[]> => {
       const { data: jobs } = await supabase
         .from("job_requests")
         .select("id, category_slug, city_slug, area, status, created_at")
-        .eq("customer_id", user.id)
+        .eq("customer_id", userId)
         .order("created_at", { ascending: false });
-      if (!jobs) {
-        setRows([]);
-        if (cacheKey) pageCache.set(cacheKey, []);
-        return;
-      }
+      if (!jobs || jobs.length === 0) return [];
       const ids = jobs.map((j) => j.id);
       const [{ data: inv }, { data: qs }] = await Promise.all([
         supabase.from("request_invitations").select("job_id").in("job_id", ids),
@@ -61,15 +43,33 @@ function MyRequestsPage() {
       const qc = new Map<string, number>();
       (inv ?? []).forEach((r) => ic.set(r.job_id, (ic.get(r.job_id) ?? 0) + 1));
       (qs ?? []).forEach((r) => qc.set(r.job_id, (qc.get(r.job_id) ?? 0) + 1));
-      const next: Row[] = jobs.map((j) => ({
-          ...j,
-          invite_count: ic.get(j.id) ?? 0,
-          quote_count: qc.get(j.id) ?? 0,
+      return jobs.map((j) => ({
+        ...j,
+        invite_count: ic.get(j.id) ?? 0,
+        quote_count: qc.get(j.id) ?? 0,
       }));
-      setRows(next);
-      if (cacheKey) pageCache.set(cacheKey, next);
-    })();
-  }, [authLoading, user, nav, cacheKey]);
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+
+function MyRequestsPage() {
+  const { lang } = useI18n();
+  const { user, loading: authLoading } = useAuth();
+  const nav = useNavigate();
+
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      nav({ to: "/signin", search: { redirect: "/my-requests" } });
+    }
+  }, [authLoading, user, nav]);
+
+  const { data: rows } = useQuery({
+    ...myRequestsQuery(user?.id ?? ""),
+    enabled: !!user,
+  });
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
