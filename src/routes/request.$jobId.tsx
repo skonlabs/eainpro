@@ -154,6 +154,13 @@ function RequestDetailPage() {
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
+  // Role detection — same screen for customer & provider, different controls.
+  const isCustomer = !!user && !!job && job.customer_id === user.id;
+  const myQuote = quotes.find((q) => q.provider_id === user?.id) ?? null;
+  const myInvite = invites.find((i) => i.provider_id === user?.id) ?? null;
+  const myBooking = booking && booking.provider_id === user?.id ? booking : null;
+  const isProvider = !!user && !!job && !isCustomer && (!!myQuote || !!myInvite || !!myBooking);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
