@@ -740,7 +740,7 @@ function RequestDetailPage() {
         )}
 
         {/* PROVIDERS TAB */}
-        {tab === "providers" && (
+        {tab === "providers" && isCustomer && (
           <div className="mt-5">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
