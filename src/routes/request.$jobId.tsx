@@ -1668,30 +1668,72 @@ function BookingPanel({
   const isCancelled = booking.status === "cancelled";
   const isCompleted = booking.status === "completed";
   const inFlight = ["accepted", "on_the_way", "started", "in_progress"].includes(booking.status);
+  const bothConfirmed =
+    !!booking.scheduled_at && !!booking.time_confirmed_by_customer && !!booking.time_confirmed_by_provider;
+  const myConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_customer : !!booking.time_confirmed_by_provider;
+  const otherConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_provider : !!booking.time_confirmed_by_customer;
+  const awaitingMyConfirmation = !!booking.scheduled_at && !myConfirmed;
+  const awaitingTheirConfirmation = !!booking.scheduled_at && myConfirmed && !otherConfirmed;
+  const needsScheduling = inFlight && !booking.scheduled_at;
+  const pendingTime = inFlight && !!booking.scheduled_at && !bothConfirmed;
 
   return (
     <div className="mt-5 space-y-4">
       {/* Status banner */}
-      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-          {isCompleted
-            ? L("Service completed", "ဝန်ဆောင်မှု ပြီးဆုံး")
-            : isCancelled
-              ? L("Booking cancelled", "ဘွတ်ကင် ပယ်ဖျက်")
-              : L("Booking confirmed", "ဘွတ်ကင် အတည်ပြုပြီး")}
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {isCompleted
-            ? L("Thank you. You can rate your provider below.", "ကျေးဇူးတင်ပါသည်။")
-            : isCancelled
-              ? booking.cancel_reason || L("This booking was cancelled.", "ဤဘွတ်ကင်ကို ပယ်ဖျက်ခဲ့သည်။")
-              : L(
-                  "Your address and phone have been shared with the provider.",
-                  "သင်၏ လိပ်စာနှင့် ဖုန်းကို ဝန်ဆောင်မှုပေးသူသို့ မျှဝေပြီးပါပြီ။",
-                )}
-        </p>
-      </div>
+      {(() => {
+        const isPending = pendingTime || needsScheduling;
+        const tone = isCompleted
+          ? "border-emerald-500/30 from-emerald-500/10"
+          : isCancelled
+            ? "border-destructive/30 from-destructive/10"
+            : isPending
+              ? "border-amber-500/40 from-amber-500/10"
+              : "border-primary/30 from-primary/10";
+        const title = isCompleted
+          ? L("Service completed", "ဝန်ဆောင်မှု ပြီးဆုံး")
+          : isCancelled
+            ? L("Booking cancelled", "ဘွတ်ကင် ပယ်ဖျက်")
+            : needsScheduling
+              ? L("Schedule the visit", "လည်ပတ်ချိန် ညှိရန်")
+              : pendingTime
+                ? L("Pending Confirmation", "အတည်ပြုရန် စောင့်ဆိုင်း")
+                : L("Booking confirmed", "ဘွတ်ကင် အတည်ပြုပြီး");
+        const sub = isCompleted
+          ? L("Thank you. You can rate your provider below.", "ကျေးဇူးတင်ပါသည်။")
+          : isCancelled
+            ? booking.cancel_reason || L("This booking was cancelled.", "ဤဘွတ်ကင်ကို ပယ်ဖျက်ခဲ့သည်။")
+            : needsScheduling
+              ? L(
+                  "Propose a time to lock in the visit. Both sides must agree.",
+                  "လည်ပတ်ချိန် တင်ပြပါ။ နှစ်ဖက်စလုံး သဘောတူရန် လိုပါသည်။",
+                )
+              : pendingTime
+                ? awaitingMyConfirmation
+                  ? L(
+                      `The ${booking.time_proposed_by === "customer" ? "customer" : "provider"} proposed ${new Date(booking.scheduled_at as string).toLocaleString()}. Confirm or propose another time.`,
+                      "တင်ပြထားသော အချိန်ကို အတည်ပြုပါ သို့မဟုတ် အသစ် တင်ပြပါ။",
+                    )
+                  : L(
+                      `Waiting for the ${role === "customer" ? "provider" : "customer"} to confirm ${new Date(booking.scheduled_at as string).toLocaleString()}.`,
+                      "တစ်ဖက်မှ အတည်ပြုရန် စောင့်ဆိုင်းနေသည်။",
+                    )
+                : L(
+                    "Your address and phone have been shared with the provider.",
+                    "သင်၏ လိပ်စာနှင့် ဖုန်းကို ဝန်ဆောင်မှုပေးသူသို့ မျှဝေပြီးပါပြီ။",
+                  );
+        const Icon = isPending ? CalendarClock : isCancelled ? AlertTriangle : CheckCircle2;
+        return (
+          <div className={`rounded-2xl border bg-gradient-to-br to-transparent p-4 ${tone}`}>
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Icon className={`h-4 w-4 ${isPending ? "text-amber-600" : "text-primary"}`} />
+              {title}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+          </div>
+        );
+      })()}
 
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
