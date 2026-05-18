@@ -240,6 +240,7 @@ function RequestDetailPage() {
   // Currently-selected conversation peer (the OTHER party). For providers
   // this is always the customer; for customers this is the chosen provider.
   const [peerId, setPeerId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -294,6 +295,11 @@ function RequestDetailPage() {
       return m.sender_id === user.id || m.sender_id === activePeerId;
     });
   }, [user, activePeerId, messages]);
+
+  // Autoscroll to latest message when thread updates.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [visibleMessages.length, activePeerId]);
 
   useEffect(() => {
     if (authLoading) return;
