@@ -423,12 +423,6 @@ function RequestDetailPage() {
       // Update local state, then switch tab once booking is set
       setBooking(b as unknown as Booking);
       setJob((j) => (j ? { ...j, status: "accepted" } : j));
-      await supabase.from("messages").insert({
-        job_id: jobId,
-        sender_id: user.id,
-        kind: "system",
-        body: `Booking confirmed: ${q.amount.toLocaleString()} MMK`,
-      });
       setTab("booking");
       toast.success(
         lang === "en" ? "Quote accepted — booking confirmed" : "စျေးနှုန်း လက်ခံပြီး",
