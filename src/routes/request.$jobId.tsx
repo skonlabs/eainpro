@@ -303,9 +303,15 @@ function RequestDetailPage() {
 
   const sendInvites = async () => {
     if (!selected.size) return;
+    await inviteProviderIds(Array.from(selected));
+    setSelected(new Set());
+  };
+
+  const inviteProviderIds = async (ids: string[]) => {
+    if (!ids.length) return;
     setSending(true);
     setErr(null);
-    const rows = Array.from(selected).map((pid) => ({ job_id: jobId, provider_id: pid }));
+    const rows = ids.map((pid) => ({ job_id: jobId, provider_id: pid }));
     const { error } = await supabase
       .from("request_invitations")
       .upsert(rows, { onConflict: "job_id,provider_id" });
@@ -322,7 +328,6 @@ function RequestDetailPage() {
         )
         .eq("job_id", jobId);
       setInvites((refreshed ?? []) as unknown as Invite[]);
-      setSelected(new Set());
       setShowSuccess(true);
     } else {
       setErr(error.message);
@@ -701,17 +706,19 @@ function RequestDetailPage() {
                   return (
                     <li
                       key={p.id}
-                      className={`rounded-2xl border p-3 transition ${
+                      onClick={() => { if (!isInvited) toggleSelect(p.id); }}
+                      className={`cursor-pointer rounded-2xl border p-3 transition ${
                         isSelected
                           ? "border-primary bg-primary/5"
                           : "border-border bg-card"
-                      }`}
+                      } ${isInvited ? "cursor-default opacity-90" : "hover:border-primary/60"}`}
                     >
                       <div className="flex items-start gap-3">
                         {!isInvited && (
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => toggleSelect(p.id)}
+                            onClick={(e) => e.stopPropagation()}
                             className="mt-1"
                           />
                         )}
@@ -745,7 +752,21 @@ function RequestDetailPage() {
                               </span>
                             )}
                           </div>
-                          <div className="mt-2 flex gap-2">
+                          <div
+                            className="mt-2 flex flex-wrap gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {!isInvited && (
+                              <Button
+                                size="sm"
+                                onClick={() => inviteProviderIds([p.id])}
+                                disabled={sending}
+                                className="rounded-lg text-xs font-semibold"
+                              >
+                                <Send className="mr-1 h-3 w-3" />
+                                {L("Request quote", "စျေး တောင်း")}
+                              </Button>
+                            )}
                             <Link to="/p/$providerId" params={{ providerId: p.id }}>
                               <Button size="sm" variant="outline" className="rounded-lg text-xs">
                                 {L("View", "ကြည့်")}
