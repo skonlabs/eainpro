@@ -145,7 +145,7 @@ function OnboardingPage() {
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-6">
-          <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
             <div>
               <label className="text-sm font-medium">
                 {lang === "en" ? "Business or your name" : "လုပ်ငန်း သို့ သင့်အမည်"}
@@ -207,7 +207,7 @@ function OnboardingPage() {
             </div>
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
             <div className="text-sm font-semibold">
               {lang === "en" ? "Services & base price (MMK)" : "ဝန်ဆောင်မှု နှင့် အခြေခံစျေး (ကျပ်)"}
             </div>
@@ -217,15 +217,14 @@ function OnboardingPage() {
                 return (
                   <div
                     key={c.slug}
-                    className={`rounded-lg border p-2 ${
+                    className={`rounded-xl border p-3 transition ${
                       active ? "border-primary bg-primary/5" : "border-border"
                     }`}
                   >
-                    <label className="flex items-center gap-2 text-sm font-medium">
-                      <input
-                        type="checkbox"
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                      <Checkbox
                         checked={active}
-                        onChange={() => toggleCat(c.slug)}
+                        onCheckedChange={() => toggleCat(c.slug)}
                       />
                       {lang === "en" ? c.en : c.my}
                     </label>
@@ -245,7 +244,7 @@ function OnboardingPage() {
             </div>
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
             <div className="text-sm font-semibold">
               {lang === "en" ? "Service areas" : "ဝန်ဆောင်ပေးသော နယ်မြေ"}
             </div>
@@ -253,14 +252,13 @@ function OnboardingPage() {
               {CITIES.map((c) => (
                 <label
                   key={c.slug}
-                  className={`flex items-center gap-2 rounded-md border p-2 text-sm ${
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-sm transition ${
                     cities[c.slug] ? "border-primary bg-primary/5" : "border-border"
                   }`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={!!cities[c.slug]}
-                    onChange={(e) => setCities((s) => ({ ...s, [c.slug]: e.target.checked }))}
+                    onCheckedChange={(v) => setCities((s) => ({ ...s, [c.slug]: !!v }))}
                   />
                   {lang === "en" ? c.en : c.my}
                 </label>
@@ -268,9 +266,13 @@ function OnboardingPage() {
             </div>
           </section>
 
-          {err && <p className="text-sm text-destructive">{err}</p>}
+          {err && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {err}
+            </p>
+          )}
 
-          <Button type="submit" disabled={saving} className="w-full">
+          <Button type="submit" disabled={saving} className="h-11 w-full rounded-xl font-semibold">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
