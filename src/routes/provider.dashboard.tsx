@@ -31,6 +31,12 @@ type ActiveBooking = {
   status: string;
   scheduled_at: string | null;
   amount: number | null;
+  job: {
+    category_slug: string;
+    city_slug: string;
+    address: string | null;
+    description: string | null;
+  } | null;
 };
 
 type DashSnapshot = {
@@ -84,7 +90,7 @@ export const providerDashboardQuery = (userId: string) =>
         supabase.from("quotes").select("job_id, amount, status").eq("provider_id", userId),
         supabase
           .from("bookings")
-          .select("id, job_id, status, scheduled_at, amount")
+          .select("id, job_id, status, scheduled_at, amount, job:job_requests(category_slug, city_slug, address, description)")
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
           .order("scheduled_at", { ascending: true }),
@@ -99,13 +105,13 @@ export const providerDashboardQuery = (userId: string) =>
       ((quotesRes.data ?? []) as { job_id: string; amount: number; status: string }[])
         .forEach((q) => (myQuotes[q.job_id] = { amount: Number(q.amount), status: q.status }));
 
-      const bs = bookingsRes.data;
+      const bs = bookingsRes.data as unknown as ActiveBooking[] | null;
 
       return {
         jobs,
         provider: prov,
         myQuotes,
-        activeBookings: (bs ?? []) as ActiveBooking[],
+        activeBookings: bs ?? [],
         needsOnboarding: false,
         error,
       };
@@ -181,23 +187,46 @@ function DashboardPage() {
             </h2>
             <ul className="space-y-2">
               {activeBookings.map((b) => (
-                <li key={b.id} className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 text-sm">
-                      <div className="font-semibold capitalize">{b.status.replace("_", " ")}</div>
-                      <div className="text-xs text-muted-foreground">
+                <li key={b.id}>
+                  <Link
+                    to="/request/$jobId"
+                    params={{ jobId: b.job_id }}
+                    search={{ tab: "booking" } as never}
+                    className="block rounded-xl border border-primary/30 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 text-sm font-semibold">
+                        {b.job ? catName(b.job.category_slug) : (lang === "en" ? "Booking" : "ဘွတ်ကင်")}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                        {b.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    {b.job?.description && (
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{b.job.description}</p>
+                    )}
+                    <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>
                         {b.scheduled_at
                           ? new Date(b.scheduled_at).toLocaleString(lang === "en" ? "en" : "my-MM")
                           : lang === "en" ? "Time TBD" : "အချိန် ညှိရန်"}
-                        {b.amount ? ` · ${Number(b.amount).toLocaleString()} MMK` : ""}
-                      </div>
+                      </span>
+                      {b.amount != null && (
+                        <span className="ml-auto font-semibold text-foreground">
+                          {Number(b.amount).toLocaleString()} MMK
+                        </span>
+                      )}
                     </div>
-                    <Link to="/request/$jobId" params={{ jobId: b.job_id }}>
-                      <Button size="sm">
-                        {lang === "en" ? "Open" : "ဖွင့်"}
-                      </Button>
-                    </Link>
-                  </div>
+                    {b.job && (
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">
+                          {[b.job.address, cityName(b.job.city_slug)].filter(Boolean).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>
