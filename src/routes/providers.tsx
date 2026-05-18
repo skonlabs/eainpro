@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
+import { pageCache } from "@/lib/page-cache";
 import { Star, BadgeCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { z } from "zod";
@@ -31,7 +32,9 @@ type Row = {
 function ProvidersPage() {
   const { lang } = useI18n();
   const sp = Route.useSearch();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(
+    () => pageCache.get<Row[]>("providers:list") ?? null,
+  );
   const [cat, setCat] = useState(sp.cat);
   const [city, setCity] = useState(sp.city);
 
@@ -43,7 +46,9 @@ function ProvidersPage() {
         .eq("is_verified", true)
         .eq("is_suspended", false)
         .order("rating_avg", { ascending: false });
-      setRows((data ?? []) as unknown as Row[]);
+      const next = (data ?? []) as unknown as Row[];
+      setRows(next);
+      pageCache.set("providers:list", next);
     })();
   }, []);
 
