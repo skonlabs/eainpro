@@ -510,11 +510,14 @@ function RequestDetailPage() {
           provider_id: q.provider_id,
           amount: q.amount,
           scheduled_at: q.earliest_at,
+          time_proposed_by: q.earliest_at ? "provider" : null,
+          time_confirmed_by_provider: !!q.earliest_at,
+          time_confirmed_by_customer: false,
           customer_phone: job.contact_phone ?? null,
           status: "accepted",
         })
         .select(
-          "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
         )
         .maybeSingle();
       if (bookErr || !b) {
