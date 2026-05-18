@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -432,12 +432,36 @@ function RequestDetailPage() {
     if (!msgBody.trim() || !user || !activePeerId) return;
     const body = msgBody.trim();
     setMsgBody("");
-    const { data } = await supabase
+    // Optimistic append so the user sees their message immediately.
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimistic: Message = {
+      id: tempId,
+      sender_id: user.id,
+      recipient_id: activePeerId,
+      body,
+      created_at: new Date().toISOString(),
+      attachment_url: null,
+      kind: "text",
+    };
+    setMessages((m) => [...m, optimistic]);
+    const { data, error } = await supabase
       .from("messages")
       .insert({ job_id: jobId, sender_id: user.id, recipient_id: activePeerId, body, kind: "text" })
       .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
       .single();
-    if (data) setMessages((m) => [...m, data as Message]);
+    if (error) {
+      setMessages((m) => m.filter((x) => x.id !== tempId));
+      toast.error(error.message);
+      setMsgBody(body);
+      return;
+    }
+    if (data) {
+      const real = data as Message;
+      setMessages((m) => {
+        const without = m.filter((x) => x.id !== tempId && x.id !== real.id);
+        return [...without, real];
+      });
+    }
   };
 
   const sendPhoto = async (file: File) => {
