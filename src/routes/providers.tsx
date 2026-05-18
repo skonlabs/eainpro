@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { pageCache } from "@/lib/page-cache";
 import { Star, BadgeCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { z } from "zod";
@@ -15,6 +15,9 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/providers")({
   validateSearch: searchSchema,
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(providersListQuery());
+  },
   component: ProvidersPage,
 });
 
@@ -29,34 +32,34 @@ type Row = {
   provider_service_areas: { city_slug: string }[];
 };
 
-function ProvidersPage() {
-  const { lang } = useI18n();
-  const sp = Route.useSearch();
-  const [rows, setRows] = useState<Row[] | null>(
-    () => pageCache.get<Row[]>("providers:list") ?? null,
-  );
-  const [cat, setCat] = useState(sp.cat);
-  const [city, setCity] = useState(sp.city);
-
-  useEffect(() => {
-    (async () => {
+export const providersListQuery = () =>
+  queryOptions({
+    queryKey: ["providers", "list"],
+    queryFn: async (): Promise<Row[]> => {
       const { data } = await supabase
         .from("providers")
         .select("id, business_name, rating_avg, rating_count, jobs_completed, is_verified, provider_services(category_slug), provider_service_areas(city_slug)")
         .eq("is_verified", true)
         .eq("is_suspended", false)
         .order("rating_avg", { ascending: false });
-      const next = (data ?? []) as unknown as Row[];
-      setRows(next);
-      pageCache.set("providers:list", next);
-    })();
-  }, []);
+      return (data ?? []) as unknown as Row[];
+    },
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+  });
 
-  const filtered = (rows ?? []).filter((r) => {
+function ProvidersPage() {
+  const { lang } = useI18n();
+  const sp = Route.useSearch();
+  const { data: rows } = useQuery(providersListQuery());
+  const [cat, setCat] = useState(sp.cat);
+  const [city, setCity] = useState(sp.city);
+
+  const filtered = useMemo(() => (rows ?? []).filter((r) => {
     if (cat && !r.provider_services.some((s) => s.category_slug === cat)) return false;
     if (city && !r.provider_service_areas.some((a) => a.city_slug === city)) return false;
     return true;
-  });
+  }), [rows, cat, city]);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useMemo, useState } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +11,6 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIES, CITIES, BUDGET_OPTIONS, URGENCY_OPTIONS, CATEGORY_QUESTIONS } from "@/lib/catalog";
 import { QuoteForm } from "@/components/jobs/QuoteForm";
-import { pageCache } from "@/lib/page-cache";
 import {
   BadgeCheck,
   Star,
@@ -36,6 +36,9 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/request/$jobId")({
   validateSearch: searchSchema,
+  loader: ({ params, context }) => {
+    context.queryClient.ensureQueryData(requestSnapshotQuery(params.jobId));
+  },
   component: RequestDetailPage,
   head: () => ({ meta: [{ title: "Request — Eain Pro" }] }),
 });
@@ -131,6 +134,71 @@ type Review = {
   comment: string | null;
 };
 
+type Snapshot = {
+  job: Job | null;
+  quotes: Quote[];
+  messages: Message[];
+  invites: Invite[];
+  booking: Booking | null;
+  review: Review | null;
+};
+
+export const requestSnapshotQuery = (jobId: string) =>
+  queryOptions({
+    queryKey: ["request-snapshot", jobId],
+    queryFn: async (): Promise<Snapshot> => {
+      const [jr, ir, qr, mr, br] = await Promise.all([
+        supabase.from("job_requests").select("*").eq("id", jobId).maybeSingle(),
+        supabase
+          .from("request_invitations")
+          .select(
+            "id, provider_id, status, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          )
+          .eq("job_id", jobId),
+        supabase
+          .from("quotes")
+          .select(
+            "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          )
+          .eq("job_id", jobId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("messages")
+          .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
+          .eq("job_id", jobId)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("bookings")
+          .select(
+            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
+          )
+          .eq("job_id", jobId)
+          .maybeSingle(),
+      ]);
+      const nextJob = (jr.data as Job | null) ?? null;
+      const nextBooking = (br.data as unknown as Booking | null) ?? null;
+      let review: Review | null = null;
+      if (nextBooking) {
+        const { data: rv } = await supabase
+          .from("reviews")
+          .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
+          .eq("booking_id", nextBooking.id)
+          .maybeSingle();
+        if (rv) review = rv as Review;
+      }
+      return {
+        job: nextJob,
+        invites: (ir.data as unknown as Invite[]) ?? [],
+        quotes: (qr.data as unknown as Quote[]) ?? [],
+        messages: (mr.data as Message[]) ?? [],
+        booking: nextBooking,
+        review,
+      };
+    },
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+  });
+
 function RequestDetailPage() {
   const { jobId } = Route.useParams();
   const { tab = "details" } = Route.useSearch();
@@ -138,23 +206,29 @@ function RequestDetailPage() {
   const { user, roles, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
-  type Snapshot = {
-    job: Job | null;
-    quotes: Quote[];
-    messages: Message[];
-    invites: Invite[];
-    booking: Booking | null;
-    review: Review | null;
-  };
-  const cacheKey = `request:${jobId}`;
-  const seed = pageCache.get<Snapshot>(cacheKey);
-  const [job, setJob] = useState<Job | null>(seed?.job ?? null);
+  const { data: snapshot } = useQuery(requestSnapshotQuery(jobId));
+  const [job, setJob] = useState<Job | null>(snapshot?.job ?? null);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>(seed?.quotes ?? []);
-  const [messages, setMessages] = useState<Message[]>(seed?.messages ?? []);
-  const [invites, setInvites] = useState<Invite[]>(seed?.invites ?? []);
-  const [booking, setBooking] = useState<Booking | null>(seed?.booking ?? null);
-  const [review, setReview] = useState<Review | null>(seed?.review ?? null);
+  const [quotes, setQuotes] = useState<Quote[]>(snapshot?.quotes ?? []);
+  const [messages, setMessages] = useState<Message[]>(snapshot?.messages ?? []);
+  const [invites, setInvites] = useState<Invite[]>(snapshot?.invites ?? []);
+  const [booking, setBooking] = useState<Booking | null>(snapshot?.booking ?? null);
+  const [review, setReview] = useState<Review | null>(snapshot?.review ?? null);
+  // Mirror snapshot into local state whenever query cache refreshes.
+  useEffect(() => {
+    if (!snapshot) return;
+    if (snapshot.job) setJob(snapshot.job);
+    setQuotes(snapshot.quotes);
+    setMessages((cur) => {
+      // preserve any realtime-added messages not yet in snapshot
+      const ids = new Set(snapshot.messages.map((m) => m.id));
+      const extras = cur.filter((m) => !ids.has(m.id));
+      return [...snapshot.messages, ...extras];
+    });
+    setInvites(snapshot.invites);
+    setBooking(snapshot.booking);
+    setReview(snapshot.review);
+  }, [snapshot]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -225,73 +299,7 @@ function RequestDetailPage() {
       nav({ to: "/signin", search: { redirect: `/request/${jobId}` } });
       return;
     }
-    let cancelled = false;
-    (async () => {
-      const [jr, ir, qr, mr, br] = await Promise.all([
-        supabase.from("job_requests").select("*").eq("id", jobId).maybeSingle(),
-        supabase
-          .from("request_invitations")
-          .select(
-            "id, provider_id, status, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId),
-        supabase
-          .from("quotes")
-          .select(
-            "id, provider_id, amount, price_type, included, not_included, duration_min, earliest_at, warranty, cancellation_policy, expires_at, notes, status, created_at, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("messages")
-          .select("id, sender_id, recipient_id, body, created_at, attachment_url, kind")
-          .eq("job_id", jobId)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("bookings")
-          .select(
-            "id, job_id, quote_id, customer_id, provider_id, amount, status, scheduled_at, scheduled_window, customer_phone, customer_confirmed_at, provider_confirmed_at, cancelled_at, cancel_reason, provider:providers(id, business_name, is_verified, rating_avg, rating_count, jobs_completed, response_minutes)",
-          )
-          .eq("job_id", jobId)
-          .maybeSingle(),
-      ]);
-      if (cancelled) return;
-      const nextJob = (jr.data as Job | null) ?? null;
-      const nextInvites = (ir.data as unknown as Invite[]) ?? [];
-      const nextQuotes = (qr.data as unknown as Quote[]) ?? [];
-      const nextMessages = (mr.data as Message[]) ?? [];
-      const nextBooking = (br.data as unknown as Booking | null) ?? null;
-      let nextReview: Review | null = null;
-      if (nextJob) setJob(nextJob);
-      setInvites(nextInvites);
-      setQuotes(nextQuotes);
-      setMessages(nextMessages);
-      if (nextBooking) {
-        setBooking(nextBooking);
-        const { data: rv } = await supabase
-          .from("reviews")
-          .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
-          .eq("booking_id", nextBooking.id)
-          .maybeSingle();
-        if (cancelled) return;
-        if (rv) {
-          nextReview = rv as Review;
-          setReview(nextReview);
-        }
-      }
-      pageCache.set<Snapshot>(cacheKey, {
-        job: nextJob,
-        quotes: nextQuotes,
-        messages: nextMessages,
-        invites: nextInvites,
-        booking: nextBooking,
-        review: nextReview,
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, user, jobId, nav, cacheKey]);
+  }, [authLoading, user, jobId, nav]);
 
   // Realtime: messages, quotes, bookings
   useEffect(() => {
