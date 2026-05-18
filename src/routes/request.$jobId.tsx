@@ -1414,9 +1414,12 @@ function BookingPanel({
   review,
   lang,
   jobAddress,
+  role,
   onComplete,
   onCancel,
   onReschedule,
+  onProviderAdvance,
+  onProviderConfirmTime,
   onToggleFavorite,
   isFavorite,
   onReviewed,
@@ -1426,9 +1429,12 @@ function BookingPanel({
   review: Review | null;
   lang: "en" | "my";
   jobAddress: string | null;
+  role: "customer" | "provider";
   onComplete: () => Promise<void>;
   onCancel: (reason: string) => Promise<void>;
   onReschedule: (iso: string) => Promise<void>;
+  onProviderAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
+  onProviderConfirmTime: () => Promise<void>;
   onToggleFavorite: () => Promise<void> | void;
   isFavorite: boolean;
   onReviewed: (r: Review) => void;
