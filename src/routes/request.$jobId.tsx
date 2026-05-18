@@ -1111,6 +1111,28 @@ function RequestDetailPage() {
         {/* QUOTES TAB — provider view: send / update own quote */}
         {tab === "quotes" && !isCustomer && (
           <div className="mt-5 space-y-4">
+            {booking && booking.provider_id === user?.id && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <div className="text-sm font-semibold">
+                      {L("Quote accepted", "စျေး လက်ခံပြီး")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {L(
+                        "Go to the Booking tab to schedule or reschedule the visit.",
+                        "လည်ပတ်ချိန် ညှိရန် Booking တက်ဘ်သို့ သွားပါ။",
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={() => setTab("booking")} className="rounded-xl shrink-0">
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  {L("Schedule visit", "လည်ပတ်ချိန် ညှိရန်")}
+                </Button>
+              </div>
+            )}
             {myQuote && (
               <div className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
