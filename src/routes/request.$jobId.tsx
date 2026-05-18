@@ -198,7 +198,7 @@ function RequestDetailPage() {
   // Active peer (the OTHER party in the visible thread).
   const activePeerId: string | null = isProvider
     ? job?.customer_id ?? null
-    : peerId ?? (booking ? booking.provider_id : (peerList.length === 1 ? peerList[0].id : null));
+    : peerId ?? booking?.provider_id ?? peerList[0]?.id ?? null;
 
   // Filter messages to the active thread only. Legacy rows (recipient_id
   // null) are only shown when there is a single peer overall — otherwise
