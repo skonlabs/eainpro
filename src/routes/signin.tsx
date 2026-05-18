@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
@@ -20,10 +22,17 @@ function SignInPage() {
   const { lang } = useI18n();
   const { redirect } = Route.useSearch();
   const nav = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      nav({ to: safeRedirect(redirect, "/"), replace: true });
+    }
+  }, [authLoading, user, nav, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
