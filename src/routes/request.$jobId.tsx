@@ -597,14 +597,25 @@ function RequestDetailPage() {
 
         {/* Tabs */}
         <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 text-sm">
-          {(booking
-            ? (["booking", "details", "quotes", "messages"] as const)
-            : (["details", "providers", "quotes", "messages"] as const)
-          ).map((t) => {
+          {(() => {
+            // Customers see "providers" tab; providers don't.
+            // Providers see the quotes tab labeled as their own quote panel.
+            const tabs: Array<"details" | "providers" | "quotes" | "messages" | "booking"> =
+              isCustomer
+                ? booking
+                  ? ["booking", "details", "quotes", "messages"]
+                  : ["details", "providers", "quotes", "messages"]
+                : booking
+                  ? ["booking", "details", "quotes", "messages"]
+                  : ["details", "quotes", "messages"];
+            return tabs;
+          })().map((t) => {
             const labels = {
               details: L("Details", "အသေးစိတ်"),
               providers: L("Providers", "ဝန်ဆောင်မှုပေးသူ"),
-              quotes: L(`Quotes (${quotes.length})`, `စျေး (${quotes.length})`),
+              quotes: isCustomer
+                ? L(`Quotes (${quotes.length})`, `စျေး (${quotes.length})`)
+                : L("Your quote", "သင်၏ စျေး"),
               messages: L("Messages", "မက်ဆေ့ချ်"),
               booking: L("Booking", "ဘွတ်ကင်"),
             };
