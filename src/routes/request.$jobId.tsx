@@ -152,6 +152,9 @@ function RequestDetailPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  // Currently-selected conversation peer (the OTHER party). For providers
+  // this is always the customer; for customers this is the chosen provider.
+  const [peerId, setPeerId] = useState<string | null>(null);
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
