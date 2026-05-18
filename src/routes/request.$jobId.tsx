@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -186,14 +186,14 @@ function RequestDetailPage() {
 
   // Build the list of conversation peers for the customer. A peer is any
   // provider who has interacted with this job (invited, quoted, or booked).
-  const peerList: Provider[] = (() => {
+  const peerList: Provider[] = useMemo(() => {
     if (!isCustomer) return [];
     const map = new Map<string, Provider>();
     if (booking?.provider) map.set(booking.provider.id, booking.provider);
     for (const q of quotes) if (q.provider) map.set(q.provider.id, q.provider);
     for (const i of invites) if (i.provider) map.set(i.provider.id, i.provider);
     return Array.from(map.values());
-  })();
+  }, [isCustomer, booking, quotes, invites]);
 
   // Active peer (the OTHER party in the visible thread).
   const activePeerId: string | null = isProvider
@@ -204,7 +204,7 @@ function RequestDetailPage() {
   // null) are only shown when there is a single peer overall — otherwise
   // we cannot safely attribute them.
   const totalPeerCount = peerList.length;
-  const visibleMessages: Message[] = (() => {
+  const visibleMessages: Message[] = useMemo(() => {
     if (!user || !activePeerId) return [];
     return messages.filter((m) => {
       if (m.recipient_id) {
@@ -217,7 +217,7 @@ function RequestDetailPage() {
       if (isProvider) return m.sender_id === user.id || m.sender_id === activePeerId;
       return totalPeerCount <= 1 && (m.sender_id === user.id || m.sender_id === activePeerId);
     });
-  })();
+  }, [user, activePeerId, messages, isProvider, totalPeerCount]);
 
   useEffect(() => {
     if (authLoading) return;
