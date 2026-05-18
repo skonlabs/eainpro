@@ -474,9 +474,58 @@ function RequestDetailPage() {
       job_id: jobId,
       sender_id: user.id,
       kind: "system",
-      body: `Customer proposed new time: ${new Date(newAt).toLocaleString()}`,
+      body: `${isCustomer ? "Customer" : "Provider"} proposed new time: ${new Date(newAt).toLocaleString()}`,
     });
     toast.success(lang === "en" ? "Reschedule proposed" : "အချိန် အသစ် တင်ပြပြီး");
+  };
+
+  // Provider-side booking actions.
+  const providerAdvance = async (status: "on_the_way" | "started" | "completed") => {
+    if (!booking || !user) return;
+    const patch: Record<string, unknown> = { status };
+    if (status === "completed") {
+      patch.provider_confirmed_at = new Date().toISOString();
+    }
+    const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (status === "completed") {
+      await supabase.from("job_requests").update({ status: "completed" }).eq("id", jobId);
+    }
+    setBooking({ ...booking, status, ...(status === "completed" ? { provider_confirmed_at: patch.provider_confirmed_at as string } : {}) });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body:
+        status === "on_the_way" ? "Provider is on the way" :
+        status === "started" ? "Provider has started the job" :
+        "Provider marked the job complete",
+    });
+    toast.success(lang === "en" ? "Status updated" : "အခြေအနေ ပြောင်းပြီး");
+  };
+
+  const providerConfirmTime = async () => {
+    if (!booking || !user) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("bookings")
+      .update({ provider_confirmed_at: now })
+      .eq("id", booking.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setBooking({ ...booking, provider_confirmed_at: now });
+    await supabase.from("messages").insert({
+      job_id: jobId,
+      sender_id: user.id,
+      kind: "system",
+      body: `Provider confirmed the time${booking.scheduled_at ? `: ${new Date(booking.scheduled_at).toLocaleString()}` : ""}`,
+    });
+    toast.success(lang === "en" ? "Time confirmed" : "အချိန် အတည်ပြုပြီး");
   };
 
   const toggleFavorite = async (providerId: string) => {
