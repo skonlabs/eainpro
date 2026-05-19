@@ -26,9 +26,9 @@ const Ctx = createContext<AuthCtx | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [sessionReady, setSessionReady] = useState(false);
   // loading = true until the initial session check + roles fetch both complete.
   // rolesReady tracks whether the roles slice is current for the active session.
-  const [loading, setLoading] = useState(true);
   const [rolesReady, setRolesReady] = useState(false);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
@@ -38,12 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRolesReady(true);
       return;
     }
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setRoles((data ?? []).map((r) => r.role as AppRole));
-    setRolesReady(true);
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      setRoles((data ?? []).map((r) => r.role as AppRole));
+    } finally {
+      setRolesReady(true);
+    }
   };
 
   useEffect(() => {
@@ -74,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // The onAuthStateChange listener already fires INITIAL_SESSION with the
       // same session and triggers loadRoles via apply(). Calling apply +
       // loadRoles again here would flip rolesReady back to false and cause a
-      // visible flash/re-render across the app. Just flip loading off.
+      // visible flash/re-render across the app. Just mark the session ready.
       apply(data.session);
-      setLoading(false);
+      setSessionReady(true);
     });
 
     return () => sub.subscription.unsubscribe();
@@ -85,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Stabilise the user reference: only change identity when the user id flips.
   const userId = session?.user?.id ?? null;
   const user = useMemo(() => session?.user ?? null, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const loading = !sessionReady || !rolesReady;
 
   const value: AuthCtx = useMemo(
     () => ({
