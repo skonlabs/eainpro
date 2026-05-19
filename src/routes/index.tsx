@@ -103,14 +103,13 @@ type CustomerReq = {
 
 type CustomerBooking = {
   id: string;
-  job_id: string;
+  lead_id: string;
   status: string;
   scheduled_at: string | null;
   amount: number | null;
-  time_confirmed_by_customer: boolean | null;
-  time_confirmed_by_provider: boolean | null;
-  time_proposed_by: string | null;
-  job: { category_slug: string; address: string | null } | null;
+  customer_confirmed_at: string | null;
+  provider_confirmed_at: string | null;
+  lead: { category_slug: string; address: string | null } | null;
 };
 
 function CustomerHome({
@@ -133,32 +132,44 @@ function CustomerHome({
     (async () => {
       const [reqRes, bookRes] = await Promise.all([
         supabase
-          .from("job_requests")
-          .select("id, category_slug, area, status, created_at, quotes(id)")
+          .from("customer_leads")
+          .select("id, address, status, created_at, service_type:service_types(category_slug), quotes(id)")
           .eq("customer_id", userId)
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("bookings")
           .select(
-            "id, job_id, status, scheduled_at, amount, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, job:job_requests(category_slug, address)",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(address, service_type:service_types(category_slug))",
           )
           .eq("customer_id", userId)
           .order("scheduled_at", { ascending: true, nullsFirst: false }),
       ]);
 
       const reqs = (reqRes.data ?? []).map(
-        (r: { id: string; category_slug: string; area: string | null; status: string; created_at: string; quotes: unknown[] }) => ({
+        (r: { id: string; address: string | null; status: string; created_at: string; service_type: { category_slug: string } | { category_slug: string }[] | null; quotes: unknown[] }) => ({
           id: r.id,
-          category_slug: r.category_slug,
-          area: r.area,
+          category_slug: Array.isArray(r.service_type)
+            ? r.service_type[0]?.category_slug ?? ""
+            : r.service_type?.category_slug ?? "",
+          area: r.address,
           status: r.status,
           created_at: r.created_at,
           quotes_count: (r.quotes ?? []).length,
         }),
       );
       setRequests(reqs);
-      const bks = (bookRes.data ?? []) as unknown as CustomerBooking[];
+      const bks = (bookRes.data ?? []).map((b: any) => ({
+        ...b,
+        lead: b.lead
+          ? {
+              address: b.lead.address ?? null,
+              category_slug: Array.isArray(b.lead.service_type)
+                ? b.lead.service_type[0]?.category_slug ?? ""
+                : b.lead.service_type?.category_slug ?? "",
+            }
+          : null,
+      })) as CustomerBooking[];
       setBookings(bks);
 
       // Completed bookings without a review
@@ -178,7 +189,7 @@ function CustomerHome({
     (b) =>
       ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
       b.scheduled_at &&
-      !b.time_confirmed_by_customer,
+      !b.customer_confirmed_at,
   );
   const newQuotes = (requests ?? []).filter((r) => r.status === "quoted" && r.quotes_count > 0);
   const upcoming = (bookings ?? [])
@@ -186,8 +197,8 @@ function CustomerHome({
       (b) =>
         ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
         b.scheduled_at &&
-        b.time_confirmed_by_customer &&
-        b.time_confirmed_by_provider &&
+        b.customer_confirmed_at &&
+        b.provider_confirmed_at &&
         new Date(b.scheduled_at).getTime() >= Date.now() - 6 * 3600_000,
     )
     .slice(0, 3);
@@ -200,7 +211,7 @@ function CustomerHome({
     const counts = new Map<string, number>();
     for (const r of requests ?? []) counts.set(r.category_slug, (counts.get(r.category_slug) ?? 0) + 1);
     for (const b of bookings ?? []) {
-      const s = b.job?.category_slug;
+      const s = b.lead?.category_slug;
       if (s) counts.set(s, (counts.get(s) ?? 0) + 1);
     }
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([s]) => s);
@@ -223,11 +234,11 @@ function CustomerHome({
 
   // "Book again" — past completed bookings, deduped by category+provider.
   const bookAgain = useMemo(() => {
-    const list = (bookings ?? []).filter((b) => b.status === "completed" && b.job?.category_slug);
+    const list = (bookings ?? []).filter((b) => b.status === "completed" && b.lead?.category_slug);
     const seen = new Set<string>();
     const out: CustomerBooking[] = [];
     for (const b of list) {
-      const key = b.job!.category_slug;
+      const key = b.lead!.category_slug;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(b);
