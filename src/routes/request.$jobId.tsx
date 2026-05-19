@@ -2049,22 +2049,6 @@ function BookingPanel({
         )}
         {inFlight && role === "provider" && (
           <>
-            {bothConfirmed && booking.status === "accepted" && (
-              <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
-                {L("On the way", "လမ်းပေါ်")}
-              </Button>
-            )}
-            {bothConfirmed && (booking.status === "accepted" || booking.status === "on_the_way") && (
-              <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
-                {L("Start job", "စတင်")}
-              </Button>
-            )}
-            {bothConfirmed && (
-            <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
-              <Check className="mr-2 h-4 w-4" />
-              {L("Mark complete", "ပြီးဆုံးပြီ")}
-            </Button>
-            )}
             {bothConfirmed && (
             <Button
               variant="outline"
