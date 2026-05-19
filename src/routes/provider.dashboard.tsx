@@ -186,21 +186,10 @@ function DashboardPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
 
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-14">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             {lang === "en" ? "Your work" : "သင်၏ အလုပ်"}
           </h1>
-          <Link to="/provider/onboarding">
-            <Button variant="ghost" size="sm">
-              {lang === "en" ? "Edit profile" : "ပရိုဖိုင် ပြင်ရန်"}
-            </Button>
-          </Link>
-          <Link to="/provider/leads">
-            <Button variant="outline" size="sm">Leads</Button>
-          </Link>
-          <Link to="/provider/wallet">
-            <Button size="sm">Wallet</Button>
-          </Link>
         </div>
 
         {provider && !provider.is_verified && (

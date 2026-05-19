@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, MessageSquare, Calendar } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, MessageSquare, Wallet, Inbox } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -35,9 +35,9 @@ export function BottomNav() {
     : isProvider
       ? [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-            { to: "/provider/dashboard", icon: Briefcase, en: "My Jobs", my: "အလုပ်" },
-            { to: "/messages", icon: MessageSquare, en: "Messages", my: "မက်ဆေ့ဂျ်", primary: true },
-            { to: "/provider/calendar", icon: Calendar, en: "My Calendar", my: "ပြက္ခဒိန်" },
+            { to: "/provider/leads", icon: Inbox, en: "Leads", my: "Lead များ" },
+            { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
+            { to: "/provider/wallet", icon: Wallet, en: "Wallet", my: "ပိုက်ဆံအိတ်" },
           { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
         ]
       : user
