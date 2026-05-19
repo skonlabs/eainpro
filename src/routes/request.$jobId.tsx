@@ -719,18 +719,28 @@ function RequestDetailPage() {
     <div className="min-h-screen bg-background pb-24 md:pb-0">
 
       <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-10">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              {lang === "en" ? cat?.en : cat?.my}
-            </h1>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" />
-              {lang === "en" ? city?.en : city?.my}
-              {job.area ? ` · ${job.area}` : ""}
-            </p>
+        <div
+          className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-xl shadow-primary/25"
+          style={{ background: "var(--gradient-hero)" }}
+        >
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-[color:var(--accent)]/30 blur-3xl" />
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">
+                {L("Request", "တောင်းဆို")}
+              </div>
+              <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
+                {lang === "en" ? cat?.en : cat?.my}
+              </h1>
+              <p className="mt-1 flex items-center gap-1 text-sm text-primary-foreground/85">
+                <MapPin className="h-3.5 w-3.5" />
+                {lang === "en" ? city?.en : city?.my}
+                {job.area ? ` · ${job.area}` : ""}
+              </p>
+            </div>
+            <StatusBadge status={job.status} lang={lang} />
           </div>
-          <StatusBadge status={job.status} lang={lang} />
         </div>
 
         {/* Tabs */}
