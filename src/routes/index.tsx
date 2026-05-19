@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +38,8 @@ import {
   MapPin,
   Calendar as CalendarIcon,
   BadgeCheck,
+  Search,
+  RotateCw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
