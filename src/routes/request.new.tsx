@@ -432,7 +432,7 @@ function NewRequestPage() {
                   {L("Sending…", "ပေးပို့နေ…")}
                 </>
               ) : (
-                L("Find Providers", "ဝန်ဆောင်မှုပေးသူ ရှာရန်")
+                L("Submit Request", "တောင်းဆို တင်ရန်")
               )}
             </Button>
           ) : (
