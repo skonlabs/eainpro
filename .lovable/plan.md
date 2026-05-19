@@ -1,120 +1,137 @@
-## What I missed last round
+# Provider Lead Pricing & Unlock System
 
-I changed paint, not the journey. You're right — search → book → schedule → done is still the same number of taps, the same dead-ends, the same "where am I now?" moments. This plan walks both journeys step by step, names the friction, and proposes the UX change for each step. No new tables, no new auth — pure flow + screen rewrites.
+This is the marketplace's core revenue model, so it must be built in stages with the database first, then provider UX, then admin. Below is the production-ready plan.
 
----
-
-## Homeowner: end-to-end
-
-```text
-discover → describe → match → quote → schedule → track → complete → review → rebook
-```
-
-### 1. Discover (Home + Services)
-- **Today**: Home shows greeting + 8 category icons + lists. To start a job you tap "Book a service", land on a wizard that asks for category again.
-- **Change**: Home becomes one decision: a big search field ("What needs fixing?") + 6 most-likely categories under it as one-tap chips. Tapping a chip jumps straight to step 2 of the wizard with category pre-filled. Two taps to a brief, not five.
-- **Add**: "Book again" row of last 3 services you used, one-tap rebook (pre-fills category, address, area).
-
-### 2. Describe the job (Wizard)
-- **Today**: Multi-step wizard with category, subcategory, urgency, budget, photos, address, contact — every field on its own screen, slow to commit.
-- **Change**: Collapse to 3 steps with a visible progress bar:
-  1. **What** — category + 2-3 smart questions specific to that category (already exist in `CATEGORY_QUESTIONS`) + optional description/photos.
-  2. **Where & when** — saved addresses (one tap), urgency as 3 chips (Now / Today-Tomorrow / This week), optional date.
-  3. **Review & invite** — show top 3 matched providers right inside the last step with rating + ETA + starting price; "Invite all 3" is the primary CTA. Skip the separate "Providers" tab entirely for first-time invites.
-- **Add**: sticky action bar with Back / Continue and a clear "Step 2 of 3" indicator. Saved addresses (new client-side `localStorage` cache of past `address`+`area`+`city_slug` rows from the user's own jobs — no schema change).
-
-### 3. Quote comparison
-- **Today**: Quotes tab lists cards with price, included, warranty, etc. — heavy reading, hard to compare side-by-side.
-- **Change**: A compact comparison table on mobile: provider name + rating, price, earliest, warranty in 4 columns; tap a row to expand details inline. Best-price and fastest-ETA get visible "Best price" / "Fastest" tags. Primary action stays "Accept" with confirm sheet.
-- **Add**: "Message before accepting" CTA per quote that opens the thread pre-scoped to that provider.
-
-### 4. Schedule (the part most broken today)
-- **Today**: After Accept, the booking sits in limbo waiting on `time_proposed_by_*` / `time_confirmed_by_*` columns the user has to manually understand.
-- **Change**: Brand new `ScheduleCard` on the Booking tab that always tells you exactly one thing:
-  - *Provider hasn't proposed a time yet* → "Waiting for [Name] to propose a time" + "Suggest a time" secondary action.
-  - *Provider proposed* → big date/time, "Confirm" primary + "Propose a different time" secondary.
-  - *Both confirmed* → "Locked in [Date, Time]" with "Add to calendar" + "Reschedule" + "Cancel" buttons.
-- **Add**: in-app date+time picker (shadcn Calendar + time chips: 9am / 12pm / 3pm / 6pm / custom) so proposing a time is 3 taps instead of typing ISO strings.
-
-### 5. Track work (day-of)
-- **Today**: Status changes (`accepted` → `on_the_way` → `started` → `completed`) happen but the customer sees only a small pill.
-- **Change**: Booking tab gets a live progress strip — `Confirmed · On the way · Started · Done` — with the current step highlighted and a timestamp under it. Plus a fixed "Call / Message" action row so contacting the provider is one tap.
-- **Add**: ETA hint when status flips to `on_the_way` ("[Name] is heading to you · ~20 min" — derived from provider's `response_minutes` if no real GPS, with copy that makes the estimate honest).
-
-### 6. Complete + review
-- **Today**: Completion + review live in different blocks, easy to miss.
-- **Change**: When status flips to `completed`, the Booking tab swaps to a full-screen "How did it go?" panel with 4 quick stars (quality / speed / value / communication) + optional comment + "Tip provider" placeholder (UI only, no payments work). Customer can't dismiss to a blank screen; they finish the loop or explicitly "Skip review".
-- **Add**: After review submit, surface a "Save [Name] as a favorite" toggle inline (uses existing `favorites` table).
-
-### 7. Re-engage
-- **Today**: My Requests is a flat list, hard to find a past provider.
-- **Change**: My Requests gets two segments: **Active** (anything not completed/cancelled) and **Past**. Past items show "Book [Name] again" as the primary action when there's a favorite/completed provider, jumping straight back to step 2 with everything pre-filled.
+Note on backend: this project uses the user's own Supabase (not Lovable Cloud). I will produce a new migration SQL file. **You will need to run it manually in your Supabase SQL editor** — migrations do not auto-apply.
 
 ---
 
-## Provider: end-to-end
+## 1. Database (new migration)
 
-```text
-onboard → get leads → quote → win → schedule → work → complete → get paid (placeholder) → grow
-```
+New tables (RLS enabled on all):
 
-### 1. Onboard
-- **Today**: Multi-step onboarding with services, areas, verification. Then dropped onto a dashboard.
-- **Change**: After onboarding completes, route to a 3-card "You're ready" screen: *Set your availability* / *Add a profile photo* / *Browse open jobs in your area*. Each card is a 1-tap action. Removes the "now what?" cliff.
+- `service_categories` — already exists as `categories`; reuse.
+- `service_types` — `id, category_slug, slug, name_en, name_my, is_active, sort_order`. Seed from the 6-group catalog already in `src/lib/catalog.ts`.
+- `lead_pricing` — `id, service_type_id (unique), price_credits, max_provider_unlocks, refund_allowed, is_active, updated_at`. Seeded with the 16-row pricing table you supplied. Service types not in the table default to 2,000 credits / 4 slots and `is_active=false` until admin sets them.
+- `customer_leads` — full field list from the spec, FK to `service_types`, denormalized `lead_price_credits` and `max_provider_unlocks` (snapshot at creation so later admin price edits don't change historical leads). `status` enum: `active | fully_booked | closed | expired | cancelled`.
+- `lead_photos` — `id, lead_id, url, sort_order`.
+- `provider_wallets` — `provider_id pk, balance_credits, lifetime_topup_credits, lifetime_spent_credits, updated_at`.
+- `provider_wallet_transactions` — append-only ledger. Enum: `topup | unlock | refund | adjustment`. Includes `balance_before/after`.
+- `provider_credit_topups` — package, MMK amount, credits, bonus, payment ref, proof url (Supabase Storage `topup-proofs` bucket), status enum `pending | approved | rejected`, admin approver.
+- `provider_lead_unlocks` — unique `(lead_id, provider_id)`. Snapshot `unlock_price_credits`. Status enum: `unlocked | contacted | quoted | won | lost | customer_no_response | invalid | completed`. `quoted_price_mmk`, `provider_notes`, `is_refunded`, `refunded_amount_credits`.
+- `lead_status_history` — audit of provider lead status changes.
+- `lead_refunds` — `id, unlock_id, amount_credits, reason, approved_by, created_at`.
+- `admin_audit_logs` — generic admin action log.
 
-### 2. Get leads (Dashboard)
-- **Today**: Dashboard has invites + active jobs mixed; provider has to scan.
-- **Change**: Dashboard becomes 3 segmented tabs, each with a count badge:
-  - **New leads** (invitations not yet quoted) — newest first, each card shows category · area · "X min ago" · *Send quote* primary button inline.
-  - **Awaiting** (quoted, waiting on customer / time-proposed waiting on customer / scheduled but not started).
-  - **Today** (anything scheduled within next 24h, ordered by time) — this is what they open in the morning.
-- **Add**: A persistent stat strip at top: *N open leads · N scheduled today · ★ rating · $ this week (placeholder)*.
+Helpers:
 
-### 3. Quote
-- **Today**: QuoteForm exists; usable but verbose.
-- **Change**: Quote form becomes a single sheet with smart defaults: amount + earliest-date chips (Today / Tomorrow / This week / Custom) + optional notes. Advanced fields (warranty, cancellation policy, expiry) collapse under "More details". Submit returns to leads list with a toast + the lead instantly moves to **Awaiting**.
+- `has_role(uuid, app_role)` already exists; reuse for admin checks.
+- Trigger `on_topup_approved`: when `provider_credit_topups.status` flips to `approved`, atomically credit the wallet + write a `topup` transaction.
+- RPC `unlock_lead(p_lead_id uuid)` (SECURITY DEFINER) does the whole unlock atomically:
+  1. lock the wallet row + lead row,
+  2. validate (verified, balance, slots, not already unlocked, service match, area match, status=active, not expired),
+  3. decrement wallet, insert transaction + unlock,
+  4. increment `current_unlock_count`, flip lead to `fully_booked` when count reaches max,
+  5. return rich error codes (`INSUFFICIENT_CREDITS`, `ALREADY_UNLOCKED`, `LEAD_FULL`, `EXPIRED`, `SERVICE_AREA_MISMATCH`, `NOT_VERIFIED`, etc.).
+- RPC `refund_unlock(p_unlock_id uuid, p_amount integer, p_reason text)` admin-only, atomic refund + ledger + `lead_refunds` row.
+- Scheduled job (pg_cron, optional) `expire_leads()` — closes leads older than 7 days, or 48h for `urgency='today'`.
 
-### 4. Win → Schedule
-- **Today**: When a quote is accepted, the booking row is created but the provider has to dig to propose a time.
-- **Change**: On accept, fire an in-app notification ("[Customer] accepted your quote — propose a time"). Their dashboard's **Awaiting** card for that job swaps to a single CTA: "Propose visit time" → opens the same in-app calendar+time picker from the customer flow. After propose, card moves to **Today** when the visit is within 24h.
+RLS highlights:
 
-### 5. Work (day-of)
-- **Today**: Status buttons exist on the booking panel but are buried.
-- **Change**: Each **Today** card on the dashboard has the next status action as the visible primary button: `On the way` → `Mark started` → `Mark complete`. Tap = one action, no navigation. Tapping the card body opens the full job for details/messages.
-- **Add**: Tap-to-call and tap-to-navigate (`tel:` link + `https://www.google.com/maps?q=...` link from the address) directly on the card.
+- `customer_leads`: customers read their own; providers read **only the locked preview columns** via a `lead_previews` view filtered by service + area match; full row only via the unlock RPC return or for providers in `provider_lead_unlocks`.
+- `provider_wallets` / `provider_wallet_transactions` / `provider_credit_topups`: provider reads own; admin reads all.
+- `provider_lead_unlocks`: provider reads own + admin.
+- `lead_pricing`, `service_types`: public read; admin write.
+- All write ops on `provider_wallets`, `provider_wallet_transactions`, `lead_pricing`, `customer_leads.status` are restricted to the SECURITY DEFINER RPCs or admins.
 
-### 6. Complete → review
-- **Today**: Mark complete and nothing happens until the customer reviews.
-- **Change**: On mark-complete, show a sheet: "Send invoice & request review" — sends the customer a notification that includes the amount and a 1-tap "Leave review" CTA. Provider sees "Awaiting review" on their dashboard card with the customer's name and date. After review lands, dashboard auto-clears it.
+Indexes on: `customer_leads(status, service_type_id, city_slug, created_at)`, `provider_lead_unlocks(provider_id, status)`, `provider_wallet_transactions(provider_id, created_at)`.
 
-### 7. Calendar + availability
-- **Today**: Calendar route exists but has no block-off-time flow.
-- **Change**: Month view + day view (already there). Tap empty slot → mini sheet: "Block this time" (creates a local "unavailable" booking row that customers' time-propose UI respects — uses existing `bookings` table with a `cancelled` status + reason marker, no schema change).
-
----
-
-## Cross-cutting
-
-- **Notification bell** (already exists): wire real triggers for *quote received*, *time proposed*, *time confirmed*, *status changed*, *review received*. Tapping a notification deep-links straight to the right tab.
-- **Empty states**: every list (My Requests, dashboard tabs, Messages) gets a real `EmptyState` with one primary action ("Browse services" / "Set availability"), not a blank pane.
-- **Skeletons everywhere**: every async view loads with skeletons matching the final shape — no more "Loading…" text.
-- **Address book**: lightweight client-side cache (localStorage, last 5 unique addresses from the user's own jobs) so re-booking is instant.
+Storage bucket: `topup-proofs` (private, providers upload/read own, admin reads all).
 
 ---
 
-## Out of scope (explicit)
+## 2. Customer flow updates (`/request/new`)
 
-- No payments, no chat realtime upgrades beyond what's already wired, no new auth providers, no schema changes. Everything above runs on existing tables (`job_requests`, `quotes`, `bookings`, `request_invitations`, `notifications`, `favorites`, `messages`, `reviews`).
-- "Tip provider" and "Send invoice" are UI-only placeholders for now.
+- Extend submission to write into `customer_leads` with `lead_price_credits` + `max_provider_unlocks` resolved from `lead_pricing` at insert time.
+- Add a confirmation note above submit: *"Your request will be shared with verified providers. Up to N providers may contact you."* — N pulled from pricing.
+- Existing photo upload, multi-select sub-category logic stays intact (no regression to that work).
 
 ---
 
-## Execution order (so you can see movement quickly)
+## 3. Provider routes
 
-1. **Customer hot path**: rebuilt Home (search + chips + "Book again"), wizard collapsed to 3 steps, comparison-style quotes tab, new `ScheduleCard` with in-app calendar picker.
-2. **Provider hot path**: dashboard 3-segment rebuild with inline primary actions + tap-to-call/navigate, simplified quote sheet, propose-time picker.
-3. **Day-of UX**: live status strip on customer booking tab + corresponding one-tap status buttons on provider dashboard cards.
-4. **Close the loop**: forced review panel on completion + "Save favorite" toggle + active/past split on My Requests.
-5. **Cross-cutting polish**: notifications wired to all the right triggers, real empty states, skeletons, address book.
+Tabs added under a new `/provider/leads` route:
 
-I'll check in after step 1 with the customer hot path working end-to-end so you can see the difference before I touch the provider side. If any item above shouldn't be in scope, say so and I'll cut it.
+- **Available** — `lead_previews` filtered by provider's services + areas, locked card per spec (service, township, urgency, short desc, price, slots remaining `X of Y unlocked`, photo count, created time, "Unlock Lead" button).
+- **Unlocked** — full details, status dropdown, quoted price input, notes textarea, "Request Refund" button, call/chat/quote actions.
+- **Won** — `status='won'`.
+- **Lost / Closed** — `lost | invalid | customer_no_response | refunded | expired`.
+
+Unlock modal: shows price, slots remaining, non-refundable warning, Cancel / "Unlock for X credits" calling `unlock_lead` RPC. Toast on every error code with a friendly message.
+
+New route `/provider/wallet`:
+
+- Big balance card + low-balance warning (< cheapest active lead price).
+- 4 credit packages (10k/25k/50k/100k MMK with the bonus structure) → "Buy" opens a modal: enter payment reference, upload proof (to `topup-proofs`), submit `provider_credit_topups` row.
+- Transaction history table (paginated) with type badges (top-up / unlock / refund / adjustment), lead link, before/after.
+
+Provider onboarding already handles services + areas; reused for unlock validation.
+
+Mobile-first: cards stack, sticky action bar on lead detail, large tap targets, MMK and credits shown with thousands separators.
+
+---
+
+## 4. Admin routes (`/admin`)
+
+Add sub-tabs (gated by `has_role('admin')`):
+
+- **Lead pricing** — table of every `service_type`: price, max slots, refund allowed, active toggle, inline edit.
+- **Top-ups** — pending queue with proof image, approve/reject buttons (writes admin id + notes). Approval triggers the wallet credit trigger.
+- **Refunds** — search by lead/provider, view unlock detail, "Issue refund" (full or partial credits) with required reason.
+- **Lead unlocks** — table with filters by service, status, date.
+- **Revenue dashboard** — KPIs from SQL views: total revenue (sum of `unlock` transactions), revenue by category, leads created/unlocked, unlock conversion %, avg providers per lead, refund count/amount, top spenders, top win-rate providers, invalid-lead rate.
+- **Service categories** — activate/deactivate service types.
+- **Audit log viewer** — `admin_audit_logs` table.
+
+---
+
+## 5. Notifications
+
+Lightweight in-app `notifications` table + `NotificationBell` (already exists) gets new event types: `lead_matched`, `topup_approved`, `topup_rejected`, `refund_approved`, `lead_closed`, `lead_updated`, `provider_unlocked`, `provider_quoted`, `job_completed`. Triggers on the relevant table mutations insert rows; bell polls.
+
+(SMS/Viber push out of scope for v1 — schema is ready when you add a provider.)
+
+---
+
+## 6. Technical details (for reference)
+
+- All money-affecting writes go through SECURITY DEFINER RPCs; client never updates `provider_wallets` directly.
+- Snapshotting `unlock_price_credits` on the unlock row keeps history immutable when admins change pricing.
+- `lead_previews` is a Postgres view with only the safe columns — keeps RLS simple and prevents accidental column leaks.
+- Ledger invariant: `balance_after = balance_before ± amount_credits`. Enforced in RPC, not client.
+- Soft uniqueness on `(provider_id, lead_id)` prevents double unlocks at the DB level.
+- Frontend: TanStack Query for all lead/wallet reads, optimistic UI only on status changes (never on unlock — that needs the server response).
+- File structure: new routes `src/routes/provider.leads.tsx`, `src/routes/provider.wallet.tsx`, `src/routes/admin.pricing.tsx`, `src/routes/admin.topups.tsx`, `src/routes/admin.refunds.tsx`. Shared queries in `src/lib/leads.ts`, `src/lib/wallet.ts`.
+- Migration delivered as `supabase/migrations/20260519_lead_pricing_wallet.sql` — single file you paste into the SQL editor.
+
+---
+
+## 7. Build order
+
+1. Migration SQL + seed pricing.
+2. `src/lib/leads.ts` + `src/lib/wallet.ts` query helpers.
+3. Customer request submission → writes the new fields.
+4. Provider `/provider/leads` (Available + Unlocked tabs first).
+5. Provider `/provider/wallet` + top-up flow + storage bucket.
+6. Admin pricing + top-up approval + refund pages.
+7. Won / Lost tabs, status updates, notifications, revenue dashboard.
+
+Each step is independently shippable; you can review after step 3 before I continue.
+
+---
+
+## Open questions before I start
+
+1. Do you want admin role assignment to happen via SQL (you grant yourself `admin` in `user_roles`) or do you want a small "make me admin" bootstrap UI?
+2. Top-up payment proof — upload image only, or also accept "transaction reference text only" (no proof)?
+3. Should I include the optional pg_cron auto-expiry job, or leave expiry as an admin manual action for v1?
