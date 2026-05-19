@@ -80,7 +80,7 @@ function NewRequestPage() {
 
   const [form, setForm] = useState({
     category: cat ?? "",
-    subcategory: sub ?? "",
+    subcategories: sub ? sub.split(",").filter(Boolean) : ([] as string[]),
     description: "",
     answers: {} as Record<string, string>,
     urgency: "flexible" as "today" | "tomorrow" | "this_week" | "flexible",
@@ -102,11 +102,11 @@ function NewRequestPage() {
   useEffect(() => {
     setForm((current) => {
       const nextCategory = cat ?? "";
-      const nextSubcategory = sub ?? "";
+      const nextSubs = sub ? sub.split(",").filter(Boolean) : [];
 
       if (
         current.category === nextCategory &&
-        current.subcategory === nextSubcategory &&
+        current.subcategories.join(",") === nextSubs.join(",") &&
         current.city === (initialCity ?? "yangon")
       ) {
         return current;
@@ -115,7 +115,7 @@ function NewRequestPage() {
       return {
         ...current,
         category: nextCategory,
-        subcategory: nextSubcategory,
+        subcategories: nextSubs,
         city: initialCity ?? current.city,
       };
     });
@@ -170,7 +170,7 @@ function NewRequestPage() {
       case "category":
         return !!form.category;
       case "subcategory":
-        return !!form.subcategory;
+        return form.subcategories.length > 0;
       case "question":
         return !!form.answers[step.questionId!];
       case "township":
@@ -252,9 +252,9 @@ function NewRequestPage() {
       .insert({
         customer_id: user.id,
         category_slug: form.category,
-        subcategory_slug: form.subcategory || null,
+        subcategory_slug: form.subcategories[0] ?? null,
         description: form.description,
-        category_answers: form.answers,
+        category_answers: { ...form.answers, _subcategories: form.subcategories },
         city_slug: form.city,
         township_text: form.township || null,
         area: form.area || null,
@@ -389,7 +389,7 @@ function NewRequestPage() {
                     setForm((f) => ({
                       ...f,
                       category: c.slug,
-                      subcategory: "",
+                      subcategories: [],
                       answers: {},
                     }));
                   }}
@@ -408,19 +408,37 @@ function NewRequestPage() {
               `What kind of ${category?.en.toLowerCase()} work?`,
               "ဘယ်လို အကူအညီ လိုသလဲ?",
             )}
-            hint={L("Pick the closest match.", "အနီးစပ်ဆုံး ရွေးပါ။")}
+            hint={L(
+              "Pick all that apply. You can select multiple.",
+              "သင့်လျော်သမျှ ရွေးပါ — တစ်ခုထက်ပို ရွေးနိုင်သည်။",
+            )}
           >
             <div className="grid gap-2 sm:grid-cols-2">
               {subs.map((s) => (
                 <BigChoice
                   key={s.slug}
-                  active={form.subcategory === s.slug}
-                  onClick={() => pick("subcategory", s.slug)}
+                  active={form.subcategories.includes(s.slug)}
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      subcategories: f.subcategories.includes(s.slug)
+                        ? f.subcategories.filter((x: string) => x !== s.slug)
+                        : [...f.subcategories, s.slug],
+                    }))
+                  }
                 >
                   {L(s.en, s.my)}
                 </BigChoice>
               ))}
             </div>
+            {form.subcategories.length > 0 && (
+              <p className="mt-3 text-xs font-semibold text-primary">
+                {L(
+                  `${form.subcategories.length} selected`,
+                  `${form.subcategories.length} ခု ရွေးထား`,
+                )}
+              </p>
+            )}
           </StepShell>
         );
 
@@ -765,8 +783,13 @@ function NewRequestPage() {
               };
               const serviceText = category
                 ? `${lang === "en" ? category.en : category.my}${
-                    form.subcategory
-                      ? ` · ${subs.find((s) => s.slug === form.subcategory)?.[lang === "en" ? "en" : "my"] ?? ""}`
+                    form.subcategories.length
+                      ? ` · ${form.subcategories
+                          .map(
+                            (slug: string) =>
+                              subs.find((s) => s.slug === slug)?.[lang === "en" ? "en" : "my"] ?? slug,
+                          )
+                          .join(", ")}`
                       : ""
                   }`
                 : "—";
