@@ -744,22 +744,6 @@ function ProviderHome({
                 cta={L("Review", "ကြည့်")}
               />
             ))}
-            {(invites ?? []).slice(0, 5).map((inv) => {
-              const cat = CATEGORIES.find((c) => c.slug === inv.job?.category_slug);
-              return (
-                <ActionRow
-                  key={`i-${inv.id}`}
-                  to="/request/$leadId"
-                  params={{ leadId: inv.lead_id }}
-                  search={{ tab: "quotes" }}
-                  icon={<Inbox className="h-5 w-5" />}
-                  tone="primary"
-                  title={L("New invitation", "ဖိတ်ကြားမှု အသစ်")}
-                  sub={cat ? (lang === "en" ? cat.en : cat.my) : inv.job?.category_slug ?? ""}
-                  cta={L("Send quote", "စျေးပေး")}
-                />
-              );
-            })}
           </ul>
         </section>
       )}
