@@ -2223,6 +2223,29 @@ function ReviewSheet({
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+
+  const onPickPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const f of Array.from(files).slice(0, 5 - photos.length)) {
+        const ext = f.name.split(".").pop() ?? "jpg";
+        const path = `${booking.customer_id}/reviews/${booking.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("job-photos").upload(path, f, { upsert: false });
+        if (upErr) { toast.error(upErr.message); continue; }
+        const { data: pu } = supabase.storage.from("job-photos").getPublicUrl(path);
+        uploaded.push(pu.publicUrl);
+      }
+      setPhotos((p) => [...p, ...uploaded]);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -2239,6 +2262,9 @@ function ReviewSheet({
         rating_value: value,
         rating_communication: comm,
         comment: comment.trim() || null,
+        photo_urls: photos,
+        reported: reporting,
+        report_reason: reporting ? reportReason.trim() || null : null,
       })
       .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
       .single();
@@ -2250,7 +2276,11 @@ function ReviewSheet({
     }
     if (data) {
       onSubmitted(data as Review);
-      toast.success(lang === "en" ? "Thanks for your review!" : "ကျေးဇူးတင်ပါသည်!");
+      toast.success(
+        reporting
+          ? lang === "en" ? "Review submitted & problem reported" : "သုံးသပ်ချက် တင်ပြီး"
+          : lang === "en" ? "Thanks for your review!" : "ကျေးဇူးတင်ပါသည်!",
+      );
     }
   };
 
@@ -2293,6 +2323,70 @@ function ReviewSheet({
             placeholder={L("How was your experience?", "သင်၏ အတွေ့အကြုံ ဘယ်လိုလဲ?")}
             className="mt-1"
           />
+        </div>
+
+        {/* Photos */}
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {L("Add photos (optional)", "ဓာတ်ပုံ ထည့်ပါ")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {photos.map((u, i) => (
+              <div key={u} className="relative h-16 w-16 overflow-hidden rounded-lg border border-border">
+                <img src={u} alt={`review-${i}`} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
+                  className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-full bg-background/80 text-foreground"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            ))}
+            {photos.length < 5 && (
+              <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary/50">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                <span className="text-[9px] font-semibold">{L("Add", "ထည့်")}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => onPickPhotos(e.target.files)}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Report a problem */}
+        <div className="mt-4 rounded-xl border border-border p-3">
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              checked={reporting}
+              onChange={(e) => setReporting(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-destructive"
+            />
+            <span className="flex-1">
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
+                <Flag className="h-3.5 w-3.5" />
+                {L("Report a problem with this job", "ဤအလုပ်အကြောင်း တိုင်ကြားရန်")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {L("Our team will follow up with you.", "ကျွန်ုပ်တို့ ပြန်ဆက်သွယ်ပါမည်။")}
+              </span>
+            </span>
+          </label>
+          {reporting && (
+            <Textarea
+              rows={2}
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder={L("What went wrong?", "ဘာဖြစ်သွားသလဲ?")}
+              className="mt-2"
+            />
+          )}
         </div>
 
         {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
