@@ -5,6 +5,8 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +29,9 @@ import {
   AlertTriangle,
   CalendarClock,
   Heart,
+  Phone,
+  Navigation,
+  CalendarPlus,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -1822,6 +1827,18 @@ function BookingPanel({
         );
       })()}
 
+      {/* Schedule card — single source of truth for "what time?" */}
+      {!isCancelled && !isCompleted && (
+        <ScheduleCard
+          booking={booking}
+          role={role}
+          lang={lang}
+          jobAddress={jobAddress}
+          onConfirmTime={onConfirmTime}
+          onProposeTime={(iso) => onReschedule(iso)}
+        />
+      )}
+
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
@@ -2276,6 +2293,307 @@ function StarRow({ value, onChange, big }: { value: number; onChange: (n: number
           />
         </button>
       ))}
+    </div>
+  );
+}
+
+// One-decision schedule card. Tells the user the single next thing to do
+// about timing: propose, confirm, reschedule, or call/navigate when locked.
+function ScheduleCard({
+  booking,
+  role,
+  lang,
+  jobAddress,
+  onConfirmTime,
+  onProposeTime,
+}: {
+  booking: Booking;
+  role: "customer" | "provider";
+  lang: "en" | "my";
+  jobAddress: string | null;
+  onConfirmTime: () => Promise<void>;
+  onProposeTime: (iso: string) => Promise<void>;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(
+    booking.scheduled_at ? new Date(booking.scheduled_at) : undefined,
+  );
+  const [hour, setHour] = useState<number | null>(
+    booking.scheduled_at ? new Date(booking.scheduled_at).getHours() : null,
+  );
+  const [busy, setBusy] = useState(false);
+
+  const myConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_customer : !!booking.time_confirmed_by_provider;
+  const otherConfirmed =
+    role === "customer" ? !!booking.time_confirmed_by_provider : !!booking.time_confirmed_by_customer;
+  const both = myConfirmed && otherConfirmed && !!booking.scheduled_at;
+  const proposed = !!booking.scheduled_at && !both;
+  const awaitingMe = proposed && !myConfirmed;
+  const noTimeYet = !booking.scheduled_at;
+  const proposedByOther =
+    booking.time_proposed_by && booking.time_proposed_by !== role;
+
+  const otherLabel = role === "customer" ? L("provider", "ပညာရှင်") : L("customer", "ဖောက်သည်");
+  const fmt = (d: string) =>
+    new Date(d).toLocaleString(lang === "en" ? "en" : "my-MM", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+  const submit = async () => {
+    if (!date || hour === null) return;
+    setBusy(true);
+    const d = new Date(date);
+    d.setHours(hour, 0, 0, 0);
+    await onProposeTime(d.toISOString());
+    setBusy(false);
+    setOpen(false);
+  };
+
+  // Confirmed visit: show big locked-in card with day-of utilities.
+  if (both) {
+    const when = new Date(booking.scheduled_at as string);
+    const mapsQuery = encodeURIComponent(jobAddress ?? "");
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+        <div className="flex items-center gap-3 border-b border-border bg-primary/5 px-4 py-3">
+          <CheckCircle2 className="h-5 w-5 text-primary" />
+          <div className="text-xs font-bold uppercase tracking-wider text-primary">
+            {L("Visit locked in", "လည်ပတ်ချိန် အတည်ပြုပြီး")}
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="font-display text-2xl font-extrabold tracking-tight">
+            {when.toLocaleDateString(lang === "en" ? "en" : "my-MM", {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
+            })}
+          </div>
+          <div className="mt-0.5 text-sm text-muted-foreground">
+            {when.toLocaleTimeString(lang === "en" ? "en" : "my-MM", { hour: "numeric", minute: "2-digit" })}
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {booking.customer_phone && (
+              <a
+                href={`tel:${booking.customer_phone}`}
+                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-background py-2 text-xs font-semibold transition hover:border-primary/50"
+              >
+                <Phone className="h-4 w-4 text-primary" />
+                {L("Call", "ဖုန်းခေါ်")}
+              </a>
+            )}
+            {jobAddress && (
+              <a
+                href={`https://www.google.com/maps?q=${mapsQuery}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-background py-2 text-xs font-semibold transition hover:border-primary/50"
+              >
+                <Navigation className="h-4 w-4 text-primary" />
+                {L("Navigate", "လမ်းပြ")}
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="flex flex-col items-center gap-1 rounded-xl border border-border bg-background py-2 text-xs font-semibold transition hover:border-primary/50"
+            >
+              <CalendarPlus className="h-4 w-4 text-primary" />
+              {L("Reschedule", "ပြန်ညှိ")}
+            </button>
+          </div>
+        </div>
+        {open && (
+          <TimePickerSheet
+            title={L("Propose a new time", "အချိန် အသစ် တင်ပြ")}
+            lang={lang}
+            date={date}
+            setDate={setDate}
+            hour={hour}
+            setHour={setHour}
+            busy={busy}
+            onClose={() => setOpen(false)}
+            onSubmit={submit}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Time proposed, waiting on me to confirm.
+  if (awaitingMe && proposedByOther) {
+    return (
+      <div className="rounded-2xl border border-[color:var(--status-pending)]/40 bg-[color:var(--status-pending)]/10 p-4 shadow-soft">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[color:var(--status-pending-foreground)]">
+          <CalendarClock className="h-4 w-4" />
+          {L(`${otherLabel} proposed a time`, "အချိန် တင်ပြထားသည်")}
+        </div>
+        <div className="mt-2 font-display text-xl font-extrabold tracking-tight">
+          {fmt(booking.scheduled_at as string)}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {L("Confirm or counter-propose another time.", "အတည်ပြုပါ သို့မဟုတ် အသစ် တင်ပြပါ။")}
+        </p>
+        <div className="mt-3 flex gap-2">
+          <Button onClick={onConfirmTime} className="flex-1 rounded-xl">
+            <Check className="mr-2 h-4 w-4" />
+            {L("Confirm time", "အတည်ပြု")}
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(true)} className="rounded-xl">
+            {L("Suggest other", "အသစ်")}
+          </Button>
+        </div>
+        {open && (
+          <TimePickerSheet
+            title={L("Propose a different time", "အချိန် အသစ် တင်ပြ")}
+            lang={lang}
+            date={date}
+            setDate={setDate}
+            hour={hour}
+            setHour={setHour}
+            busy={busy}
+            onClose={() => setOpen(false)}
+            onSubmit={submit}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Either I proposed and waiting, or no time yet.
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <CalendarClock className="h-4 w-4 text-primary" />
+        {noTimeYet
+          ? L("No time agreed yet", "အချိန် မရွေးရသေး")
+          : L(`Waiting for ${otherLabel}`, "တစ်ဖက်မှ စောင့်ဆိုင်း")}
+      </div>
+      {!noTimeYet && (
+        <div className="mt-2 font-display text-xl font-extrabold tracking-tight">
+          {fmt(booking.scheduled_at as string)}
+        </div>
+      )}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {noTimeYet
+          ? L("Pick a date and time. Both sides must agree before the visit is locked in.", "အချိန် ရွေးပါ။ နှစ်ဖက်စလုံး သဘောတူရန် လိုပါသည်။")
+          : L(`We've notified the ${otherLabel}. You can also propose a different time.`, "တင်ပြထားသည်။ ပြောင်းလိုလျှင် အသစ် တင်ပြနိုင်သည်။")}
+      </p>
+      <Button onClick={() => setOpen(true)} className="mt-3 w-full rounded-xl">
+        <CalendarClock className="mr-2 h-4 w-4" />
+        {noTimeYet ? L("Pick a time", "အချိန် ရွေး") : L("Propose new time", "အသစ် တင်ပြ")}
+      </Button>
+      {open && (
+        <TimePickerSheet
+          title={L("Pick date & time", "ရက်နှင့် အချိန် ရွေး")}
+          lang={lang}
+          date={date}
+          setDate={setDate}
+          hour={hour}
+          setHour={setHour}
+          busy={busy}
+          onClose={() => setOpen(false)}
+          onSubmit={submit}
+        />
+      )}
+    </div>
+  );
+}
+
+function TimePickerSheet({
+  title,
+  lang,
+  date,
+  setDate,
+  hour,
+  setHour,
+  busy,
+  onClose,
+  onSubmit,
+}: {
+  title: string;
+  lang: "en" | "my";
+  date: Date | undefined;
+  setDate: (d: Date | undefined) => void;
+  hour: number | null;
+  setHour: (h: number) => void;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const slots = [9, 11, 13, 15, 17, 19];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-end bg-background/80 p-0 backdrop-blur sm:place-items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-t-3xl border border-border bg-card p-5 shadow-2xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 16px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
+        <div className="flex items-center gap-2 text-base font-bold">
+          <CalendarClock className="h-5 w-5 text-primary" />
+          {title}
+        </div>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            disabled={(d) => d < today}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </div>
+        <div className="mt-3">
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            {L("Time", "အချိန်")}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {slots.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => setHour(h)}
+                className={cn(
+                  "rounded-xl border px-3 py-2 text-sm font-semibold transition",
+                  hour === h
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background hover:border-primary/50",
+                )}
+              >
+                {new Date(2000, 0, 1, h).toLocaleTimeString(lang === "en" ? "en" : "my-MM", {
+                  hour: "numeric",
+                })}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl">
+            {L("Cancel", "ပယ်ဖျက်")}
+          </Button>
+          <Button
+            onClick={onSubmit}
+            disabled={!date || hour === null || busy}
+            className="flex-1 rounded-xl"
+          >
+            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {L("Propose", "တင်ပြ")}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
