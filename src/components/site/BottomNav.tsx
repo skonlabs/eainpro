@@ -62,10 +62,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Bottom navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/90 backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="mx-auto flex max-w-screen-md items-end justify-between px-3 pt-2">
+      <ul className="mx-auto flex h-16 max-w-screen-md items-stretch justify-between px-2">
         {items.map((it) => {
           const Icon = it.icon;
           const active =
@@ -77,23 +77,17 @@ export function BottomNav() {
               <Link
                 to={it.to as "/"}
                 search={it.search as Record<string, never>}
-                className={`flex flex-col items-center justify-end gap-1 py-1.5 text-[10px] font-semibold transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground/70"
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors ${
+                  active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                {it.primary ? (
-                  <span className="-mt-7 grid h-14 w-14 place-items-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform active:scale-95">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                ) : (
-                  <span
-                    className={`grid h-9 w-9 place-items-center rounded-xl transition-colors ${
-                      active ? "bg-primary/10 text-primary" : "text-foreground/70"
-                    }`}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                  </span>
-                )}
+                <span
+                  className={`pointer-events-none absolute inset-x-6 top-0 h-0.5 rounded-full bg-primary transition-opacity ${
+                    active ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+                <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} />
                 <span>{lang === "en" ? it.en : it.my}</span>
               </Link>
             </li>
