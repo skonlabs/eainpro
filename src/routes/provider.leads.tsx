@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { listAvailableLeads, listMyUnlocks, unlockLead, updateUnlockStatus, UNLOCK_ERROR_MESSAGES, type LeadPreview } from "@/lib/leads";
 import { fmt, getWallet } from "@/lib/wallet";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,8 @@ function LeadsPage() {
   const [won, setWon] = useState<any[]>([]);
   const [lost, setLost] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
+  const [hasServices, setHasServices] = useState(true);
+  const [hasAreas, setHasAreas] = useState(true);
   const [pickedLead, setPickedLead] = useState<LeadPreview | null>(null);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -35,6 +38,12 @@ function LeadsPage() {
     if (!user) return;
     const w = await getWallet(user.id);
     setBalance(w?.balance_credits ?? 0);
+    const [{ data: svc }, { data: ars }] = await Promise.all([
+      supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
+      supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+    ]);
+    setHasServices((svc ?? []).length > 0);
+    setHasAreas((ars ?? []).length > 0);
     const [a, u, wn, ls] = await Promise.all([
       listAvailableLeads(user.id),
       listMyUnlocks(user.id, ["unlocked","contacted","quoted","completed"]),
@@ -96,6 +105,16 @@ function LeadsPage() {
 
           <TabsContent value="available" className="space-y-3">
             {available === null ? <SkelList /> :
+              !hasServices || !hasAreas ? (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-900">
+                  <p className="font-semibold mb-1">Finish your provider profile to receive leads.</p>
+                  <p className="text-xs mb-3">
+                    {!hasServices && "You haven't selected any service categories. "}
+                    {!hasAreas && "You haven't set any service areas. "}
+                  </p>
+                  <Link to="/provider/onboarding" className="inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">Update profile</Link>
+                </div>
+              ) :
               available.length === 0 ? <Empty msg="No matching leads in your service areas right now. Check back soon." /> :
               available.map((l) => <LockedCard key={l.id} lead={l} onUnlock={() => setPickedLead(l)} />)}
           </TabsContent>
