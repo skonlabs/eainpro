@@ -32,6 +32,10 @@ import {
   Phone,
   Navigation,
   CalendarPlus,
+  Truck,
+  PlayCircle,
+  Flag,
+  Camera,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
