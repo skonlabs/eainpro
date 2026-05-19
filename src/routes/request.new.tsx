@@ -285,6 +285,60 @@ function NewRequestPage() {
       setErr(error.message);
       return;
     }
+    // Also create a customer_leads entry for the pay-per-lead unlock system.
+    // Non-fatal: errors here don't block the original request flow.
+    try {
+      const subSlug = form.subcategories[0] ?? null;
+      if (subSlug) {
+        const { data: st } = await supabase
+          .from("service_types")
+          .select("id")
+          .eq("category_slug", form.category)
+          .eq("slug", subSlug)
+          .maybeSingle();
+        if (st?.id) {
+          const { data: pricing } = await supabase
+            .from("lead_pricing")
+            .select("price_credits, max_provider_unlocks, is_active")
+            .eq("service_type_id", st.id)
+            .maybeSingle();
+          if (pricing?.is_active) {
+            const shortDesc = (form.description || "").slice(0, 140);
+            const expiresAt = new Date(
+              Date.now() + (form.urgency === "today" ? 48 : 7 * 24) * 3600 * 1000,
+            ).toISOString();
+            const { data: lead } = await supabase
+              .from("customer_leads")
+              .insert({
+                customer_id: user.id,
+                customer_name: user.user_metadata?.full_name ?? user.email ?? "Customer",
+                customer_phone: form.contactPhone || "",
+                city_slug: form.city,
+                address: form.address || null,
+                service_type_id: st.id,
+                urgency: form.urgency,
+                preferred_date: form.customDate || null,
+                preferred_time: form.window || null,
+                short_description: shortDesc || subSlug,
+                full_description: form.description || null,
+                lead_price_credits: pricing.price_credits,
+                max_provider_unlocks: pricing.max_provider_unlocks,
+                expires_at: expiresAt,
+              })
+              .select("id")
+              .single();
+            if (lead?.id && form.photoUrls.length) {
+              await supabase.from("lead_photos").insert(
+                form.photoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: i })),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // swallow — main job_requests row is already created
+      console.warn("customer_leads create failed", e);
+    }
     nav({ to: "/request/$jobId", params: { jobId: data.id }, search: { tab: "providers" } });
   };
 
