@@ -127,6 +127,7 @@ function CustomerHome({
   const [requests, setRequests] = useState<CustomerReq[] | null>(null);
   const [bookings, setBookings] = useState<CustomerBooking[] | null>(null);
   const [needsReview, setNeedsReview] = useState<CustomerBooking[]>([]);
+  const [q, setQ] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -192,7 +193,48 @@ function CustomerHome({
     .slice(0, 3);
 
   const attentionCount = awaitingMyTime.length + newQuotes.length + needsReview.length;
-  const popular = CATEGORIES.slice(0, 8);
+
+  // Most-used categories (from this user's history), filtered by the search
+  // query. Falls back to the first N catalog entries for new users.
+  const usedSlugs = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of requests ?? []) counts.set(r.category_slug, (counts.get(r.category_slug) ?? 0) + 1);
+    for (const b of bookings ?? []) {
+      const s = b.job?.category_slug;
+      if (s) counts.set(s, (counts.get(s) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([s]) => s);
+  }, [requests, bookings]);
+
+  const filteredCats = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (needle) {
+      return CATEGORIES.filter(
+        (c) => c.en.toLowerCase().includes(needle) || c.my.includes(q.trim()) || c.slug.includes(needle),
+      ).slice(0, 12);
+    }
+    const usedSet = new Set(usedSlugs);
+    const used = usedSlugs
+      .map((s) => CATEGORIES.find((c) => c.slug === s))
+      .filter((c): c is typeof CATEGORIES[number] => !!c);
+    const rest = CATEGORIES.filter((c) => !usedSet.has(c.slug));
+    return [...used, ...rest].slice(0, 8);
+  }, [q, usedSlugs]);
+
+  // "Book again" — past completed bookings, deduped by category+provider.
+  const bookAgain = useMemo(() => {
+    const list = (bookings ?? []).filter((b) => b.status === "completed" && b.job?.category_slug);
+    const seen = new Set<string>();
+    const out: CustomerBooking[] = [];
+    for (const b of list) {
+      const key = b.job!.category_slug;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(b);
+      if (out.length >= 3) break;
+    }
+    return out;
+  }, [bookings]);
 
   return (
     <div className="space-y-5">
