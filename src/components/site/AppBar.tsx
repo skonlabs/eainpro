@@ -79,29 +79,33 @@ export function AppBar() {
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl"
+      className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-12 max-w-screen-md items-center gap-2 px-3 sm:h-14 sm:px-4">
+      <div className="mx-auto flex h-14 max-w-screen-md items-center gap-2 px-3 sm:px-4">
         {isRoot ? (
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground text-sm font-extrabold">
+            <span
+              className="grid h-9 w-9 place-items-center rounded-xl text-primary-foreground text-sm font-extrabold shadow-md shadow-primary/30"
+              style={{ background: "var(--gradient-hero)" }}
+            >
               E
             </span>
+            <span className="font-display text-base font-extrabold tracking-tight">Eain Pro</span>
           </Link>
         ) : (
           <button
             type="button"
             onClick={goBack}
             aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-full text-foreground/80 hover:bg-secondary"
+            className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 hover:bg-secondary"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
 
-        <h1 className="flex-1 truncate text-base font-bold tracking-tight sm:text-lg">
-          {title}
+        <h1 className="flex-1 truncate font-display text-base font-extrabold tracking-tight sm:text-lg">
+          {isRoot ? "" : title}
         </h1>
 
         <button
