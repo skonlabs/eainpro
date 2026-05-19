@@ -520,7 +520,7 @@ function NewRequestPage() {
                   active={form.subcategories.includes(s.slug)}
                   onClick={() => {
                     setForm((f) => ({ ...f, subcategories: [s.slug] }));
-                    setTimeout(() => goNext(), 180);
+                    advanceAfterSelection();
                   }}
                 >
                   {L(s.en, s.my)}
