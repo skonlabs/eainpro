@@ -5,6 +5,8 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +29,9 @@ import {
   AlertTriangle,
   CalendarClock,
   Heart,
+  Phone,
+  Navigation,
+  CalendarPlus,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
