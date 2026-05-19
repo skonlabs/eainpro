@@ -950,3 +950,45 @@ function Row({
     </div>
   );
 }
+
+function ReviewItem({
+  icon,
+  label,
+  value,
+  multiline,
+  onEdit,
+  editLabel,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  multiline?: boolean;
+  onEdit?: () => void;
+  editLabel?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-primary">{icon}</span>
+          {label}
+        </div>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="shrink-0 text-xs font-semibold text-primary hover:underline"
+          >
+            {editLabel ?? "Edit"}
+          </button>
+        )}
+      </div>
+      <div
+        className={`mt-1.5 text-sm font-medium text-foreground ${multiline ? "whitespace-pre-wrap break-words" : "break-words"}`}
+      >
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+}
