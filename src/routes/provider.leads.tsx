@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { listAvailableLeads, listMyUnlocks, unlockLead, updateUnlockStatus, UNLOCK_ERROR_MESSAGES, type LeadPreview } from "@/lib/leads";
+import { listAvailableLeads, listMyUnlocks, unlockLead, updateUnlockStatus, UNLOCK_ERROR_MESSAGES, isCustomerLeadRecursionError, type LeadPreview } from "@/lib/leads";
 import { fmt, getWallet } from "@/lib/wallet";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -31,29 +31,49 @@ function LeadsPage() {
   const [balance, setBalance] = useState(0);
   const [hasServices, setHasServices] = useState(true);
   const [hasAreas, setHasAreas] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [pickedLead, setPickedLead] = useState<LeadPreview | null>(null);
   const [unlocking, setUnlocking] = useState(false);
 
   const refresh = async () => {
     if (!user) return;
-    const w = await getWallet(user.id);
-    setBalance(w?.balance_credits ?? 0);
-    const [{ data: svc }, { data: ars }] = await Promise.all([
-      supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
-      supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
-    ]);
-    setHasServices((svc ?? []).length > 0);
-    setHasAreas((ars ?? []).length > 0);
-    const [a, u, wn, ls] = await Promise.all([
-      listAvailableLeads(user.id),
-      listMyUnlocks(user.id, ["unlocked","contacted","quoted","completed"]),
-      listMyUnlocks(user.id, ["won"]),
-      listMyUnlocks(user.id, ["lost","customer_no_response","invalid"]),
-    ]);
-    setAvailable(a);
-    setUnlocked(u);
-    setWon(wn);
-    setLost(ls);
+    setLoadError(null);
+
+    try {
+      const w = await getWallet(user.id);
+      setBalance(w?.balance_credits ?? 0);
+
+      const [{ data: svc }, { data: ars }] = await Promise.all([
+        supabase.from("provider_services").select("category_slug").eq("provider_id", user.id),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+      ]);
+
+      setHasServices((svc ?? []).length > 0);
+      setHasAreas((ars ?? []).length > 0);
+
+      const [a, u, wn, ls] = await Promise.all([
+        listAvailableLeads(user.id),
+        listMyUnlocks(user.id, ["unlocked","contacted","quoted","completed"]),
+        listMyUnlocks(user.id, ["won"]),
+        listMyUnlocks(user.id, ["lost","customer_no_response","invalid"]),
+      ]);
+
+      setAvailable(a);
+      setUnlocked(u);
+      setWon(wn);
+      setLost(ls);
+    } catch (error) {
+      console.error("Failed to load leads", error);
+      setAvailable([]);
+      setUnlocked([]);
+      setWon([]);
+      setLost([]);
+      setLoadError(
+        isCustomerLeadRecursionError(error)
+          ? "The leads database policies still need the latest recursion fix applied in Supabase."
+          : "Could not load leads right now.",
+      );
+    }
   };
 
   useEffect(() => {
@@ -94,6 +114,13 @@ function LeadsPage() {
             <Wallet className="h-3.5 w-3.5" /> {fmt(balance)} credits
           </Link>
         </div>
+
+        {loadError ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            <p className="font-medium">Couldn’t load all lead data.</p>
+            <p className="mt-1 text-xs text-destructive/80">{loadError}</p>
+          </div>
+        ) : null}
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-4">
