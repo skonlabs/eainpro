@@ -23,7 +23,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesCategoryRouteImport } from './routes/services.$category'
 import { Route as RequestNewRouteImport } from './routes/request.new'
 import { Route as RequestJobIdRouteImport } from './routes/request.$jobId'
+import { Route as ProviderWalletRouteImport } from './routes/provider.wallet'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
+import { Route as ProviderLeadsRouteImport } from './routes/provider.leads'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
@@ -99,9 +101,19 @@ const RequestJobIdRoute = RequestJobIdRouteImport.update({
   path: '/request/$jobId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProviderWalletRoute = ProviderWalletRouteImport.update({
+  id: '/provider/wallet',
+  path: '/provider/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
   id: '/provider/onboarding',
   path: '/provider/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProviderLeadsRoute = ProviderLeadsRouteImport.update({
+  id: '/provider/leads',
+  path: '/provider/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProviderDashboardRoute = ProviderDashboardRouteImport.update({
@@ -141,7 +153,9 @@ export interface FileRoutesByFullPath {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/wallet': typeof ProviderWalletRoute
   '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -162,7 +176,9 @@ export interface FileRoutesByTo {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/wallet': typeof ProviderWalletRoute
   '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -184,7 +200,9 @@ export interface FileRoutesById {
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
+  '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/wallet': typeof ProviderWalletRoute
   '/request/$jobId': typeof RequestJobIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -207,7 +225,9 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
+    | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/wallet'
     | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
@@ -228,7 +248,9 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
+    | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/wallet'
     | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
@@ -249,7 +271,9 @@ export interface FileRouteTypes {
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
+    | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/wallet'
     | '/request/$jobId'
     | '/request/new'
     | '/services/$category'
@@ -271,7 +295,9 @@ export interface RootRouteChildren {
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderCalendarRoute: typeof ProviderCalendarRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
+  ProviderLeadsRoute: typeof ProviderLeadsRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
+  ProviderWalletRoute: typeof ProviderWalletRoute
   RequestJobIdRoute: typeof RequestJobIdRoute
   RequestNewRoute: typeof RequestNewRoute
 }
@@ -376,11 +402,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RequestJobIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/provider/wallet': {
+      id: '/provider/wallet'
+      path: '/provider/wallet'
+      fullPath: '/provider/wallet'
+      preLoaderRoute: typeof ProviderWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/provider/onboarding': {
       id: '/provider/onboarding'
       path: '/provider/onboarding'
       fullPath: '/provider/onboarding'
       preLoaderRoute: typeof ProviderOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/provider/leads': {
+      id: '/provider/leads'
+      path: '/provider/leads'
+      fullPath: '/provider/leads'
+      preLoaderRoute: typeof ProviderLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/provider/dashboard': {
@@ -442,7 +482,9 @@ const rootRouteChildren: RootRouteChildren = {
   PProviderIdRoute: PProviderIdRoute,
   ProviderCalendarRoute: ProviderCalendarRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
+  ProviderLeadsRoute: ProviderLeadsRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
+  ProviderWalletRoute: ProviderWalletRoute,
   RequestJobIdRoute: RequestJobIdRoute,
   RequestNewRoute: RequestNewRoute,
 }
