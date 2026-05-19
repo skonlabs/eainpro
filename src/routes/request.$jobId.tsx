@@ -254,6 +254,23 @@ function RequestDetailPage() {
   const [peerId, setPeerId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Pay-per-lead: how many providers have unlocked the matching customer_leads row.
+  const [leadStats, setLeadStats] = useState<{ unlocks: number; max: number; status: string } | null>(null);
+  useEffect(() => {
+    if (!user || !job || job.customer_id !== user.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("customer_leads")
+        .select("current_unlock_count, max_provider_unlocks, status")
+        .eq("customer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      const match = (data ?? []).find((d) => true) ?? null;
+      if (match)
+        setLeadStats({ unlocks: match.current_unlock_count, max: match.max_provider_unlocks, status: match.status });
+    })();
+  }, [user, job]);
+
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   // Role detection — same screen for customer & provider, different controls.
@@ -814,6 +831,21 @@ function RequestDetailPage() {
         {/* DETAILS TAB */}
         {tab === "details" && (
           <div className="mt-5 space-y-4">
+            {isCustomer && leadStats && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="text-sm font-semibold">
+                  {leadStats.unlocks} of {leadStats.max} {L("providers have seen your request", "ဝန်ဆောင်မှုပေးသူများ ကြည့်ပြီးပါပြီ")}
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-2 rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((leadStats.unlocks / leadStats.max) * 100))}%` }} />
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {leadStats.status === "fully_booked"
+                    ? L("Your request has reached the maximum number of providers.", "ဝန်ဆောင်မှုပေးသူ အများဆုံးအရေအတွက် ပြည့်သွားပါပြီ။")
+                    : L("They may contact you directly. You can also browse and invite providers below.", "သူတို့ တိုက်ရိုက် ဆက်သွယ်နိုင်ပါသည်။")}
+                </div>
+              </div>
+            )}
             {booking && (booking.provider_id === user?.id || booking.customer_id === user?.id) && (
               <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
