@@ -1884,6 +1884,22 @@ function BookingPanel({
         />
       )}
 
+      {/* Day-of live tracking — customer */}
+      {inFlight && bothConfirmed && role === "customer" && (
+        <ProgressTimeline status={booking.status} lang={lang} providerPhone={booking.provider?.business_name ? null : null} />
+      )}
+
+      {/* Day-of stepper — provider */}
+      {inFlight && bothConfirmed && role === "provider" && (
+        <DayOfStepper
+          status={booking.status}
+          lang={lang}
+          customerPhone={booking.customer_phone}
+          jobAddress={jobAddress}
+          onAdvance={onProviderAdvance}
+        />
+      )}
+
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
