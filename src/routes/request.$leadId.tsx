@@ -51,6 +51,7 @@ type Quote = {
 type Booking = {
   id: string;
   lead_id: string;
+  quote_id: string | null;
   provider_id: string;
   customer_id: string;
   amount: number | null;
