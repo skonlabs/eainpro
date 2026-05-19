@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Clock, MapPin, Zap } from "lucide-react";
+import { Clock, MapPin, Zap, Inbox, Hourglass, CalendarCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/provider/dashboard")({
@@ -146,6 +146,31 @@ function DashboardPage() {
   const activeBookings = data?.activeBookings ?? [];
   const err = data?.error ?? null;
 
+  // Split jobs into "new leads" (no quote yet) vs "awaiting" (quoted, waiting on customer)
+  const { newLeads, awaiting } = useMemo(() => {
+    const nl: Job[] = [];
+    const aw: Job[] = [];
+    (jobs ?? []).forEach((j) => (myQuotes[j.id] ? aw.push(j) : nl.push(j)));
+    return { newLeads: nl, awaiting: aw };
+  }, [jobs, myQuotes]);
+
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(t);
+    tomorrow.setDate(t.getDate() + 1);
+    return activeBookings.filter((b) => {
+      if (!b.scheduled_at) return false;
+      const d = new Date(b.scheduled_at);
+      return d >= t && d < tomorrow;
+    });
+  }, [activeBookings]);
+
+  const [tab, setTab] = useState<"leads" | "awaiting" | "today">("leads");
+  useEffect(() => {
+    if (today.length > 0) setTab("today");
+  }, [today.length]);
+
   const catName = (s: string) => {
     const c = CATEGORIES.find((x) => x.slug === s);
     return c ? (lang === "en" ? c.en : c.my) : s;
@@ -161,7 +186,7 @@ function DashboardPage() {
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-14">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {lang === "en" ? "Incoming jobs" : "ဝင်လာသော အလုပ်များ"}
+            {lang === "en" ? "Your work" : "သင်၏ အလုပ်"}
           </h1>
           <Link to="/provider/onboarding">
             <Button variant="ghost" size="sm">
@@ -180,58 +205,30 @@ function DashboardPage() {
 
         {err && <p className="mt-4 text-sm text-destructive">{err}</p>}
 
-        {activeBookings.length > 0 && (
-          <section className="mt-6">
-            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              {lang === "en" ? "Active bookings" : "လုပ်ဆောင်နေသော ဘွတ်ကင်"}
-            </h2>
-            <ul className="space-y-2">
-              {activeBookings.map((b) => (
-                <li key={b.id}>
-                  <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
-                    search={{ tab: "booking" } as never}
-                    className="block rounded-xl border border-primary/30 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 text-sm font-semibold">
-                        {b.job ? catName(b.job.category_slug) : (lang === "en" ? "Booking" : "ဘွတ်ကင်")}
-                      </div>
-                      <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                        {b.status.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    {b.job?.description && (
-                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{b.job.description}</p>
-                    )}
-                    <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {b.scheduled_at
-                          ? new Date(b.scheduled_at).toLocaleString(lang === "en" ? "en" : "my-MM")
-                          : lang === "en" ? "Time TBD" : "အချိန် ညှိရန်"}
-                      </span>
-                      {b.amount != null && (
-                        <span className="ml-auto font-semibold text-foreground">
-                          {Number(b.amount).toLocaleString()} MMK
-                        </span>
-                      )}
-                    </div>
-                    {b.job && (
-                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">
-                          {[b.job.address, cityName(b.job.city_slug)].filter(Boolean).join(", ")}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* Stat strip */}
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          <StatCard
+            icon={<Inbox className="h-4 w-4" />}
+            label={lang === "en" ? "New leads" : "အလုပ်အသစ်"}
+            value={newLeads.length}
+            active={tab === "leads"}
+            onClick={() => setTab("leads")}
+          />
+          <StatCard
+            icon={<Hourglass className="h-4 w-4" />}
+            label={lang === "en" ? "Awaiting" : "စောင့်နေ"}
+            value={awaiting.length}
+            active={tab === "awaiting"}
+            onClick={() => setTab("awaiting")}
+          />
+          <StatCard
+            icon={<CalendarCheck className="h-4 w-4" />}
+            label={lang === "en" ? "Today" : "ယနေ့"}
+            value={today.length}
+            active={tab === "today"}
+            onClick={() => setTab("today")}
+          />
+        </div>
 
         {!jobs && !err && (
           <ul className="mt-6 space-y-3">
@@ -249,15 +246,13 @@ function DashboardPage() {
             ))}
           </ul>
         )}
-        {jobs && jobs.length === 0 && (
-          <p className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            {lang === "en"
-              ? "No matching jobs yet. Make sure your services and service areas are set."
-              : "ကိုက်ညီသော အလုပ်မရှိသေးပါ။ ဝန်ဆောင်မှု နှင့် ဧရိယာ မှန်ကန်ကြောင်း သေချာပါ။"}
-          </p>
-        )}
-        <ul className="mt-6 space-y-3">
-          {(jobs ?? []).map((j) => (
+
+        {jobs && tab === "leads" && (
+          newLeads.length === 0 ? (
+            <EmptyHint lang={lang} kind="leads" />
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {newLeads.map((j) => (
             <li key={j.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -287,22 +282,165 @@ function DashboardPage() {
                 </div>
                 <Link to="/request/$jobId" params={{ jobId: j.id }}>
                   <Button size="sm" variant="outline">
-                    {myQuotes[j.id]
-                      ? lang === "en"
-                        ? `Quoted ${myQuotes[j.id].amount.toLocaleString()}`
-                        : `စျေးပေးပြီး ${myQuotes[j.id].amount.toLocaleString()}`
-                      : lang === "en"
-                        ? "View & quote"
-                        : "ကြည့်ပြီး စျေးပေး"}
+                    {lang === "en" ? "View & quote" : "ကြည့်ပြီး စျေးပေး"}
                   </Button>
                 </Link>
               </div>
             </li>
-          ))}
-        </ul>
+              ))}
+            </ul>
+          )
+        )}
+
+        {jobs && tab === "awaiting" && (
+          awaiting.length === 0 ? (
+            <EmptyHint lang={lang} kind="awaiting" />
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {awaiting.map((j) => (
+                <li key={j.id} className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold">{catName(j.category_slug)}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {lang === "en" ? "You quoted" : "စျေးပေးပြီး"}{" "}
+                        <span className="font-semibold text-foreground">
+                          {myQuotes[j.id]?.amount.toLocaleString()} MMK
+                        </span>
+                      </div>
+                      <div className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {cityName(j.city_slug)}
+                      </div>
+                    </div>
+                    <Link to="/request/$jobId" params={{ jobId: j.id }}>
+                      <Button size="sm" variant="outline">
+                        {lang === "en" ? "View" : "ကြည့်"}
+                      </Button>
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
+
+        {tab === "today" && (
+          today.length === 0 ? (
+            <div className="mt-6">
+              <EmptyHint lang={lang} kind="today" />
+              {activeBookings.length > 0 && (
+                <div className="mt-3 text-center text-xs text-muted-foreground">
+                  {lang === "en"
+                    ? `${activeBookings.length} upcoming booking(s) scheduled later.`
+                    : `နောက်ပိုင်း ဘွတ်ကင် ${activeBookings.length} ခု ရှိ။`}
+                </div>
+              )}
+            </div>
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {today.map((b) => (
+                <li key={b.id}>
+                  <Link
+                    to="/request/$jobId"
+                    params={{ jobId: b.job_id }}
+                    search={{ tab: "booking" } as never}
+                    className="block rounded-xl border border-primary/30 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 text-sm font-semibold">
+                        {b.job ? catName(b.job.category_slug) : lang === "en" ? "Booking" : "ဘွတ်ကင်"}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                        {b.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        {b.scheduled_at
+                          ? new Date(b.scheduled_at).toLocaleTimeString(lang === "en" ? "en" : "my-MM", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })
+                          : lang === "en"
+                            ? "Time TBD"
+                            : "အချိန် ညှိရန်"}
+                      </span>
+                      {b.amount != null && (
+                        <span className="ml-auto font-semibold text-foreground">
+                          {Number(b.amount).toLocaleString()} MMK
+                        </span>
+                      )}
+                    </div>
+                    {b.job && (
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">
+                          {[b.job.address, cityName(b.job.city_slug)].filter(Boolean).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
       </main>
 
     </div>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-start rounded-2xl border p-3 text-left transition ${
+        active
+          ? "border-primary bg-primary/10 shadow-sm"
+          : "border-border bg-card hover:border-primary/40"
+      }`}
+    >
+      <span className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${active ? "text-primary" : "text-muted-foreground"}`}>
+        {icon}
+        {label}
+      </span>
+      <span className="mt-1 text-2xl font-extrabold tabular-nums">{value}</span>
+    </button>
+  );
+}
+
+function EmptyHint({ lang, kind }: { lang: "en" | "my"; kind: "leads" | "awaiting" | "today" }) {
+  const msg = {
+    leads:
+      lang === "en"
+        ? "No new leads matching your services. Check back soon."
+        : "သင်နှင့် ကိုက်ညီသော အလုပ်အသစ် မရှိသေး။",
+    awaiting:
+      lang === "en"
+        ? "No quotes waiting on a customer reply."
+        : "ဖောက်သည် ပြန်ဖြေချက် စောင့်နေသော စျေး မရှိ။",
+    today:
+      lang === "en" ? "No jobs scheduled for today." : "ယနေ့အတွက် ဘွတ်ကင် မရှိ။",
+  }[kind];
+  return (
+    <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+      {msg}
+    </p>
   );
 }
 
