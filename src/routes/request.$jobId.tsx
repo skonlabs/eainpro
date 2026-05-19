@@ -254,6 +254,23 @@ function RequestDetailPage() {
   const [peerId, setPeerId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Pay-per-lead: how many providers have unlocked the matching customer_leads row.
+  const [leadStats, setLeadStats] = useState<{ unlocks: number; max: number; status: string } | null>(null);
+  useEffect(() => {
+    if (!user || !job || job.customer_id !== user.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("customer_leads")
+        .select("current_unlock_count, max_provider_unlocks, status")
+        .eq("customer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      const match = (data ?? []).find((d) => true) ?? null;
+      if (match)
+        setLeadStats({ unlocks: match.current_unlock_count, max: match.max_provider_unlocks, status: match.status });
+    })();
+  }, [user, job]);
+
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   // Role detection — same screen for customer & provider, different controls.
