@@ -78,17 +78,18 @@ export function BottomNav() {
                 to={it.to as "/"}
                 search={it.search as Record<string, never>}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
-                }`}
+                className="relative flex h-full flex-col items-center justify-center text-[10px] font-semibold tracking-tight"
               >
                 <span
-                  className={`pointer-events-none absolute inset-x-6 top-0 h-0.5 rounded-full bg-primary transition-opacity ${
-                    active ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} />
-                <span>{lang === "en" ? it.en : it.my}</span>
+                  className={`flex h-12 w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                      : "text-muted-foreground"
+                  } ${it.primary && !active ? "ring-1 ring-primary/30 text-primary" : ""}`}
+                >
+                  <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} />
+                  <span className="leading-none">{lang === "en" ? it.en : it.my}</span>
+                </span>
               </Link>
             </li>
           );
