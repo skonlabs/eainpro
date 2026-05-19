@@ -374,10 +374,17 @@ function NewRequestPage() {
                   key={c.slug}
                   active={form.category === c.slug}
                   onClick={() => {
-                    console.log("[req] cat click", c.slug, "before", form.category);
-                    set("category", c.slug);
-                    set("subcategory", "");
-                    setTimeout(() => goNext(), 180);
+                    // Picking a category removes the "category" step from the
+                    // steps array (because it's only added when form.category
+                    // is empty). The next step naturally takes index 0, so we
+                    // must NOT increment stepIdx here — otherwise we'd skip
+                    // the new first step (subcategory or first question).
+                    setForm((f) => ({
+                      ...f,
+                      category: c.slug,
+                      subcategory: "",
+                      answers: {},
+                    }));
                   }}
                 >
                   {L(c.en, c.my)}
