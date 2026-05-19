@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { CITIES } from "@/lib/catalog";
-import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut } from "lucide-react";
+import { CITIES, CATEGORIES } from "@/lib/catalog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut, Briefcase } from "lucide-react";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
@@ -45,7 +47,8 @@ type FavRow = {
 
 function AccountPage() {
   const { lang, setLang } = useI18n();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, roles } = useAuth();
+  const isProvider = roles.includes("provider");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -64,6 +67,19 @@ function AccountPage() {
     phone: "",
     is_default: false,
   });
+
+  // Provider profile state
+  const [biz, setBiz] = useState({
+    business_name: "",
+    business_type: "individual" as "individual" | "business",
+    bio: "",
+    years_experience: 0,
+    supports_urgent: false,
+  });
+  const [bizCats, setBizCats] = useState<Record<string, string>>({});
+  const [bizCities, setBizCities] = useState<Record<string, boolean>>({});
+  const [savingBiz, setSavingBiz] = useState(false);
+  const [bizMsg, setBizMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -96,6 +112,82 @@ function AccountPage() {
       setFavs((f as unknown as FavRow[]) ?? []);
     })();
   }, [authLoading, user, nav, lang]);
+
+  useEffect(() => {
+    if (!user || !isProvider) return;
+    (async () => {
+      const [{ data: p }, { data: svcs }, { data: areas }] = await Promise.all([
+        supabase
+          .from("providers")
+          .select("business_name, business_type, bio, years_experience, supports_urgent")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase.from("provider_services").select("category_slug, base_price").eq("provider_id", user.id),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+      ]);
+      if (p) {
+        setBiz({
+          business_name: p.business_name ?? "",
+          business_type: (p.business_type as "individual" | "business") ?? "individual",
+          bio: p.bio ?? "",
+          years_experience: p.years_experience ?? 0,
+          supports_urgent: !!p.supports_urgent,
+        });
+      }
+      const m: Record<string, string> = {};
+      (svcs ?? []).forEach((s) => (m[s.category_slug] = s.base_price?.toString() ?? ""));
+      setBizCats(m);
+      const c: Record<string, boolean> = {};
+      (areas ?? []).forEach((a) => (c[a.city_slug] = true));
+      setBizCities(c);
+    })();
+  }, [user, isProvider]);
+
+  const toggleBizCat = (slug: string) =>
+    setBizCats((c) => {
+      const n = { ...c };
+      if (slug in n) delete n[slug];
+      else n[slug] = "";
+      return n;
+    });
+
+  const saveBusiness = async () => {
+    if (!user) return;
+    setSavingBiz(true);
+    setBizMsg(null);
+    const { error: upErr } = await supabase.from("providers").upsert({
+      id: user.id,
+      business_name: biz.business_name.trim(),
+      business_type: biz.business_type,
+      bio: biz.bio.trim() || null,
+      years_experience: biz.years_experience || 0,
+      supports_urgent: biz.supports_urgent,
+    });
+    if (upErr) {
+      setSavingBiz(false);
+      setBizMsg(upErr.message);
+      return;
+    }
+    await supabase.from("provider_services").delete().eq("provider_id", user.id);
+    if (Object.keys(bizCats).length) {
+      await supabase.from("provider_services").insert(
+        Object.entries(bizCats).map(([slug, p]) => ({
+          provider_id: user.id,
+          category_slug: slug,
+          base_price: p ? Number(p) : null,
+        })),
+      );
+    }
+    const cityList = Object.keys(bizCities).filter((k) => bizCities[k]);
+    await supabase.from("provider_service_areas").delete().eq("provider_id", user.id);
+    if (cityList.length) {
+      await supabase.from("provider_service_areas").insert(
+        cityList.map((c) => ({ provider_id: user.id, city_slug: c })),
+      );
+    }
+    setSavingBiz(false);
+    setBizMsg(L("Saved!", "သိမ်းပြီး!"));
+  };
 
   const saveProfile = async () => {
     if (!user || !profile) return;
@@ -197,8 +289,11 @@ function AccountPage() {
         </div>
 
         <Tabs defaultValue="profile">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isProvider ? "grid-cols-4" : "grid-cols-3"}`}>
             <TabsTrigger value="profile">{L("Profile", "ပရိုဖိုင်")}</TabsTrigger>
+            {isProvider && (
+              <TabsTrigger value="business">{L("Business", "လုပ်ငန်း")}</TabsTrigger>
+            )}
             <TabsTrigger value="addresses">{L("Addresses", "လိပ်စာ")}</TabsTrigger>
             <TabsTrigger value="favorites">{L("Favorites", "နှစ်သက်")}</TabsTrigger>
           </TabsList>
@@ -253,6 +348,144 @@ function AccountPage() {
               {profileMsg && <span className="text-xs text-muted-foreground">{profileMsg}</span>}
             </div>
           </TabsContent>
+
+          {isProvider && (
+          <TabsContent value="business" className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{L("Business profile", "လုပ်ငန်း ပရိုဖိုင်")}</span>
+              </div>
+              <div className="space-y-2">
+                <Label>{L("Business or your name", "လုပ်ငန်း သို့ သင့်အမည်")}</Label>
+                <Input
+                  value={biz.business_name}
+                  onChange={(e) => setBiz((b) => ({ ...b, business_name: e.target.value }))}
+                />
+              </div>
+              <div className="flex gap-2 rounded-lg bg-secondary p-1">
+                {(["individual", "business"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setBiz((b) => ({ ...b, business_type: t }))}
+                    className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
+                      biz.business_type === t ? "bg-card shadow-sm" : "text-muted-foreground"
+                    }`}
+                  >
+                    {t === "individual"
+                      ? L("Individual", "တစ်ဦးတည်း")
+                      : L("Business", "လုပ်ငန်း")}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label>{L("Short bio", "မိတ်ဆက်")}</Label>
+                <Textarea
+                  rows={3}
+                  value={biz.bio}
+                  onChange={(e) => setBiz((b) => ({ ...b, bio: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>{L("Years of experience", "အတွေ့အကြုံ နှစ်")}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={biz.years_experience}
+                    onChange={(e) =>
+                      setBiz((b) => ({ ...b, years_experience: Number(e.target.value) }))
+                    }
+                  />
+                </div>
+                <label className="mt-6 flex cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={biz.supports_urgent}
+                    onCheckedChange={(v) =>
+                      setBiz((b) => ({ ...b, supports_urgent: !!v }))
+                    }
+                  />
+                  {L("Accept urgent same-day jobs", "အရေးပေါ် တနေ့တည်း လက်ခံ")}
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className="text-sm font-semibold">
+                {L("Services offered & base price (MMK)", "ဝန်ဆောင်မှု နှင့် အခြေခံစျေး (ကျပ်)")}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {CATEGORIES.map((c) => {
+                  const active = c.slug in bizCats;
+                  return (
+                    <div
+                      key={c.slug}
+                      className={`rounded-xl border p-3 transition ${
+                        active ? "border-primary bg-primary/5" : "border-border"
+                      }`}
+                    >
+                      <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                        <Checkbox
+                          checked={active}
+                          onCheckedChange={() => toggleBizCat(c.slug)}
+                        />
+                        {lang === "en" ? c.en : c.my}
+                      </label>
+                      {active && (
+                        <Input
+                          className="mt-2 h-8 text-sm"
+                          placeholder={L("Base price (optional)", "အခြေခံစျေး (ရွေး)")}
+                          value={bizCats[c.slug]}
+                          onChange={(e) =>
+                            setBizCats((s) => ({ ...s, [c.slug]: e.target.value }))
+                          }
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className="text-sm font-semibold">
+                {L("Service areas (cities)", "ဝန်ဆောင်ပေးသော နယ်မြေ")}
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {CITIES.map((c) => (
+                  <label
+                    key={c.slug}
+                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-sm transition ${
+                      bizCities[c.slug] ? "border-primary bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <Checkbox
+                      checked={!!bizCities[c.slug]}
+                      onCheckedChange={(v) =>
+                        setBizCities((s) => ({ ...s, [c.slug]: !!v }))
+                      }
+                    />
+                    {lang === "en" ? c.en : c.my}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {L(
+                  "Township-level details belong on each saved address (Addresses tab).",
+                  "မြို့နယ်အလိုက် အသေးစိတ်ကို လိပ်စာ tab တွင် ထည့်ပါ။",
+                )}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Button onClick={saveBusiness} disabled={savingBiz}>
+                {savingBiz ? L("Saving…", "သိမ်းနေ…") : L("Save business", "သိမ်းရန်")}
+              </Button>
+              {bizMsg && <span className="text-xs text-muted-foreground">{bizMsg}</span>}
+            </div>
+          </TabsContent>
+          )}
 
           <TabsContent value="addresses" className="mt-4 space-y-3">
             {addrs.length === 0 && !showAddr && (
