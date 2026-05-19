@@ -1,60 +1,93 @@
 ## Goal
 
-Stop treating Eain Pro like a marketing website. Every screen becomes an **app screen** inside a fixed app shell: compact top app bar + bottom tab nav, no hero/testimonial/footer chrome.
+Rebuild Eain Pro as a polished, app-feeling marketplace (not a website). One coherent visual system, one predictable booking lifecycle, every screen rebuilt against it. Brand: **Ocean Deep** palette (`#0c2340 / #1a4a6e / #2d8a9e / #5cbdb9`) with **Sora** display + **Manrope** body.
 
-## What changes
+## 1. Design system (foundation — done first, everything else consumes it)
 
-### 1. App shell (`src/routes/__root.tsx` + `components/site/*`)
-- Remove `<Footer />` entirely from the root layout.
-- Replace `<Header />` (marketing nav with logo + links + language switcher) with a slim **AppBar**: back button (when not on a tab root), screen title, right-side actions (notifications, profile avatar). No "Sign in / Sign up" buttons in the bar — auth is handled by routes.
-- Keep `<BottomNav />`, rework tabs to the app's actual surfaces and switch them based on role:
-  - **Customer**: Home · Requests · Inbox · Account
-  - **Provider**: Jobs · Schedule · Earnings · Account
-  - **Admin**: Overview · Users · Jobs · Settings
-- Add safe-area padding (`pb-[env(safe-area-inset-bottom)]`) and constrain content to `max-w-screen-md mx-auto` so it reads as an app on desktop too.
+`src/styles.css`
+- Replace tokens with Ocean Deep in oklch: `--background`, `--foreground`, `--card`, `--primary` (teal `#2d8a9e`), `--primary-foreground`, `--secondary` (deep navy surface), `--accent` (mint `#5cbdb9`), `--muted`, `--border`, `--ring`. Dark mode = navy surfaces, light mode = off-white with navy ink.
+- Add semantic status tokens: `--status-pending`, `--status-active`, `--status-confirmed`, `--status-done`, `--status-cancelled` (+ `-foreground` pairs) so banners/chips share one source of truth.
+- Add elevation/shadow tokens (`--shadow-card`, `--shadow-sheet`), radius scale (`--radius` 14px), gradient `--gradient-hero` (navy→teal).
+- Load Sora (600/700) + Manrope (400/500/600/700) in `__root.tsx` head links; set `font-family` via `--font-display` / `--font-body` and apply in `body`.
 
-### 2. Home screen (`src/routes/index.tsx`)
-Throw out the landing page (hero search, popular categories grid, "why us", reviews). Replace with a customer **Home dashboard**:
-- Greeting row ("Hi, {name}") + quick action: **Book a service** (primary button → `/request/new`).
-- "Active requests" card list (pulled from existing requests data) with status chips and tap → `/request/:jobId`.
-- "Browse services" horizontal scroller of category chips → `/services/$category`.
-- Empty state when no requests: single illustration + CTA.
+Shared primitives (`src/components/ui/*` already shadcn — extend, don't fork):
+- `StatusBadge` (booking/job statuses → semantic tokens).
+- `EmptyState` (icon + title + subtitle + CTA).
+- `Section` (consistent `rounded-2xl bg-card border` card with optional title row).
+- `ActionBar` (sticky bottom action bar used by request/booking flows; replaces ad-hoc divs).
 
-Unauthenticated visitors to `/` are redirected to `/signin` (no public marketing).
+## 2. App shell
 
-### 3. Role routing
-- Add a tiny `useRole()` derived from existing `AuthProvider` (`customer | provider | admin`).
-- `BottomNav` and the home redirect branch on role:
-  - provider → `/provider/dashboard`
-  - admin → `/admin`
-  - customer → stays on `/` dashboard
-- Guard `/provider/*` and `/admin` so other roles get bounced to their own home (in-component check, since routes aren't under `_authenticated/` folder yet — keep scope small).
+- `AppBar`: keep, restyle. Add subtle bottom hairline, larger title, contextual right-side actions slot (so screens can inject e.g. "Filter", "+ New").
+- `BottomNav`: keep role-based tabs; restyle pill nav with active indicator bar, remove the floating "primary" bubble (replaced by per-screen primary CTAs — less visual noise, less mis-tap).
+- Delete unused `Header.tsx` & `Footer.tsx` mounts (already unmounted; just remove files).
+- Root layout: tighten max width to `max-w-screen-sm` on phone, `max-w-screen-md` desktop; consistent `px-4 pt-4 pb-28` rhythm.
 
-### 4. Existing pages — reskin only, no logic changes
-For each of these, strip outer marketing wrappers (hero banners, large headings centred with subtitle, decorative gradients) and present them as app screens with a single `<h1>` title under the app bar and content in cards/list rows:
-- `services.tsx`, `services.$category.tsx`
-- `providers.tsx`, `p.$providerId.tsx`
-- `request.new.tsx`, `request.$jobId.tsx`, `my-requests.tsx`
-- `jobs.$jobId.tsx`
-- `account.tsx`, `signin.tsx`, `signup.tsx`, `reset-password.tsx`
-- `provider.dashboard.tsx`, `provider.onboarding.tsx`, `admin.tsx`, `guided.tsx`
+## 3. Booking lifecycle (single source of truth)
 
-All business logic, forms, and data fetching stay as-is.
+A new `src/lib/booking-status.ts` derives a single `BookingState` from a booking row:
+`requested → quoted → scheduled_pending → scheduled_confirmed → in_progress → completed → cancelled`.
+Every screen renders status via `StatusBadge` + a single "next action" hint, so customer and provider always see the same story.
 
-### 5. Visual tokens
-Keep current palette/fonts. Tighten: smaller section spacing (`py-4` not `py-16`), card-based content (`rounded-2xl bg-card border`), no full-width hero gradients, no decorative SVG blobs.
+Migrations needed (user runs in Supabase SQL editor):
+- Already-pending: `20260528000000_booking_schedule_confirmation.sql` and `20260528010000_fix_jobs_policy_recursion.sql`.
+- (No new schema in this plan — we work with what exists.)
 
-## Out of scope (explicitly not doing)
-- Deleting routes or changing data models.
-- Touching the request wizard's step logic (separate fix already shipped).
-- New features (chat, payments, push). Reskin only.
-- Custom domain / publish settings.
+## 4. Screens — rebuilt
+
+Customer
+- **/ (Home)**: greeting, big "Book a service" CTA, "Active jobs" list (real cards with service name, provider, status, next action, tap → details), horizontal category scroller, recent providers row. App-style — no hero, no marketing.
+- **/services, /services/$category**: dense card grid with icon + name + starting price; tap → request flow prefilled.
+- **/providers, /p/$providerId**: list with rating/jobs/city chips; profile = header card + services + reviews + "Request quote" sticky CTA.
+- **/request/new**: keep wizard logic, restyle as full-screen steps with progress bar + sticky `ActionBar` (Back / Continue). One question per screen on mobile.
+- **/my-requests**: segmented tabs (Active / Past), real job cards, status badge, next-action line, tap → request page.
+- **/request/$jobId**: redesign as 3 tabs: **Overview** (service, address, schedule, price, provider card) · **Quotes** (only when relevant) · **Messages**. Single sticky `ActionBar` whose buttons change with status (Accept quote / Confirm time / Reschedule / Mark complete / Cancel). Removes the current banner soup.
+
+Provider
+- **/provider/dashboard**: 3 segments — **New leads** · **Active jobs** · **Scheduled**. Each card: service, customer first name, area, money, status, next action. Tap = open same `/request/$jobId` shared screen (one detail screen, role-aware actions).
+- **/provider/calendar**: month + day view of scheduled jobs; tap empty slot → set unavailability; tap job → details.
+- **/provider/onboarding**: stepper restyled like request wizard.
+- **/messages**: thread list + thread view, app-style bubbles, attach photo.
+
+Account / auth
+- **/account**: profile card, role-switch (if multi-role), language, sign out. App-style list rows with chevrons.
+- **/signin, /signup, /reset-password**: centered card, brand mark, single primary CTA, secondary link. No marketing chrome.
+
+Admin
+- **/admin**: overview tiles (users, jobs, GMV), recent users table, recent jobs table. Functional, not pretty-marketing.
+
+## 5. Feature gaps closed (end-to-end completeness)
+
+- **Unified detail screen**: `/request/$jobId` is the single job surface for both roles. `/jobs/$jobId` redirects to it (already partially the case — finalize).
+- **Schedule / reschedule loop**: provider proposes time → customer confirms → status flips to `scheduled_confirmed`. Either side can propose a new time before `in_progress`. Driven by existing `time_proposed_by` / `time_confirmed_by_*` columns once the pending migration is applied.
+- **Cancellation**: explicit cancel with reason on both sides; reflected in status badge + my-requests/dashboard lists.
+- **Notifications**: keep `NotificationBell`; ensure it fires on quote received, time proposed, time confirmed, job completed.
+- **Empty/loading/error states**: every list screen gets a real `EmptyState` and skeleton, not a blank pane.
+
+## 6. Out of scope (explicit)
+
+- No new tables, no new auth providers, no payments, no chat realtime upgrades, no i18n string additions beyond what already exists.
+- No marketing pages (hero/testimonials/footer) — this is an app.
+- Wizard step logic untouched; only its shell restyled.
 
 ## Technical notes
-- `Footer` component file stays on disk but is no longer mounted; safe to delete later.
-- `Header` is replaced with a new `AppBar` component (`src/components/site/AppBar.tsx`). `Header.tsx` stays unreferenced.
-- Role detection reads `user.user_metadata.role` if present, falls back to `customer`. No DB schema change.
-- All edits are presentation-layer (JSX + Tailwind). No server functions, no migrations.
+
+- All edits are tokens + JSX + Tailwind. Server functions, RLS, route tree unchanged.
+- `StatusBadge` and `booking-status.ts` are the only new shared modules; everything else extends existing files.
+- Pending migrations (`20260528000000_*.sql`, `20260528010000_*.sql`) must be applied manually in Supabase before the booking flow works end-to-end — flagged in chat after code lands.
+- Sora/Manrope loaded via Google Fonts `<link>` in `__root.tsx`.
 
 ## Verification
-After edits: load `/`, `/services`, `/request/new`, `/account`, `/provider/dashboard`, `/admin` in the preview. Each should render as a single app screen with the app bar on top and bottom tab nav, no marketing footer, no full-width hero.
+
+Walk these in preview after each phase: `/`, `/services`, `/request/new`, `/my-requests`, `/request/<id>`, `/provider/dashboard`, `/provider/calendar`, `/messages`, `/account`, `/signin`, `/admin`. Every screen should: render under the slim AppBar, use Ocean Deep tokens, show a single primary action, and tell the user what happens next.
+
+## Suggested execution order
+
+1. Tokens + fonts + shared primitives (`StatusBadge`, `EmptyState`, `Section`, `ActionBar`, `booking-status.ts`).
+2. Shell (AppBar/BottomNav restyle, layout rhythm).
+3. Customer home + my-requests + request detail (the hot path).
+4. Provider dashboard + calendar + shared detail actions.
+5. Services / providers / profile / auth / account / admin.
+6. Empty/loading/error pass across all list screens.
+
+Once approved I'll start at step 1 and check in after step 3 before continuing — that's the natural place to course-correct before I touch the provider side.
