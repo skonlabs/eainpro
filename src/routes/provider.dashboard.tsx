@@ -6,8 +6,9 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Clock, MapPin, Zap, Inbox, Hourglass, CalendarCheck } from "lucide-react";
+import { Clock, MapPin, Zap, Inbox, Hourglass, CalendarCheck, Phone, Truck, PlayCircle, Flag, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/provider/dashboard")({
   component: DashboardPage,
@@ -31,6 +32,7 @@ type ActiveBooking = {
   status: string;
   scheduled_at: string | null;
   amount: number | null;
+  customer_phone?: string | null;
   job: {
     category_slug: string;
     city_slug: string;
@@ -90,7 +92,7 @@ export const providerDashboardQuery = (userId: string) =>
         supabase.from("quotes").select("job_id, amount, status").eq("provider_id", userId),
         supabase
           .from("bookings")
-          .select("id, job_id, status, scheduled_at, amount, job:job_requests(category_slug, city_slug, address, description)")
+          .select("id, job_id, status, scheduled_at, amount, customer_phone, job:job_requests(category_slug, city_slug, address, description)")
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
           .order("scheduled_at", { ascending: true }),
