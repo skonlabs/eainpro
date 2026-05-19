@@ -349,8 +349,6 @@ function AccountPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="addresses" className="mt-4 space-y-3">
-          </TabsContent>
           {isProvider && (
           <TabsContent value="business" className="mt-4 space-y-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
@@ -489,7 +487,7 @@ function AccountPage() {
           </TabsContent>
           )}
 
-          <TabsContent value="addresses-real" className="mt-4 space-y-3 hidden">
+          <TabsContent value="addresses" className="mt-4 space-y-3">
             {addrs.length === 0 && !showAddr && (
               <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
                 <MapPin className="mx-auto h-9 w-9 text-muted-foreground" />
