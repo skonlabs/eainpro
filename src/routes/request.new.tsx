@@ -130,6 +130,7 @@ function NewRequestPage() {
   );
   const subs = CATEGORY_SUBCATEGORIES[form.category] ?? [];
   const questions = CATEGORY_QUESTIONS[form.category] ?? [];
+  const hasPrefilledSubcategory = !!sub && subs.some((item) => item.slug === sub);
 
   // Build the dynamic step list based on current category
   const steps: Step[] = useMemo(() => {
@@ -154,6 +155,10 @@ function NewRequestPage() {
   const [stepIdx, setStepIdx] = useState(0);
   const step = steps[Math.min(stepIdx, steps.length - 1)];
   const progress = ((stepIdx + 1) / steps.length) * 100;
+
+  useEffect(() => {
+    setStepIdx(hasPrefilledSubcategory ? Math.min(1, steps.length - 1) : 0);
+  }, [hasPrefilledSubcategory, steps.length]);
 
   const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
   const goBack = () => {
