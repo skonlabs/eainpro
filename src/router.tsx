@@ -10,7 +10,7 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 10_000,
+    defaultPreloadStaleTime: 0,
   });
 
   return router;
