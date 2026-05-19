@@ -103,14 +103,13 @@ type CustomerReq = {
 
 type CustomerBooking = {
   id: string;
-  job_id: string;
+  lead_id: string;
   status: string;
   scheduled_at: string | null;
   amount: number | null;
-  time_confirmed_by_customer: boolean | null;
-  time_confirmed_by_provider: boolean | null;
-  time_proposed_by: string | null;
-  job: { category_slug: string; address: string | null } | null;
+  customer_confirmed_at: string | null;
+  provider_confirmed_at: string | null;
+  lead: { category_slug: string; address: string | null } | null;
 };
 
 function CustomerHome({
@@ -133,32 +132,44 @@ function CustomerHome({
     (async () => {
       const [reqRes, bookRes] = await Promise.all([
         supabase
-          .from("job_requests")
-          .select("id, category_slug, area, status, created_at, quotes(id)")
+          .from("customer_leads")
+          .select("id, address, status, created_at, service_type:service_types(category_slug), quotes(id)")
           .eq("customer_id", userId)
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("bookings")
           .select(
-            "id, job_id, status, scheduled_at, amount, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, job:job_requests(category_slug, address)",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(address, service_type:service_types(category_slug))",
           )
           .eq("customer_id", userId)
           .order("scheduled_at", { ascending: true, nullsFirst: false }),
       ]);
 
       const reqs = (reqRes.data ?? []).map(
-        (r: { id: string; category_slug: string; area: string | null; status: string; created_at: string; quotes: unknown[] }) => ({
+        (r: { id: string; address: string | null; status: string; created_at: string; service_type: { category_slug: string } | { category_slug: string }[] | null; quotes: unknown[] }) => ({
           id: r.id,
-          category_slug: r.category_slug,
-          area: r.area,
+          category_slug: Array.isArray(r.service_type)
+            ? r.service_type[0]?.category_slug ?? ""
+            : r.service_type?.category_slug ?? "",
+          area: r.address,
           status: r.status,
           created_at: r.created_at,
           quotes_count: (r.quotes ?? []).length,
         }),
       );
       setRequests(reqs);
-      const bks = (bookRes.data ?? []) as unknown as CustomerBooking[];
+      const bks = (bookRes.data ?? []).map((b: any) => ({
+        ...b,
+        lead: b.lead
+          ? {
+              address: b.lead.address ?? null,
+              category_slug: Array.isArray(b.lead.service_type)
+                ? b.lead.service_type[0]?.category_slug ?? ""
+                : b.lead.service_type?.category_slug ?? "",
+            }
+          : null,
+      })) as CustomerBooking[];
       setBookings(bks);
 
       // Completed bookings without a review
@@ -178,7 +189,7 @@ function CustomerHome({
     (b) =>
       ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
       b.scheduled_at &&
-      !b.time_confirmed_by_customer,
+      !b.customer_confirmed_at,
   );
   const newQuotes = (requests ?? []).filter((r) => r.status === "quoted" && r.quotes_count > 0);
   const upcoming = (bookings ?? [])
@@ -186,8 +197,8 @@ function CustomerHome({
       (b) =>
         ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
         b.scheduled_at &&
-        b.time_confirmed_by_customer &&
-        b.time_confirmed_by_provider &&
+        b.customer_confirmed_at &&
+        b.provider_confirmed_at &&
         new Date(b.scheduled_at).getTime() >= Date.now() - 6 * 3600_000,
     )
     .slice(0, 3);
@@ -200,7 +211,7 @@ function CustomerHome({
     const counts = new Map<string, number>();
     for (const r of requests ?? []) counts.set(r.category_slug, (counts.get(r.category_slug) ?? 0) + 1);
     for (const b of bookings ?? []) {
-      const s = b.job?.category_slug;
+      const s = b.lead?.category_slug;
       if (s) counts.set(s, (counts.get(s) ?? 0) + 1);
     }
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([s]) => s);
@@ -223,11 +234,11 @@ function CustomerHome({
 
   // "Book again" — past completed bookings, deduped by category+provider.
   const bookAgain = useMemo(() => {
-    const list = (bookings ?? []).filter((b) => b.status === "completed" && b.job?.category_slug);
+    const list = (bookings ?? []).filter((b) => b.status === "completed" && b.lead?.category_slug);
     const seen = new Set<string>();
     const out: CustomerBooking[] = [];
     for (const b of list) {
-      const key = b.job!.category_slug;
+      const key = b.lead!.category_slug;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(b);
@@ -297,13 +308,13 @@ function CustomerHome({
           <SectionHeader title={L("Book again", "ပြန် မှာ")} />
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {bookAgain.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <Link
                   key={b.id}
                   to="/request/new"
-                  search={{ cat: b.job?.category_slug }}
+                  search={{ cat: b.lead?.category_slug }}
                   className="flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                 >
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -311,10 +322,10 @@ function CustomerHome({
                   </span>
                   <div>
                     <div className="truncate text-sm font-semibold">
-                      {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                      {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                     </div>
                     <div className="truncate text-[11px] text-muted-foreground">
-                      {b.job?.address ?? L("Same as last time", "ယခင် နေရာ")}
+                      {b.lead?.address ?? L("Same as last time", "ယခင် နေရာ")}
                     </div>
                   </div>
                   <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
@@ -339,8 +350,8 @@ function CustomerHome({
             {awaitingMyTime.map((b) => (
               <ActionRow
                 key={`t-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<CalendarClock className="h-5 w-5" />}
                 tone="amber"
@@ -358,8 +369,8 @@ function CustomerHome({
               return (
                 <ActionRow
                   key={`q-${r.id}`}
-                  to="/request/$jobId"
-                  params={{ jobId: r.id }}
+                  to="/request/$leadId"
+                  params={{ leadId: r.id }}
                   search={{ tab: "quotes" }}
                   icon={<Inbox className="h-5 w-5" />}
                   tone="primary"
@@ -375,8 +386,8 @@ function CustomerHome({
             {needsReview.map((b) => (
               <ActionRow
                 key={`r-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<Star className="h-5 w-5" />}
                 tone="emerald"
@@ -395,13 +406,13 @@ function CustomerHome({
           <SectionHeader title={L("Upcoming visits", "လာမည့် ဘွတ်ကင်")} />
           <ul className="space-y-2">
             {upcoming.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <li key={b.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
+                    to="/request/$leadId"
+                    params={{ leadId: b.lead_id }}
                     search={{ tab: "booking" }}
                     className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                   >
@@ -410,7 +421,7 @@ function CustomerHome({
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold">
-                        {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                        {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
@@ -458,8 +469,8 @@ function CustomerHome({
               return (
                 <li key={r.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: r.id }}
+                    to="/request/$leadId"
+                    params={{ leadId: r.id }}
                     className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                   >
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -490,21 +501,13 @@ function CustomerHome({
 
 type ProviderBooking = {
   id: string;
-  job_id: string;
+  lead_id: string;
   status: string;
   scheduled_at: string | null;
   amount: number | null;
-  time_confirmed_by_customer: boolean | null;
-  time_confirmed_by_provider: boolean | null;
-  time_proposed_by: string | null;
-  job: { category_slug: string; city_slug: string; address: string | null } | null;
-};
-
-type ProviderInvite = {
-  id: string;
-  job_id: string;
-  status: string;
-  job: { category_slug: string; city_slug: string; created_at: string } | null;
+  customer_confirmed_at: string | null;
+  provider_confirmed_at: string | null;
+  lead: { category_slug: string; city_slug: string; address: string | null } | null;
 };
 
 type ProviderProfile = {
@@ -528,7 +531,6 @@ function ProviderHome({
   const nav = useNavigate();
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [bookings, setBookings] = useState<ProviderBooking[] | null>(null);
-  const [invites, setInvites] = useState<ProviderInvite[] | null>(null);
   const [newJobsCount, setNewJobsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -544,36 +546,47 @@ function ProviderHome({
       }
       setProfile(prov as ProviderProfile);
 
-      const [bkRes, invRes, svcRes, areaRes] = await Promise.all([
+      const [bkRes, svcRes, areaRes] = await Promise.all([
         supabase
           .from("bookings")
           .select(
-            "id, job_id, status, scheduled_at, amount, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, job:job_requests(category_slug, city_slug, address)",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(city_slug, address, service_type:service_types(category_slug))",
           )
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
           .order("scheduled_at", { ascending: true, nullsFirst: false }),
-        supabase
-          .from("request_invitations")
-          .select("id, job_id, status, job:job_requests(category_slug, city_slug, created_at)")
-          .eq("provider_id", userId)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(10),
         supabase.from("provider_services").select("category_slug").eq("provider_id", userId),
         supabase.from("provider_service_areas").select("city_slug").eq("provider_id", userId),
       ]);
-      setBookings((bkRes.data ?? []) as unknown as ProviderBooking[]);
-      setInvites((invRes.data ?? []) as unknown as ProviderInvite[]);
+      setBookings(
+        (bkRes.data ?? []).map((b: any) => ({
+          ...b,
+          lead: b.lead
+            ? {
+                city_slug: b.lead.city_slug,
+                address: b.lead.address ?? null,
+                category_slug: Array.isArray(b.lead.service_type)
+                  ? b.lead.service_type[0]?.category_slug ?? ""
+                  : b.lead.service_type?.category_slug ?? "",
+              }
+            : null,
+        })) as ProviderBooking[],
+      );
 
       const cats = (svcRes.data ?? []).map((r) => r.category_slug);
       const cities = (areaRes.data ?? []).map((r) => r.city_slug);
       if (cats.length) {
-        let q = supabase
-          .from("job_requests")
-          .select("id", { count: "exact", head: true })
-          .in("status", ["open", "quoted"])
+        // Count active leads that match this provider's services + areas.
+        const { data: types } = await supabase
+          .from("service_types")
+          .select("id")
           .in("category_slug", cats);
+        const typeIds = (types ?? []).map((t) => t.id);
+        let q = supabase
+          .from("customer_leads")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .in("service_type_id", typeIds.length ? typeIds : ["00000000-0000-0000-0000-000000000000"]);
         if (cities.length) q = q.in("city_slug", cities);
         const { count } = await q;
         setNewJobsCount(count ?? 0);
@@ -589,17 +602,17 @@ function ProviderHome({
     return (bookings ?? []).filter((b) => {
       if (!b.scheduled_at) return false;
       const t = new Date(b.scheduled_at).getTime();
-      const confirmed = b.time_confirmed_by_customer && b.time_confirmed_by_provider;
+      const confirmed = b.customer_confirmed_at && b.provider_confirmed_at;
       return confirmed && t >= start.getTime() && t < end.getTime();
     });
   }, [bookings]);
 
   const awaitingMyTime = (bookings ?? []).filter(
-    (b) => b.scheduled_at && !b.time_confirmed_by_provider,
+    (b) => b.scheduled_at && !b.provider_confirmed_at,
   );
 
   const activeCount = bookings?.length ?? 0;
-  const attentionCount = awaitingMyTime.length + (invites?.length ?? 0);
+  const attentionCount = awaitingMyTime.length;
 
   return (
     <div className="space-y-5">
@@ -663,13 +676,13 @@ function ProviderHome({
         ) : (
           <ul className="space-y-2">
             {today.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <li key={b.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
+                    to="/request/$leadId"
+                    params={{ leadId: b.lead_id }}
                     search={{ tab: "booking" }}
                     className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 transition hover:border-primary"
                   >
@@ -687,13 +700,13 @@ function ProviderHome({
                           : "—"}
                         <span className="text-muted-foreground">·</span>
                         <span className="truncate">
-                          {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                          {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                         </span>
                       </div>
-                      {b.job?.address && (
+                      {b.lead?.address && (
                         <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                           <MapPin className="h-3 w-3" />
-                          {b.job.address}
+                          {b.lead.address}
                         </div>
                       )}
                     </div>
@@ -717,8 +730,8 @@ function ProviderHome({
             {awaitingMyTime.map((b) => (
               <ActionRow
                 key={`t-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<CalendarClock className="h-5 w-5" />}
                 tone="amber"
@@ -731,22 +744,6 @@ function ProviderHome({
                 cta={L("Review", "ကြည့်")}
               />
             ))}
-            {(invites ?? []).slice(0, 5).map((inv) => {
-              const cat = CATEGORIES.find((c) => c.slug === inv.job?.category_slug);
-              return (
-                <ActionRow
-                  key={`i-${inv.id}`}
-                  to="/request/$jobId"
-                  params={{ jobId: inv.job_id }}
-                  search={{ tab: "quotes" }}
-                  icon={<Inbox className="h-5 w-5" />}
-                  tone="primary"
-                  title={L("New invitation", "ဖိတ်ကြားမှု အသစ်")}
-                  sub={cat ? (lang === "en" ? cat.en : cat.my) : inv.job?.category_slug ?? ""}
-                  cta={L("Send quote", "စျေးပေး")}
-                />
-              );
-            })}
           </ul>
         </section>
       )}
