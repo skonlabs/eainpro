@@ -2642,3 +2642,177 @@ function TimePickerSheet({
     </div>
   );
 }
+
+// Live customer-facing tracking timeline once the visit is locked in.
+function ProgressTimeline({
+  status,
+  lang,
+  providerPhone,
+}: {
+  status: string;
+  lang: "en" | "my";
+  providerPhone: string | null;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const steps: { key: string; en: string; my: string; icon: typeof CheckCircle2 }[] = [
+    { key: "accepted",    en: "Confirmed",   my: "အတည်ပြုပြီး", icon: CheckCircle2 },
+    { key: "on_the_way",  en: "On the way",  my: "လမ်းပေါ်",     icon: Truck },
+    { key: "started",     en: "In progress", my: "လုပ်နေ",       icon: PlayCircle },
+    { key: "completed",   en: "Done",        my: "ပြီးဆုံး",     icon: Flag },
+  ];
+  const order = ["accepted", "on_the_way", "started", "in_progress", "completed"];
+  const currentIdx = Math.max(0, order.indexOf(status));
+  const stepIdx = (k: string) => (k === "started" ? 2 : order.indexOf(k));
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          {L("Live status", "လက်ရှိ အခြေအနေ")}
+        </div>
+        {providerPhone && (
+          <a
+            href={`tel:${providerPhone}`}
+            className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+          >
+            <Phone className="h-3 w-3" />
+            {L("Call provider", "ဖုန်းခေါ်")}
+          </a>
+        )}
+      </div>
+      <ol className="mt-4 flex items-start justify-between gap-1">
+        {steps.map((s, i) => {
+          const reached = currentIdx >= stepIdx(s.key);
+          const isActive = stepIdx(s.key) === currentIdx ||
+            (s.key === "started" && status === "in_progress");
+          const Icon = s.icon;
+          return (
+            <li key={s.key} className="relative flex flex-1 flex-col items-center">
+              {i < steps.length - 1 && (
+                <span
+                  className={cn(
+                    "absolute left-1/2 top-4 h-0.5 w-full",
+                    reached && currentIdx > stepIdx(s.key) ? "bg-primary" : "bg-border",
+                  )}
+                />
+              )}
+              <span
+                className={cn(
+                  "relative z-10 grid h-8 w-8 place-items-center rounded-full border-2 transition",
+                  reached
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground",
+                  isActive && "ring-4 ring-primary/20",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+              <span
+                className={cn(
+                  "mt-2 text-center text-[10px] font-semibold uppercase tracking-wide",
+                  reached ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {L(s.en, s.my)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        {status === "accepted" && L("Visit is locked in. We'll update you when the provider is on the way.", "ဝန်ဆောင်မှု အတည်ပြုပြီး။")}
+        {status === "on_the_way" && L("Your provider is heading to you now.", "သင်ထံ ရောက်လာနေပါပြီ။")}
+        {(status === "started" || status === "in_progress") && L("Work is in progress. You'll be notified when it's done.", "လုပ်ဆောင်နေပါသည်။")}
+      </p>
+    </div>
+  );
+}
+
+// Provider day-of action stepper with prominent next-step button.
+function DayOfStepper({
+  status,
+  lang,
+  customerPhone,
+  jobAddress,
+  onAdvance,
+}: {
+  status: string;
+  lang: "en" | "my";
+  customerPhone: string | null;
+  jobAddress: string | null;
+  onAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [busy, setBusy] = useState<string | null>(null);
+  const run = async (s: "on_the_way" | "started" | "completed") => {
+    setBusy(s);
+    try { await onAdvance(s); } finally { setBusy(null); }
+  };
+  const next: { key: "on_the_way" | "started" | "completed"; label: string; my: string; icon: typeof Truck; tone: string } | null =
+    status === "accepted"
+      ? { key: "on_the_way", label: "I'm on the way", my: "လမ်းပေါ်ပါပြီ", icon: Truck, tone: "bg-primary text-primary-foreground" }
+      : status === "on_the_way"
+        ? { key: "started", label: "Start the job", my: "အလုပ် စတင်", icon: PlayCircle, tone: "bg-primary text-primary-foreground" }
+        : (status === "started" || status === "in_progress")
+          ? { key: "completed", label: "Mark complete", my: "ပြီးဆုံးပြီ", icon: Flag, tone: "bg-emerald-600 text-white hover:bg-emerald-700" }
+          : null;
+
+  const mapsQuery = encodeURIComponent(jobAddress ?? "");
+  return (
+    <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-soft">
+      <div className="flex items-center gap-2 border-b border-border bg-primary/5 px-4 py-2.5">
+        <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+          {status === "accepted" ? 1 : status === "on_the_way" ? 2 : 3}
+        </span>
+        <span className="text-xs font-bold uppercase tracking-wider text-primary">
+          {L("Next step", "နောက်တစ်ဆင့်")}
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        {next && (
+          <Button
+            onClick={() => run(next.key)}
+            disabled={busy !== null}
+            className={cn("w-full rounded-xl py-6 text-base font-bold", next.tone)}
+          >
+            {busy === next.key ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <next.icon className="mr-2 h-5 w-5" />
+            )}
+            {L(next.label, next.my)}
+          </Button>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {customerPhone ? (
+            <a
+              href={`tel:${customerPhone}`}
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold transition hover:border-primary/50"
+            >
+              <Phone className="h-4 w-4 text-primary" />
+              {L("Call customer", "ဖောက်သည် ဖုန်းခေါ်")}
+            </a>
+          ) : (
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-3 text-xs text-muted-foreground">
+              {L("No phone on file", "ဖုန်း မရှိ")}
+            </div>
+          )}
+          {jobAddress ? (
+            <a
+              href={`https://www.google.com/maps?q=${mapsQuery}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold transition hover:border-primary/50"
+            >
+              <Navigation className="h-4 w-4 text-primary" />
+              {L("Navigate", "လမ်းပြ")}
+            </a>
+          ) : (
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-3 text-xs text-muted-foreground">
+              {L("No address", "လိပ်စာ မရှိ")}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
