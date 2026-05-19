@@ -1483,6 +1483,28 @@ function QuotesTab({
       return n;
     });
 
+  // Compute Best Price + Fastest Response among pending, non-expired quotes
+  const pending = quotes.filter(
+    (q) => q.status === "pending" && !(q.expires_at && new Date(q.expires_at) < new Date()),
+  );
+  const bestPriceId = pending.length
+    ? pending.reduce((a, b) => (a.amount <= b.amount ? a : b)).id
+    : null;
+  const fastestId = pending.length
+    ? pending.reduce((a, b) => {
+        const ra = a.provider?.response_minutes ?? Number.MAX_SAFE_INTEGER;
+        const rb = b.provider?.response_minutes ?? Number.MAX_SAFE_INTEGER;
+        return ra <= rb ? a : b;
+      }).id
+    : null;
+  const topRatedId = pending.length
+    ? pending.reduce((a, b) => {
+        const ra = a.provider?.rating_avg ?? 0;
+        const rb = b.provider?.rating_avg ?? 0;
+        return ra >= rb ? a : b;
+      }).id
+    : null;
+
   const decline = async (q: Quote) => {
     await supabase.from("quotes").update({ status: "declined" }).eq("id", q.id);
     await onRefresh();
@@ -1556,6 +1578,25 @@ function QuotesTab({
             key={q.id}
             className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40"
           >
+            {(q.id === bestPriceId || q.id === fastestId || q.id === topRatedId) && (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {q.id === bestPriceId && (
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                    {L("Best price", "စျေးအသက်သာဆုံး")}
+                  </span>
+                )}
+                {q.id === fastestId && q.provider?.response_minutes != null && (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {L("Fastest reply", "အမြန်ဆုံး")}
+                  </span>
+                )}
+                {q.id === topRatedId && (q.provider?.rating_count ?? 0) > 0 && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                    {L("Top rated", "အကောင်းဆုံး")}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1">
