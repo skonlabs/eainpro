@@ -20,9 +20,6 @@ export function BottomNav() {
   const isProvider = roles.includes("provider");
   const isAdmin = roles.includes("admin");
 
-  // Hide on flows that have their own fixed bottom action bar to avoid overlap.
-  if (pathname.startsWith("/request/new")) return null;
-
   // While auth (including roles) is still resolving, don't render nav to avoid
   // flashing the wrong set of items (e.g. guest nav briefly for a signed-in user).
   if (loading || !rolesReady) return null;
