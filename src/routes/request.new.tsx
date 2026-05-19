@@ -374,6 +374,7 @@ function NewRequestPage() {
                   key={c.slug}
                   active={form.category === c.slug}
                   onClick={() => {
+                    console.log("[req] cat click", c.slug, "before", form.category);
                     set("category", c.slug);
                     set("subcategory", "");
                     setTimeout(() => goNext(), 180);
