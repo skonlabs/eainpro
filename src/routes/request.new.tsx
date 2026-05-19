@@ -26,6 +26,13 @@ import {
   ShieldCheck,
   Loader2,
   Camera,
+  Wrench,
+  FileText,
+  MapPin,
+  Image as ImageIcon,
+  Zap,
+  CalendarClock,
+  Wallet,
 } from "lucide-react";
 
 const searchSchema = z.object({
