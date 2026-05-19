@@ -127,11 +127,15 @@ function LeadsPage() {
             <div className="space-y-3 text-sm">
               <div className="rounded-lg border border-border p-3">
                 <div className="font-medium">{pickedLead.service_name_en}</div>
-                <div className="text-xs text-muted-foreground mt-1">{pickedLead.short_description}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {pickedLead.city_slug} · {pickedLead.urgency}
+                </div>
               </div>
               <p>
-                You are about to spend <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> to unlock this lead.
-                If the customer details are valid, this fee is non-refundable.
+                Confirm to deduct <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> from your wallet and reveal the customer's full request, contact details and address. This fee is non-refundable once valid details are shown.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Wallet balance: <strong>{fmt(balance)} credits</strong> → after unlock: <strong>{fmt(Math.max(0, balance - pickedLead.lead_price_credits))} credits</strong>
               </p>
               <p className="text-xs text-muted-foreground">
                 {pickedLead.current_unlock_count} of {pickedLead.max_provider_unlocks} providers have unlocked this lead.
