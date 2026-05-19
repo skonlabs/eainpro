@@ -308,13 +308,13 @@ function CustomerHome({
           <SectionHeader title={L("Book again", "ပြန် မှာ")} />
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {bookAgain.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <Link
                   key={b.id}
                   to="/request/new"
-                  search={{ cat: b.job?.category_slug }}
+                  search={{ cat: b.lead?.category_slug }}
                   className="flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                 >
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -322,10 +322,10 @@ function CustomerHome({
                   </span>
                   <div>
                     <div className="truncate text-sm font-semibold">
-                      {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                      {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                     </div>
                     <div className="truncate text-[11px] text-muted-foreground">
-                      {b.job?.address ?? L("Same as last time", "ယခင် နေရာ")}
+                      {b.lead?.address ?? L("Same as last time", "ယခင် နေရာ")}
                     </div>
                   </div>
                   <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
@@ -350,8 +350,8 @@ function CustomerHome({
             {awaitingMyTime.map((b) => (
               <ActionRow
                 key={`t-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<CalendarClock className="h-5 w-5" />}
                 tone="amber"
@@ -369,8 +369,8 @@ function CustomerHome({
               return (
                 <ActionRow
                   key={`q-${r.id}`}
-                  to="/request/$jobId"
-                  params={{ jobId: r.id }}
+                  to="/request/$leadId"
+                  params={{ leadId: r.id }}
                   search={{ tab: "quotes" }}
                   icon={<Inbox className="h-5 w-5" />}
                   tone="primary"
@@ -386,8 +386,8 @@ function CustomerHome({
             {needsReview.map((b) => (
               <ActionRow
                 key={`r-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<Star className="h-5 w-5" />}
                 tone="emerald"
@@ -406,13 +406,13 @@ function CustomerHome({
           <SectionHeader title={L("Upcoming visits", "လာမည့် ဘွတ်ကင်")} />
           <ul className="space-y-2">
             {upcoming.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <li key={b.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
+                    to="/request/$leadId"
+                    params={{ leadId: b.lead_id }}
                     search={{ tab: "booking" }}
                     className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                   >
@@ -421,7 +421,7 @@ function CustomerHome({
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold">
-                        {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                        {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
@@ -469,8 +469,8 @@ function CustomerHome({
               return (
                 <li key={r.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: r.id }}
+                    to="/request/$leadId"
+                    params={{ leadId: r.id }}
                     className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                   >
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -674,13 +674,13 @@ function ProviderHome({
         ) : (
           <ul className="space-y-2">
             {today.map((b) => {
-              const cat = CATEGORIES.find((c) => c.slug === b.job?.category_slug);
+              const cat = CATEGORIES.find((c) => c.slug === b.lead?.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
               return (
                 <li key={b.id}>
                   <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
+                    to="/request/$leadId"
+                    params={{ leadId: b.lead_id }}
                     search={{ tab: "booking" }}
                     className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 transition hover:border-primary"
                   >
@@ -698,13 +698,13 @@ function ProviderHome({
                           : "—"}
                         <span className="text-muted-foreground">·</span>
                         <span className="truncate">
-                          {cat ? (lang === "en" ? cat.en : cat.my) : b.job?.category_slug}
+                          {cat ? (lang === "en" ? cat.en : cat.my) : b.lead?.category_slug}
                         </span>
                       </div>
-                      {b.job?.address && (
+                      {b.lead?.address && (
                         <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                           <MapPin className="h-3 w-3" />
-                          {b.job.address}
+                          {b.lead.address}
                         </div>
                       )}
                     </div>
@@ -728,8 +728,8 @@ function ProviderHome({
             {awaitingMyTime.map((b) => (
               <ActionRow
                 key={`t-${b.id}`}
-                to="/request/$jobId"
-                params={{ jobId: b.job_id }}
+                to="/request/$leadId"
+                params={{ leadId: b.lead_id }}
                 search={{ tab: "booking" }}
                 icon={<CalendarClock className="h-5 w-5" />}
                 tone="amber"
@@ -747,8 +747,8 @@ function ProviderHome({
               return (
                 <ActionRow
                   key={`i-${inv.id}`}
-                  to="/request/$jobId"
-                  params={{ jobId: inv.job_id }}
+                  to="/request/$leadId"
+                  params={{ leadId: inv.lead_id }}
                   search={{ tab: "quotes" }}
                   icon={<Inbox className="h-5 w-5" />}
                   tone="primary"
