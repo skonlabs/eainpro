@@ -32,6 +32,10 @@ import {
   Phone,
   Navigation,
   CalendarPlus,
+  Truck,
+  PlayCircle,
+  Flag,
+  Camera,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -1880,6 +1884,22 @@ function BookingPanel({
         />
       )}
 
+      {/* Day-of live tracking — customer */}
+      {inFlight && bothConfirmed && role === "customer" && (
+        <ProgressTimeline status={booking.status} lang={lang} providerPhone={booking.provider?.business_name ? null : null} />
+      )}
+
+      {/* Day-of stepper — provider */}
+      {inFlight && bothConfirmed && role === "provider" && (
+        <DayOfStepper
+          status={booking.status}
+          lang={lang}
+          customerPhone={booking.customer_phone}
+          jobAddress={jobAddress}
+          onAdvance={onProviderAdvance}
+        />
+      )}
+
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
@@ -2029,22 +2049,6 @@ function BookingPanel({
         )}
         {inFlight && role === "provider" && (
           <>
-            {bothConfirmed && booking.status === "accepted" && (
-              <Button variant="outline" onClick={() => onProviderAdvance("on_the_way")} className="rounded-xl">
-                {L("On the way", "လမ်းပေါ်")}
-              </Button>
-            )}
-            {bothConfirmed && (booking.status === "accepted" || booking.status === "on_the_way") && (
-              <Button variant="outline" onClick={() => onProviderAdvance("started")} className="rounded-xl">
-                {L("Start job", "စတင်")}
-              </Button>
-            )}
-            {bothConfirmed && (
-            <Button onClick={() => onProviderAdvance("completed")} className="flex-1 rounded-xl">
-              <Check className="mr-2 h-4 w-4" />
-              {L("Mark complete", "ပြီးဆုံးပြီ")}
-            </Button>
-            )}
             {bothConfirmed && (
             <Button
               variant="outline"
@@ -2219,6 +2223,29 @@ function ReviewSheet({
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+
+  const onPickPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const f of Array.from(files).slice(0, 5 - photos.length)) {
+        const ext = f.name.split(".").pop() ?? "jpg";
+        const path = `${booking.customer_id}/reviews/${booking.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("job-photos").upload(path, f, { upsert: false });
+        if (upErr) { toast.error(upErr.message); continue; }
+        const { data: pu } = supabase.storage.from("job-photos").getPublicUrl(path);
+        uploaded.push(pu.publicUrl);
+      }
+      setPhotos((p) => [...p, ...uploaded]);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -2235,6 +2262,9 @@ function ReviewSheet({
         rating_value: value,
         rating_communication: comm,
         comment: comment.trim() || null,
+        photo_urls: photos,
+        reported: reporting,
+        report_reason: reporting ? reportReason.trim() || null : null,
       })
       .select("id, rating, rating_quality, rating_speed, rating_value, rating_communication, comment")
       .single();
@@ -2246,7 +2276,11 @@ function ReviewSheet({
     }
     if (data) {
       onSubmitted(data as Review);
-      toast.success(lang === "en" ? "Thanks for your review!" : "ကျေးဇူးတင်ပါသည်!");
+      toast.success(
+        reporting
+          ? lang === "en" ? "Review submitted & problem reported" : "သုံးသပ်ချက် တင်ပြီး"
+          : lang === "en" ? "Thanks for your review!" : "ကျေးဇူးတင်ပါသည်!",
+      );
     }
   };
 
@@ -2289,6 +2323,70 @@ function ReviewSheet({
             placeholder={L("How was your experience?", "သင်၏ အတွေ့အကြုံ ဘယ်လိုလဲ?")}
             className="mt-1"
           />
+        </div>
+
+        {/* Photos */}
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {L("Add photos (optional)", "ဓာတ်ပုံ ထည့်ပါ")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {photos.map((u, i) => (
+              <div key={u} className="relative h-16 w-16 overflow-hidden rounded-lg border border-border">
+                <img src={u} alt={`review-${i}`} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
+                  className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-full bg-background/80 text-foreground"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            ))}
+            {photos.length < 5 && (
+              <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary/50">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                <span className="text-[9px] font-semibold">{L("Add", "ထည့်")}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => onPickPhotos(e.target.files)}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Report a problem */}
+        <div className="mt-4 rounded-xl border border-border p-3">
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              checked={reporting}
+              onChange={(e) => setReporting(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-destructive"
+            />
+            <span className="flex-1">
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
+                <Flag className="h-3.5 w-3.5" />
+                {L("Report a problem with this job", "ဤအလုပ်အကြောင်း တိုင်ကြားရန်")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {L("Our team will follow up with you.", "ကျွန်ုပ်တို့ ပြန်ဆက်သွယ်ပါမည်။")}
+              </span>
+            </span>
+          </label>
+          {reporting && (
+            <Textarea
+              rows={2}
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder={L("What went wrong?", "ဘာဖြစ်သွားသလဲ?")}
+              className="mt-2"
+            />
+          )}
         </div>
 
         {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
@@ -2633,6 +2731,180 @@ function TimePickerSheet({
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {L("Propose", "တင်ပြ")}
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Live customer-facing tracking timeline once the visit is locked in.
+function ProgressTimeline({
+  status,
+  lang,
+  providerPhone,
+}: {
+  status: string;
+  lang: "en" | "my";
+  providerPhone: string | null;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const steps: { key: string; en: string; my: string; icon: typeof CheckCircle2 }[] = [
+    { key: "accepted",    en: "Confirmed",   my: "အတည်ပြုပြီး", icon: CheckCircle2 },
+    { key: "on_the_way",  en: "On the way",  my: "လမ်းပေါ်",     icon: Truck },
+    { key: "started",     en: "In progress", my: "လုပ်နေ",       icon: PlayCircle },
+    { key: "completed",   en: "Done",        my: "ပြီးဆုံး",     icon: Flag },
+  ];
+  const order = ["accepted", "on_the_way", "started", "in_progress", "completed"];
+  const currentIdx = Math.max(0, order.indexOf(status));
+  const stepIdx = (k: string) => (k === "started" ? 2 : order.indexOf(k));
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          {L("Live status", "လက်ရှိ အခြေအနေ")}
+        </div>
+        {providerPhone && (
+          <a
+            href={`tel:${providerPhone}`}
+            className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+          >
+            <Phone className="h-3 w-3" />
+            {L("Call provider", "ဖုန်းခေါ်")}
+          </a>
+        )}
+      </div>
+      <ol className="mt-4 flex items-start justify-between gap-1">
+        {steps.map((s, i) => {
+          const reached = currentIdx >= stepIdx(s.key);
+          const isActive = stepIdx(s.key) === currentIdx ||
+            (s.key === "started" && status === "in_progress");
+          const Icon = s.icon;
+          return (
+            <li key={s.key} className="relative flex flex-1 flex-col items-center">
+              {i < steps.length - 1 && (
+                <span
+                  className={cn(
+                    "absolute left-1/2 top-4 h-0.5 w-full",
+                    reached && currentIdx > stepIdx(s.key) ? "bg-primary" : "bg-border",
+                  )}
+                />
+              )}
+              <span
+                className={cn(
+                  "relative z-10 grid h-8 w-8 place-items-center rounded-full border-2 transition",
+                  reached
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground",
+                  isActive && "ring-4 ring-primary/20",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+              <span
+                className={cn(
+                  "mt-2 text-center text-[10px] font-semibold uppercase tracking-wide",
+                  reached ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {L(s.en, s.my)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        {status === "accepted" && L("Visit is locked in. We'll update you when the provider is on the way.", "ဝန်ဆောင်မှု အတည်ပြုပြီး။")}
+        {status === "on_the_way" && L("Your provider is heading to you now.", "သင်ထံ ရောက်လာနေပါပြီ။")}
+        {(status === "started" || status === "in_progress") && L("Work is in progress. You'll be notified when it's done.", "လုပ်ဆောင်နေပါသည်။")}
+      </p>
+    </div>
+  );
+}
+
+// Provider day-of action stepper with prominent next-step button.
+function DayOfStepper({
+  status,
+  lang,
+  customerPhone,
+  jobAddress,
+  onAdvance,
+}: {
+  status: string;
+  lang: "en" | "my";
+  customerPhone: string | null;
+  jobAddress: string | null;
+  onAdvance: (s: "on_the_way" | "started" | "completed") => Promise<void>;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [busy, setBusy] = useState<string | null>(null);
+  const run = async (s: "on_the_way" | "started" | "completed") => {
+    setBusy(s);
+    try { await onAdvance(s); } finally { setBusy(null); }
+  };
+  const next: { key: "on_the_way" | "started" | "completed"; label: string; my: string; icon: typeof Truck; tone: string } | null =
+    status === "accepted"
+      ? { key: "on_the_way", label: "I'm on the way", my: "လမ်းပေါ်ပါပြီ", icon: Truck, tone: "bg-primary text-primary-foreground" }
+      : status === "on_the_way"
+        ? { key: "started", label: "Start the job", my: "အလုပ် စတင်", icon: PlayCircle, tone: "bg-primary text-primary-foreground" }
+        : (status === "started" || status === "in_progress")
+          ? { key: "completed", label: "Mark complete", my: "ပြီးဆုံးပြီ", icon: Flag, tone: "bg-emerald-600 text-white hover:bg-emerald-700" }
+          : null;
+
+  const mapsQuery = encodeURIComponent(jobAddress ?? "");
+  return (
+    <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-soft">
+      <div className="flex items-center gap-2 border-b border-border bg-primary/5 px-4 py-2.5">
+        <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+          {status === "accepted" ? 1 : status === "on_the_way" ? 2 : 3}
+        </span>
+        <span className="text-xs font-bold uppercase tracking-wider text-primary">
+          {L("Next step", "နောက်တစ်ဆင့်")}
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        {next && (
+          <Button
+            onClick={() => run(next.key)}
+            disabled={busy !== null}
+            className={cn("w-full rounded-xl py-6 text-base font-bold", next.tone)}
+          >
+            {busy === next.key ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <next.icon className="mr-2 h-5 w-5" />
+            )}
+            {L(next.label, next.my)}
+          </Button>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {customerPhone ? (
+            <a
+              href={`tel:${customerPhone}`}
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold transition hover:border-primary/50"
+            >
+              <Phone className="h-4 w-4 text-primary" />
+              {L("Call customer", "ဖောက်သည် ဖုန်းခေါ်")}
+            </a>
+          ) : (
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-3 text-xs text-muted-foreground">
+              {L("No phone on file", "ဖုန်း မရှိ")}
+            </div>
+          )}
+          {jobAddress ? (
+            <a
+              href={`https://www.google.com/maps?q=${mapsQuery}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold transition hover:border-primary/50"
+            >
+              <Navigation className="h-4 w-4 text-primary" />
+              {L("Navigate", "လမ်းပြ")}
+            </a>
+          ) : (
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-3 text-xs text-muted-foreground">
+              {L("No address", "လိပ်စာ မရှိ")}
+            </div>
+          )}
         </div>
       </div>
     </div>

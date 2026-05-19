@@ -6,8 +6,9 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Clock, MapPin, Zap, Inbox, Hourglass, CalendarCheck } from "lucide-react";
+import { Clock, MapPin, Zap, Inbox, Hourglass, CalendarCheck, Phone, Truck, PlayCircle, Flag, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/provider/dashboard")({
   component: DashboardPage,
@@ -31,6 +32,7 @@ type ActiveBooking = {
   status: string;
   scheduled_at: string | null;
   amount: number | null;
+  customer_phone?: string | null;
   job: {
     category_slug: string;
     city_slug: string;
@@ -90,7 +92,7 @@ export const providerDashboardQuery = (userId: string) =>
         supabase.from("quotes").select("job_id, amount, status").eq("provider_id", userId),
         supabase
           .from("bookings")
-          .select("id, job_id, status, scheduled_at, amount, job:job_requests(category_slug, city_slug, address, description)")
+          .select("id, job_id, status, scheduled_at, amount, customer_phone, job:job_requests(category_slug, city_slug, address, description)")
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
           .order("scheduled_at", { ascending: true }),
@@ -340,49 +342,13 @@ function DashboardPage() {
           ) : (
             <ul className="mt-6 space-y-3">
               {today.map((b) => (
-                <li key={b.id}>
-                  <Link
-                    to="/request/$jobId"
-                    params={{ jobId: b.job_id }}
-                    search={{ tab: "booking" } as never}
-                    className="block rounded-xl border border-primary/30 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 text-sm font-semibold">
-                        {b.job ? catName(b.job.category_slug) : lang === "en" ? "Booking" : "ဘွတ်ကင်"}
-                      </div>
-                      <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                        {b.status.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {b.scheduled_at
-                          ? new Date(b.scheduled_at).toLocaleTimeString(lang === "en" ? "en" : "my-MM", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })
-                          : lang === "en"
-                            ? "Time TBD"
-                            : "အချိန် ညှိရန်"}
-                      </span>
-                      {b.amount != null && (
-                        <span className="ml-auto font-semibold text-foreground">
-                          {Number(b.amount).toLocaleString()} MMK
-                        </span>
-                      )}
-                    </div>
-                    {b.job && (
-                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">
-                          {[b.job.address, cityName(b.job.city_slug)].filter(Boolean).join(", ")}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-                </li>
+                <TodayCard
+                  key={b.id}
+                  booking={b}
+                  lang={lang}
+                  catName={catName}
+                  cityName={cityName}
+                />
               ))}
             </ul>
           )
@@ -390,6 +356,124 @@ function DashboardPage() {
       </main>
 
     </div>
+  );
+}
+
+function TodayCard({
+  booking,
+  lang,
+  catName,
+  cityName,
+}: {
+  booking: ActiveBooking;
+  lang: "en" | "my";
+  catName: (s: string) => string;
+  cityName: (s: string) => string;
+}) {
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const [status, setStatus] = useState(booking.status);
+  const [busy, setBusy] = useState(false);
+
+  const advance = async (next: "on_the_way" | "started" | "completed") => {
+    setBusy(true);
+    const patch: Record<string, unknown> = { status: next };
+    if (next === "completed") patch.provider_confirmed_at = new Date().toISOString();
+    const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    if (next === "completed") {
+      await supabase.from("job_requests").update({ status: "completed" }).eq("id", booking.job_id);
+    }
+    setStatus(next);
+    toast.success(L("Customer notified", "ဖောက်သည် အကြောင်းကြားပြီး"));
+  };
+
+  const next: { key: "on_the_way" | "started" | "completed"; en: string; my: string; icon: typeof Truck } | null =
+    status === "accepted"
+      ? { key: "on_the_way", en: "On the way", my: "လမ်းပေါ်", icon: Truck }
+      : status === "on_the_way"
+        ? { key: "started", en: "Start", my: "စတင်", icon: PlayCircle }
+        : (status === "started" || status === "in_progress")
+          ? { key: "completed", en: "Complete", my: "ပြီးပြီ", icon: Flag }
+          : null;
+
+  const mapsQuery = encodeURIComponent(booking.job?.address ?? "");
+
+  return (
+    <li className="overflow-hidden rounded-xl border border-primary/30 bg-primary/5">
+      <Link
+        to="/request/$jobId"
+        params={{ jobId: booking.job_id }}
+        search={{ tab: "booking" } as never}
+        className="block p-3 transition-colors hover:bg-primary/10"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 text-sm font-semibold">
+            {booking.job ? catName(booking.job.category_slug) : L("Booking", "ဘွတ်ကင်")}
+          </div>
+          <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
+            {status.replace(/_/g, " ")}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          <span>
+            {booking.scheduled_at
+              ? new Date(booking.scheduled_at).toLocaleTimeString(lang === "en" ? "en" : "my-MM", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })
+              : L("Time TBD", "အချိန် ညှိရန်")}
+          </span>
+          {booking.amount != null && (
+            <span className="ml-auto font-semibold text-foreground">
+              {Number(booking.amount).toLocaleString()} MMK
+            </span>
+          )}
+        </div>
+        {booking.job && (
+          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <MapPin className="h-3 w-3" />
+            <span className="truncate">
+              {[booking.job.address, cityName(booking.job.city_slug)].filter(Boolean).join(", ")}
+            </span>
+          </div>
+        )}
+      </Link>
+      <div className="flex gap-2 border-t border-primary/20 bg-background/60 p-2">
+        {next && (
+          <Button
+            size="sm"
+            onClick={(e) => { e.preventDefault(); advance(next.key); }}
+            disabled={busy}
+            className="flex-1 rounded-lg"
+          >
+            {busy ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <next.icon className="mr-1.5 h-3.5 w-3.5" />}
+            {L(next.en, next.my)}
+          </Button>
+        )}
+        {booking.customer_phone && (
+          <a
+            href={`tel:${booking.customer_phone}`}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-primary hover:bg-secondary"
+            aria-label="call"
+          >
+            <Phone className="h-3.5 w-3.5" />
+          </a>
+        )}
+        {booking.job?.address && (
+          <a
+            href={`https://www.google.com/maps?q=${mapsQuery}`}
+            target="_blank"
+            rel="noreferrer"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-primary hover:bg-secondary"
+            aria-label="navigate"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+    </li>
   );
 }
 
