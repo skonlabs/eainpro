@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -153,12 +153,17 @@ function NewRequestPage() {
   }, [form.category, subs.length, questions.length]);
 
   const [stepIdx, setStepIdx] = useState(0);
+  const stepIdxRef = useRef(0);
   const step = steps[Math.min(stepIdx, steps.length - 1)];
   const progress = ((stepIdx + 1) / steps.length) * 100;
 
   useEffect(() => {
     setStepIdx(hasPrefilledSubcategory ? Math.min(1, steps.length - 1) : 0);
   }, [hasPrefilledSubcategory, steps.length]);
+
+  useEffect(() => {
+    stepIdxRef.current = stepIdx;
+  }, [stepIdx]);
 
   const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
   const goBack = () => {
@@ -348,14 +353,20 @@ function NewRequestPage() {
   };
 
   // Auto-advance helper for single-select chip flows
+  const advanceAfterSelection = () => {
+    queueMicrotask(() => {
+      setStepIdx((current) => Math.min(steps.length - 1, Math.max(current, stepIdxRef.current) + 1));
+    });
+  };
+
   const pick = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
-    setTimeout(() => goNext(), 180);
+    advanceAfterSelection();
   };
 
   const pickAnswer = (qid: string, val: string) => {
     setForm((f) => ({ ...f, answers: { ...f.answers, [qid]: val } }));
-    setTimeout(() => goNext(), 180);
+    advanceAfterSelection();
   };
 
   const toggleAnswer = (qid: string, val: string) => {
