@@ -193,22 +193,15 @@ function CustomerHome({
 
   return (
     <div className="space-y-5">
-      <Greeting name={name} sub={L("What can we help with today?", "ဘာကို ကူညီပေးရမလဲ?")} />
-
-      {/* Primary CTA */}
-      <Link to="/request/new" search={{ category: "" }} className="block">
-        <div className="flex items-center justify-between rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg shadow-primary/25 transition active:scale-[0.99]">
-          <div>
-            <div className="text-base font-bold">{L("Book a service", "ဝန်ဆောင်မှု ဘွတ်ကင်လုပ်ရန်")}</div>
-            <div className="text-xs text-primary-foreground/80">
-              {L("3 quick steps to get matched", "အဆင့် ၃ ဆင့်ဖြင့် ပွဲစား")}
-            </div>
-          </div>
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-white/15">
-            <Plus className="h-5 w-5" />
-          </span>
-        </div>
-      </Link>
+      <HeroCard
+        eyebrow={L("Welcome back", "ပြန်လည် ကြိုဆို")}
+        name={name}
+        sub={L("What can we help with today?", "ဘာကို ကူညီပေးရမလဲ?")}
+        ctaTo="/request/new"
+        ctaSearch={{ category: "" }}
+        ctaLabel={L("Book a service", "ဝန်ဆောင်မှု ဘွတ်ကင်")}
+        ctaHint={L("3 quick steps to get matched", "အဆင့် ၃ ဆင့်ဖြင့် ပွဲစား")}
+      />
 
       {/* Needs your attention */}
       {attentionCount > 0 && (
