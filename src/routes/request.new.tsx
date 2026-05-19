@@ -265,91 +265,66 @@ function NewRequestPage() {
       nav({ to: "/signin", search: { redirect: "/request/new" } });
       return;
     }
+    const subSlug = form.subcategories[0] ?? null;
+    if (!subSlug) {
+      setErr(L("Please pick a service type.", "ဝန်ဆောင်မှု ရွေးပါ။"));
+      return;
+    }
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from("job_requests")
+    const { data: st, error: stErr } = await supabase
+      .from("service_types")
+      .select("id")
+      .eq("category_slug", form.category)
+      .eq("slug", subSlug)
+      .maybeSingle();
+    if (stErr || !st?.id) {
+      setSubmitting(false);
+      setErr(L("Service type not configured. Please contact support.", "ဝန်ဆောင်မှု အသေးစိတ် မရှိသေးပါ။"));
+      return;
+    }
+    const { data: pricing } = await supabase
+      .from("lead_pricing")
+      .select("price_credits, max_provider_unlocks, is_active")
+      .eq("service_type_id", st.id)
+      .maybeSingle();
+    const priceCredits = pricing?.is_active ? pricing.price_credits : 500;
+    const maxUnlocks = pricing?.is_active ? pricing.max_provider_unlocks : 5;
+    const shortDesc = (form.description || "").slice(0, 140) || subSlug;
+    const expiresAt = new Date(
+      Date.now() + (form.urgency === "today" ? 48 : 7 * 24) * 3600 * 1000,
+    ).toISOString();
+    const { data: lead, error: leadErr } = await supabase
+      .from("customer_leads")
       .insert({
         customer_id: user.id,
-        category_slug: form.category,
-        subcategory_slug: form.subcategories[0] ?? null,
-        description: form.description,
-        category_answers: { ...form.answers, _subcategories: form.subcategories },
+        customer_name: user.user_metadata?.full_name ?? user.email ?? "Customer",
+        customer_phone: form.contactPhone || "",
         city_slug: form.city,
-        township_text: form.township || null,
-        area: form.area || null,
         address: form.address || null,
-        photo_urls: form.photoUrls,
-        video_urls: form.videoUrls,
+        service_type_id: st.id,
         urgency: form.urgency,
-        timing: form.timing || null,
         preferred_date: form.customDate || null,
-        preferred_window: form.window,
-        budget_range: form.budget,
-        preferred_contact: form.contact,
-        contact_phone: form.contactPhone || null,
+        preferred_time: form.window || null,
+        short_description: shortDesc,
+        full_description: form.description || null,
+        lead_price_credits: priceCredits,
+        max_provider_unlocks: maxUnlocks,
+        expires_at: expiresAt,
       })
       .select("id")
       .single();
-    setSubmitting(false);
-    if (error) {
-      setErr(error.message);
+    if (leadErr || !lead) {
+      setSubmitting(false);
+      setErr(leadErr?.message ?? L("Failed to create request.", "မအောင်မြင်ပါ။"));
       return;
     }
-    // Also create a customer_leads entry for the pay-per-lead unlock system.
-    // Non-fatal: errors here don't block the original request flow.
-    try {
-      const subSlug = form.subcategories[0] ?? null;
-      if (subSlug) {
-        const { data: st } = await supabase
-          .from("service_types")
-          .select("id")
-          .eq("category_slug", form.category)
-          .eq("slug", subSlug)
-          .maybeSingle();
-        if (st?.id) {
-          const { data: pricing } = await supabase
-            .from("lead_pricing")
-            .select("price_credits, max_provider_unlocks, is_active")
-            .eq("service_type_id", st.id)
-            .maybeSingle();
-          if (pricing?.is_active) {
-            const shortDesc = (form.description || "").slice(0, 140);
-            const expiresAt = new Date(
-              Date.now() + (form.urgency === "today" ? 48 : 7 * 24) * 3600 * 1000,
-            ).toISOString();
-            const { data: lead } = await supabase
-              .from("customer_leads")
-              .insert({
-                customer_id: user.id,
-                customer_name: user.user_metadata?.full_name ?? user.email ?? "Customer",
-                customer_phone: form.contactPhone || "",
-                city_slug: form.city,
-                address: form.address || null,
-                service_type_id: st.id,
-                urgency: form.urgency,
-                preferred_date: form.customDate || null,
-                preferred_time: form.window || null,
-                short_description: shortDesc || subSlug,
-                full_description: form.description || null,
-                lead_price_credits: pricing.price_credits,
-                max_provider_unlocks: pricing.max_provider_unlocks,
-                expires_at: expiresAt,
-              })
-              .select("id")
-              .single();
-            if (lead?.id && form.photoUrls.length) {
-              await supabase.from("lead_photos").insert(
-                form.photoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: i })),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // swallow — main job_requests row is already created
-      console.warn("customer_leads create failed", e);
+    if (form.photoUrls.length) {
+      await supabase.from("lead_photos").insert(
+        form.photoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: i })),
+      );
     }
-    nav({ to: "/request/$jobId", params: { jobId: data.id }, search: { tab: "providers" } });
+    setSubmitting(false);
+    nav({ to: "/request/$leadId", params: { leadId: lead.id } });
   };
 
   // Auto-advance helper for single-select chip flows
