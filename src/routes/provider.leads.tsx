@@ -127,11 +127,15 @@ function LeadsPage() {
             <div className="space-y-3 text-sm">
               <div className="rounded-lg border border-border p-3">
                 <div className="font-medium">{pickedLead.service_name_en}</div>
-                <div className="text-xs text-muted-foreground mt-1">{pickedLead.short_description}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {pickedLead.city_slug} · {pickedLead.urgency}
+                </div>
               </div>
               <p>
-                You are about to spend <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> to unlock this lead.
-                If the customer details are valid, this fee is non-refundable.
+                Confirm to deduct <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> from your wallet and reveal the customer's full request, contact details and address. This fee is non-refundable once valid details are shown.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Wallet balance: <strong>{fmt(balance)} credits</strong> → after unlock: <strong>{fmt(Math.max(0, balance - pickedLead.lead_price_credits))} credits</strong>
               </p>
               <p className="text-xs text-muted-foreground">
                 {pickedLead.current_unlock_count} of {pickedLead.max_provider_unlocks} providers have unlocked this lead.
@@ -178,16 +182,18 @@ function LockedCard({ lead, onUnlock }: { lead: LeadPreview; onUnlock: () => voi
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-primary">{fmt(lead.lead_price_credits)}</div>
-          <div className="text-[10px] text-muted-foreground">credits</div>
+          <div className="text-[10px] text-muted-foreground">credits to view</div>
         </div>
       </div>
-      <p className="mt-2 text-sm">{lead.short_description}</p>
+      <p className="mt-2 text-sm text-muted-foreground italic">
+        Lead details are hidden. View the lead to see the customer's request, contact info and address.
+      </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
           {slotsLeft <= 2 && <span className="ml-1 font-semibold text-amber-600">· {slotsLeft} slot{slotsLeft===1?"":"s"} left</span>}
         </span>
-        <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />Unlock Lead</Button>
+        <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />View Lead ({fmt(lead.lead_price_credits)} credits)</Button>
       </div>
     </div>
   );
