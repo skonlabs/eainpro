@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { CITIES } from "@/lib/catalog";
-import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut } from "lucide-react";
+import { CITIES, CATEGORIES } from "@/lib/catalog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut, Briefcase } from "lucide-react";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
@@ -45,7 +47,8 @@ type FavRow = {
 
 function AccountPage() {
   const { lang, setLang } = useI18n();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, roles } = useAuth();
+  const isProvider = roles.includes("provider");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -64,6 +67,19 @@ function AccountPage() {
     phone: "",
     is_default: false,
   });
+
+  // Provider profile state
+  const [biz, setBiz] = useState({
+    business_name: "",
+    business_type: "individual" as "individual" | "business",
+    bio: "",
+    years_experience: 0,
+    supports_urgent: false,
+  });
+  const [bizCats, setBizCats] = useState<Record<string, string>>({});
+  const [bizCities, setBizCities] = useState<Record<string, boolean>>({});
+  const [savingBiz, setSavingBiz] = useState(false);
+  const [bizMsg, setBizMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -96,6 +112,82 @@ function AccountPage() {
       setFavs((f as unknown as FavRow[]) ?? []);
     })();
   }, [authLoading, user, nav, lang]);
+
+  useEffect(() => {
+    if (!user || !isProvider) return;
+    (async () => {
+      const [{ data: p }, { data: svcs }, { data: areas }] = await Promise.all([
+        supabase
+          .from("providers")
+          .select("business_name, business_type, bio, years_experience, supports_urgent")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase.from("provider_services").select("category_slug, base_price").eq("provider_id", user.id),
+        supabase.from("provider_service_areas").select("city_slug").eq("provider_id", user.id),
+      ]);
+      if (p) {
+        setBiz({
+          business_name: p.business_name ?? "",
+          business_type: (p.business_type as "individual" | "business") ?? "individual",
+          bio: p.bio ?? "",
+          years_experience: p.years_experience ?? 0,
+          supports_urgent: !!p.supports_urgent,
+        });
+      }
+      const m: Record<string, string> = {};
+      (svcs ?? []).forEach((s) => (m[s.category_slug] = s.base_price?.toString() ?? ""));
+      setBizCats(m);
+      const c: Record<string, boolean> = {};
+      (areas ?? []).forEach((a) => (c[a.city_slug] = true));
+      setBizCities(c);
+    })();
+  }, [user, isProvider]);
+
+  const toggleBizCat = (slug: string) =>
+    setBizCats((c) => {
+      const n = { ...c };
+      if (slug in n) delete n[slug];
+      else n[slug] = "";
+      return n;
+    });
+
+  const saveBusiness = async () => {
+    if (!user) return;
+    setSavingBiz(true);
+    setBizMsg(null);
+    const { error: upErr } = await supabase.from("providers").upsert({
+      id: user.id,
+      business_name: biz.business_name.trim(),
+      business_type: biz.business_type,
+      bio: biz.bio.trim() || null,
+      years_experience: biz.years_experience || 0,
+      supports_urgent: biz.supports_urgent,
+    });
+    if (upErr) {
+      setSavingBiz(false);
+      setBizMsg(upErr.message);
+      return;
+    }
+    await supabase.from("provider_services").delete().eq("provider_id", user.id);
+    if (Object.keys(bizCats).length) {
+      await supabase.from("provider_services").insert(
+        Object.entries(bizCats).map(([slug, p]) => ({
+          provider_id: user.id,
+          category_slug: slug,
+          base_price: p ? Number(p) : null,
+        })),
+      );
+    }
+    const cityList = Object.keys(bizCities).filter((k) => bizCities[k]);
+    await supabase.from("provider_service_areas").delete().eq("provider_id", user.id);
+    if (cityList.length) {
+      await supabase.from("provider_service_areas").insert(
+        cityList.map((c) => ({ provider_id: user.id, city_slug: c })),
+      );
+    }
+    setSavingBiz(false);
+    setBizMsg(L("Saved!", "သိမ်းပြီး!"));
+  };
 
   const saveProfile = async () => {
     if (!user || !profile) return;
@@ -197,8 +289,11 @@ function AccountPage() {
         </div>
 
         <Tabs defaultValue="profile">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isProvider ? "grid-cols-4" : "grid-cols-3"}`}>
             <TabsTrigger value="profile">{L("Profile", "ပရိုဖိုင်")}</TabsTrigger>
+            {isProvider && (
+              <TabsTrigger value="business">{L("Business", "လုပ်ငန်း")}</TabsTrigger>
+            )}
             <TabsTrigger value="addresses">{L("Addresses", "လိပ်စာ")}</TabsTrigger>
             <TabsTrigger value="favorites">{L("Favorites", "နှစ်သက်")}</TabsTrigger>
           </TabsList>
