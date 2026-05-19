@@ -291,7 +291,7 @@ function NewRequestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-44">
       {/* Slim progress bar */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
@@ -320,10 +320,10 @@ function NewRequestPage() {
         {renderStep()}
       </main>
 
-      {/* Sticky footer CTA */}
+      {/* Sticky footer CTA — sits above the global BottomNav (which is fixed at bottom-0, z-50). */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+        className="fixed inset-x-0 bottom-[68px] z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
       >
         <div className="mx-auto flex max-w-2xl items-center gap-2 sm:px-6">
           {isOptional() && step.kind !== "review" && (
