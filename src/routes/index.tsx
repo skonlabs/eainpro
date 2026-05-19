@@ -720,10 +720,59 @@ function AdminHome({ name, L }: { name: string; L: (en: string, my: string) => s
 
 function Greeting({ name, sub }: { name: string; sub: string }) {
   return (
-    <div className="px-1">
-      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hi</div>
-      <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{name}</h1>
-      <p className="mt-0.5 text-sm text-muted-foreground">{sub}</p>
+    <div className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20" style={{ background: "var(--gradient-hero)" }}>
+      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+      <div className="relative">
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">Hi</div>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{name}</h1>
+        <p className="mt-1 text-sm text-primary-foreground/85">{sub}</p>
+      </div>
+    </div>
+  );
+}
+
+function HeroCard({
+  eyebrow,
+  name,
+  sub,
+  ctaTo,
+  ctaSearch,
+  ctaLabel,
+  ctaHint,
+}: {
+  eyebrow: string;
+  name: string;
+  sub: string;
+  ctaTo: string;
+  ctaSearch?: Record<string, string>;
+  ctaLabel: string;
+  ctaHint: string;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-xl shadow-primary/25"
+      style={{ background: "var(--gradient-hero)" }}
+    >
+      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+      <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-[color:var(--accent)]/30 blur-3xl" />
+      <div className="relative">
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">{eyebrow}</div>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{name}</h1>
+        <p className="mt-1 max-w-sm text-sm text-primary-foreground/85">{sub}</p>
+        <Link
+          to={ctaTo as "/"}
+          search={ctaSearch as Record<string, never>}
+          className="mt-4 flex items-center justify-between rounded-2xl bg-white/95 px-4 py-3 text-foreground shadow-md transition active:scale-[0.99]"
+        >
+          <div>
+            <div className="text-sm font-bold tracking-tight">{ctaLabel}</div>
+            <div className="text-[11px] text-muted-foreground">{ctaHint}</div>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/40">
+            <Plus className="h-5 w-5" />
+          </span>
+        </Link>
+      </div>
     </div>
   );
 }
