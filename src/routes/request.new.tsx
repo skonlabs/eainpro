@@ -67,7 +67,15 @@ type Step = { kind: StepKind; questionId?: string };
 
 function NewRequestPage() {
   const search = Route.useSearch();
-  const cat = search.cat ?? search.category;
+  const CATEGORY_ALIASES: Record<string, string> = {
+    pest: "pest-control",
+    aircon: "aircon-utilities",
+    repair: "home-repair",
+    install: "installation",
+  };
+  const rawCat = search.cat ?? search.category;
+  const aliased = rawCat ? CATEGORY_ALIASES[rawCat] ?? rawCat : undefined;
+  const cat = aliased && CATEGORIES.some((c) => c.slug === aliased) ? aliased : undefined;
   const sub = search.sub;
   const initialCity = search.city;
   const { lang } = useI18n();
