@@ -1827,6 +1827,18 @@ function BookingPanel({
         );
       })()}
 
+      {/* Schedule card — single source of truth for "what time?" */}
+      {!isCancelled && !isCompleted && (
+        <ScheduleCard
+          booking={booking}
+          role={role}
+          lang={lang}
+          jobAddress={jobAddress}
+          onConfirmTime={onConfirmTime}
+          onProposeTime={(iso) => onReschedule(iso)}
+        />
+      )}
+
       {/* Provider */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
