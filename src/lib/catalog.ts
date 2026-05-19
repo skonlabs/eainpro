@@ -73,19 +73,6 @@ const o = (value: string, en: string, my: string): QuestionOption => ({ value, e
 export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
   plumbing: [
     {
-      id: "issue_type",
-      en: "What type of issue is it?",
-      my: "ဘယ်လို ပြဿနာလဲ?",
-      options: [
-        o("leak", "Leak", "ရေယိုခြင်း"),
-        o("blocked", "Blocked drain", "ရေပိုက် ပိတ်နေ"),
-        o("toilet", "Toilet issue", "အိမ်သာ ပြဿနာ"),
-        o("pipe", "Pipe issue", "ပိုက် ပြဿနာ"),
-        o("pump", "Water pump issue", "ရေပန့် ပြဿနာ"),
-        o("not_sure", "Not sure", "မသိသေး"),
-      ],
-    },
-    {
       id: "leaking_now",
       en: "Is water currently leaking?",
       my: "လောလောဆယ် ရေယိုနေသလား?",
@@ -93,20 +80,6 @@ export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
     },
   ],
   electrical: [
-    {
-      id: "issue_type",
-      en: "What electrical issue do you need help with?",
-      my: "ဘယ်လို လျှပ်စစ်ပြဿနာလဲ?",
-      options: [
-        o("no_power", "No power", "မီးမလာ"),
-        o("switch", "Switch / socket issue", "ခလုတ်/ပလပ်ပေါက် ပြဿနာ"),
-        o("wiring", "Wiring issue", "ဝါယာကြိုး ပြဿနာ"),
-        o("light_fan", "Light / fan issue", "မီး/ပန်ကာ ပြဿနာ"),
-        o("breaker", "Breaker issue", "ဘရိတ်ကာ ပြဿနာ"),
-        o("install", "Installation", "တပ်ဆင်ခြင်း"),
-        o("other", "Other", "အခြား"),
-      ],
-    },
     {
       id: "safety",
       en: "Is there any safety concern?",
@@ -122,19 +95,6 @@ export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
   ],
   aircon: [
     {
-      id: "service",
-      en: "What aircon service do you need?",
-      my: "ဘယ်လို အဲကွန်းဝန်ဆောင်မှု လိုသလဲ?",
-      options: [
-        o("clean", "Cleaning", "သန့်ရှင်းခြင်း"),
-        o("repair", "Repair", "ပြုပြင်ခြင်း"),
-        o("install", "Installation", "တပ်ဆင်ခြင်း"),
-        o("gas", "Gas refill", "ဂတ်စ်ဖြည့်"),
-        o("relocate", "Relocation", "ပြောင်းရွှေ့"),
-        o("not_sure", "Not sure", "မသိ"),
-      ],
-    },
-    {
       id: "units",
       en: "How many AC units?",
       my: "အဲကွန်း ဘယ်နှစ်လုံး?",
@@ -142,18 +102,6 @@ export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
     },
   ],
   cleaning: [
-    {
-      id: "service",
-      en: "What cleaning service do you need?",
-      my: "ဘယ်လို သန့်ရှင်းရေး လိုသလဲ?",
-      options: [
-        o("regular", "Regular house cleaning", "ပုံမှန် အိမ်သန့်ရှင်းရေး"),
-        o("deep", "Deep cleaning", "အပြည့်အဝ သန့်ရှင်းရေး"),
-        o("move", "Move-in / move-out", "ပြောင်းရွှေ့ သန့်ရှင်းရေး"),
-        o("office", "Office cleaning", "ရုံးခန်း သန့်ရှင်းရေး"),
-        o("post_reno", "Post-renovation", "ပြုပြင်ပြီး သန့်ရှင်းရေး"),
-      ],
-    },
     {
       id: "size",
       en: "Property size",
@@ -168,18 +116,6 @@ export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
     },
   ],
   moving: [
-    {
-      id: "what",
-      en: "What do you need help moving?",
-      my: "ဘာသယ်ဖို့ ကူညီလိုသလဲ?",
-      options: [
-        o("few", "Few items", "ပစ္စည်းအနည်းငယ်"),
-        o("apt", "Full apartment", "တိုက်ခန်းအပြည့်"),
-        o("house", "Full house", "အိမ်အပြည့်"),
-        o("office", "Office / shop", "ရုံး/ဆိုင်"),
-        o("heavy", "Heavy item only", "လေးလံသော ပစ္စည်းသာ"),
-      ],
-    },
     {
       id: "vehicle",
       en: "Do you need a vehicle?",
