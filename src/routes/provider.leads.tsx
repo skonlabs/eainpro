@@ -178,16 +178,18 @@ function LockedCard({ lead, onUnlock }: { lead: LeadPreview; onUnlock: () => voi
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-primary">{fmt(lead.lead_price_credits)}</div>
-          <div className="text-[10px] text-muted-foreground">credits</div>
+          <div className="text-[10px] text-muted-foreground">credits to view</div>
         </div>
       </div>
-      <p className="mt-2 text-sm">{lead.short_description}</p>
+      <p className="mt-2 text-sm text-muted-foreground italic">
+        Lead details are hidden. View the lead to see the customer's request, contact info and address.
+      </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
           {slotsLeft <= 2 && <span className="ml-1 font-semibold text-amber-600">· {slotsLeft} slot{slotsLeft===1?"":"s"} left</span>}
         </span>
-        <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />Unlock Lead</Button>
+        <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />View Lead ({fmt(lead.lead_price_credits)} credits)</Button>
       </div>
     </div>
   );
