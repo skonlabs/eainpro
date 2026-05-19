@@ -62,12 +62,16 @@ function AdminPage() {
             <TabsTrigger value="pricing">Lead pricing</TabsTrigger>
             <TabsTrigger value="topups">Top-ups</TabsTrigger>
             <TabsTrigger value="refunds">Refunds</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="audit">Audit log</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
           <TabsContent value="topups"><TopupsTab /></TabsContent>
           <TabsContent value="refunds"><RefundsTab /></TabsContent>
+          <TabsContent value="revenue"><RevenueTab /></TabsContent>
+          <TabsContent value="audit"><AuditTab /></TabsContent>
           <TabsContent value="providers"><ProvidersTab /></TabsContent>
         </Tabs>
       </main>
