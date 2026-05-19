@@ -422,7 +422,7 @@ function NewRequestPage() {
                     setForm((f) => ({
                       ...f,
                       subcategories: f.subcategories.includes(s.slug)
-                        ? f.subcategories.filter((x) => x !== s.slug)
+                        ? f.subcategories.filter((x: string) => x !== s.slug)
                         : [...f.subcategories, s.slug],
                     }))
                   }
@@ -786,7 +786,7 @@ function NewRequestPage() {
                     form.subcategories.length
                       ? ` · ${form.subcategories
                           .map(
-                            (slug) =>
+                            (slug: string) =>
                               subs.find((s) => s.slug === slug)?.[lang === "en" ? "en" : "my"] ?? slug,
                           )
                           .join(", ")}`
