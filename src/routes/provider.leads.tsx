@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { listAvailableLeads, listMyUnlocks, unlockLead, updateUnlockStatus, UNLOCK_ERROR_MESSAGES, type LeadPreview } from "@/lib/leads";
 import { fmt, getWallet } from "@/lib/wallet";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
