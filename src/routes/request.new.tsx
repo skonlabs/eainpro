@@ -165,6 +165,15 @@ function NewRequestPage() {
   };
 
   // Per-step validation for the primary CTA
+  const getAnswerValues = (qid: string): string[] => {
+    const value = form.answers[qid];
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
   const canContinue = (): boolean => {
     switch (step.kind) {
       case "category":
@@ -172,7 +181,7 @@ function NewRequestPage() {
       case "subcategory":
         return form.subcategories.length > 0;
       case "question":
-        return !!form.answers[step.questionId!];
+        return getAnswerValues(step.questionId!).length > 0;
       case "township":
         return form.township.trim().length > 0;
       case "description":
@@ -288,6 +297,27 @@ function NewRequestPage() {
   const pickAnswer = (qid: string, val: string) => {
     setForm((f) => ({ ...f, answers: { ...f.answers, [qid]: val } }));
     setTimeout(() => goNext(), 180);
+  };
+
+  const toggleAnswer = (qid: string, val: string) => {
+    setForm((f) => {
+      const current = (f.answers[qid] ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const next = current.includes(val)
+        ? current.filter((item) => item !== val)
+        : [...current, val];
+
+      return {
+        ...f,
+        answers: {
+          ...f.answers,
+          [qid]: next.join(","),
+        },
+      };
+    });
   };
 
   return (
@@ -445,19 +475,27 @@ function NewRequestPage() {
       case "question": {
         const q = questions.find((x) => x.id === step.questionId);
         if (!q) return null;
+        const selectedAnswers = getAnswerValues(q.id);
         return (
           <StepShell title={L(q.en, q.my)} hint={L("Tap to choose.", "နှိပ်၍ ရွေးပါ။")}>
             <div className="grid gap-2 sm:grid-cols-2">
               {q.options.map((opt) => (
                 <BigChoice
                   key={opt.value}
-                  active={form.answers[q.id] === opt.value}
-                  onClick={() => pickAnswer(q.id, opt.value)}
+                  active={selectedAnswers.includes(opt.value)}
+                  onClick={() =>
+                    q.multi ? toggleAnswer(q.id, opt.value) : pickAnswer(q.id, opt.value)
+                  }
                 >
                   {L(opt.en, opt.my)}
                 </BigChoice>
               ))}
             </div>
+            {q.multi && selectedAnswers.length > 0 && (
+              <p className="mt-3 text-xs font-semibold text-primary">
+                {L(`${selectedAnswers.length} selected`, `${selectedAnswers.length} ခု ရွေးထား`) }
+              </p>
+            )}
           </StepShell>
         );
       }
