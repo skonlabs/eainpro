@@ -195,6 +195,12 @@ function DashboardPage() {
               {lang === "en" ? "Edit profile" : "ပရိုဖိုင် ပြင်ရန်"}
             </Button>
           </Link>
+          <Link to="/provider/leads">
+            <Button variant="outline" size="sm">Leads</Button>
+          </Link>
+          <Link to="/provider/wallet">
+            <Button size="sm">Wallet</Button>
+          </Link>
         </div>
 
         {provider && !provider.is_verified && (
