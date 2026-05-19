@@ -37,6 +37,15 @@ export const UNLOCK_ERROR_MESSAGES: Record<string, string> = {
   INSUFFICIENT_CREDITS: "Insufficient credits. Please top up your wallet.",
 };
 
+export function isCustomerLeadRecursionError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const code = "code" in error ? String((error as { code?: string }).code ?? "") : "";
+  const message = "message" in error ? String((error as { message?: string }).message ?? "") : "";
+
+  return code === "42P17" && message.includes('relation "customer_leads"');
+}
+
 export async function listAvailableLeads(providerId: string) {
   // get provider services + areas to filter client-side
   const [{ data: services }, { data: areas }] = await Promise.all([
@@ -72,13 +81,35 @@ export async function listAvailableLeads(providerId: string) {
 export async function listMyUnlocks(providerId: string, statuses?: string[]) {
   let q = supabase
     .from("provider_lead_unlocks")
-    .select("*, customer_leads(*)")
+    .select("*")
     .eq("provider_id", providerId)
     .order("unlocked_at", { ascending: false });
   if (statuses && statuses.length) q = q.in("status", statuses);
   const { data, error } = await q;
   if (error) throw error;
-  return data ?? [];
+
+  const rows = data ?? [];
+  const leadIds = [...new Set(rows.map((unlock) => unlock.lead_id).filter(Boolean))];
+
+  if (leadIds.length === 0) return rows;
+
+  const leadEntries = await Promise.all(
+    leadIds.map(async (leadId) => {
+      const { data: lead, error: leadError } = await supabase.rpc("get_customer_lead", {
+        _lead_id: leadId,
+      });
+
+      if (leadError) throw leadError;
+
+      return [leadId, Array.isArray(lead) ? (lead[0] ?? null) : lead] as const;
+    }),
+  );
+
+  const leadMap = new Map(leadEntries);
+  return rows.map((unlock) => ({
+    ...unlock,
+    customer_leads: leadMap.get(unlock.lead_id) ?? null,
+  }));
 }
 
 export async function unlockLead(leadId: string) {
