@@ -65,6 +65,7 @@ export type Question = {
   id: string;
   en: string;
   my: string;
+  multi?: boolean;
   options: QuestionOption[];
 };
 
@@ -84,6 +85,7 @@ export const CATEGORY_QUESTIONS: Record<string, Question[]> = {
       id: "safety",
       en: "Is there any safety concern?",
       my: "ဘေးကင်းရေး စိုးရိမ်စရာ ရှိသလား?",
+      multi: true,
       options: [
         o("spark", "Spark", "မီးပွား"),
         o("smell", "Burning smell", "လောင်ကျွမ်းသော အနံ့"),
