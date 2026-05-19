@@ -758,57 +758,112 @@ function NewRequestPage() {
               "ဝန်ဆောင်မှုပေးသူများ မြင်တွေ့၍ စျေးနှုန်း ပေးပါမည်။",
             )}
           >
-            <div className="space-y-3 rounded-2xl border border-border bg-card p-4 text-sm">
-              <Row
-                label={L("Service", "ဝန်ဆောင်မှု")}
-                value={
-                  category
-                    ? `${lang === "en" ? category.en : category.my}${
-                        form.subcategory
-                          ? ` · ${subs.find((s) => s.slug === form.subcategory)?.[lang === "en" ? "en" : "my"] ?? ""}`
-                          : ""
-                      }`
-                    : "—"
-                }
-              />
-              <Row
-                label={L("Description", "ဖော်ပြချက်")}
-                value={form.description}
-                multiline
-              />
-              <Row
-                label={L("Location", "တည်နေရာ")}
-                value={`${CITIES.find((c) => c.slug === form.city)?.[lang === "en" ? "en" : "my"] ?? form.city}, ${form.township}${form.area ? ` · ${form.area}` : ""}`}
-              />
-              <Row
-                label={L("Photos", "ဓာတ်ပုံ")}
-                value={
-                  form.photoUrls.length
-                    ? L(`${form.photoUrls.length} attached`, `${form.photoUrls.length} ခု`)
-                    : L("None", "မရှိ")
-                }
-              />
-              <Row
-                label={L("Urgency", "အရေးပေါ်")}
-                value={
-                  URGENCY_OPTIONS.find((u) => u.value === form.urgency)?.[
-                    lang === "en" ? "en" : "my"
-                  ] ?? form.urgency
-                }
-              />
-              <Row
-                label={L("When", "ဘယ်အချိန်")}
-                value={`${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`}
-              />
-              <Row
-                label={L("Budget", "ဘတ်ဂျက်")}
-                value={
-                  BUDGET_OPTIONS.find((b) => b.value === form.budget)?.[
-                    lang === "en" ? "en" : "my"
-                  ] ?? "—"
-                }
-              />
-            </div>
+            {(() => {
+              const goTo = (kind: StepKind) => {
+                const idx = steps.findIndex((s) => s.kind === kind);
+                if (idx >= 0) setStepIdx(idx);
+              };
+              const serviceText = category
+                ? `${lang === "en" ? category.en : category.my}${
+                    form.subcategory
+                      ? ` · ${subs.find((s) => s.slug === form.subcategory)?.[lang === "en" ? "en" : "my"] ?? ""}`
+                      : ""
+                  }`
+                : "—";
+              const locationText = `${CITIES.find((c) => c.slug === form.city)?.[lang === "en" ? "en" : "my"] ?? form.city}${form.township ? `, ${form.township}` : ""}${form.area ? ` · ${form.area}` : ""}`;
+              const urgencyText =
+                URGENCY_OPTIONS.find((u) => u.value === form.urgency)?.[lang === "en" ? "en" : "my"] ?? form.urgency;
+              const whenText = `${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`;
+              const budgetText =
+                BUDGET_OPTIONS.find((b) => b.value === form.budget)?.[lang === "en" ? "en" : "my"] ?? "—";
+              return (
+                <div className="space-y-3">
+                  <ReviewItem
+                    icon={<Wrench className="h-4 w-4" />}
+                    label={L("Service", "ဝန်ဆောင်မှု")}
+                    value={serviceText}
+                    onEdit={() => goTo("subcategory")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
+                  <ReviewItem
+                    icon={<FileText className="h-4 w-4" />}
+                    label={L("Description", "ဖော်ပြချက်")}
+                    value={form.description || L("—", "—")}
+                    multiline
+                    onEdit={() => goTo("description")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
+                  <ReviewItem
+                    icon={<MapPin className="h-4 w-4" />}
+                    label={L("Location", "တည်နေရာ")}
+                    value={locationText}
+                    onEdit={() => goTo("city")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                    <div className="flex items-center justify-between gap-2 px-4 pt-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <ImageIcon className="h-4 w-4" />
+                        {L("Photos", "ဓာတ်ပုံ")}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => goTo("photos")}
+                        className="text-xs font-semibold text-primary hover:underline"
+                      >
+                        {L("Edit", "ပြင်")}
+                      </button>
+                    </div>
+                    <div className="px-4 pb-4 pt-2">
+                      {form.photoUrls.length ? (
+                        <div className="grid grid-cols-4 gap-2">
+                          {form.photoUrls.map((u) => (
+                            <div
+                              key={u}
+                              className="relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+                            >
+                              <img
+                                src={u}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          {L("No photos added.", "ဓာတ်ပုံ မထည့်ထား။")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <ReviewItem
+                      icon={<Zap className="h-4 w-4" />}
+                      label={L("Urgency", "အရေးပေါ်")}
+                      value={urgencyText}
+                      onEdit={() => goTo("urgency")}
+                      editLabel={L("Edit", "ပြင်")}
+                    />
+                    <ReviewItem
+                      icon={<CalendarClock className="h-4 w-4" />}
+                      label={L("When", "ဘယ်အချိန်")}
+                      value={whenText}
+                      onEdit={() => goTo("timing")}
+                      editLabel={L("Edit", "ပြင်")}
+                    />
+                  </div>
+                  <ReviewItem
+                    icon={<Wallet className="h-4 w-4" />}
+                    label={L("Budget", "ဘတ်ဂျက်")}
+                    value={budgetText}
+                    onEdit={() => goTo("budget")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
+                </div>
+              );
+            })()}
             {err && (
               <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
                 {err}
