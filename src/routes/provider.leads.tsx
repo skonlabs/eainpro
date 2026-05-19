@@ -21,7 +21,7 @@ export const Route = createFileRoute("/provider/leads")({
 const STATUS_OPTIONS = ["unlocked","contacted","quoted","won","lost","customer_no_response","invalid","completed"] as const;
 
 function LeadsPage() {
-  const { user, roles, loading } = useAuth();
+  const { user, roles, loading, rolesReady } = useAuth();
   const nav = useNavigate();
   const [tab, setTab] = useState("available");
   const [available, setAvailable] = useState<LeadPreview[] | null>(null);
@@ -57,11 +57,11 @@ function LeadsPage() {
   };
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !rolesReady) return;
     if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/leads" } });
     if (!roles.includes("provider")) return void nav({ to: "/provider/onboarding" });
     refresh();
-  }, [loading, user, roles, nav]);
+  }, [loading, rolesReady, user, roles, nav]);
 
   if (loading || !user) return null;
 
