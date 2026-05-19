@@ -71,8 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s));
 
     supabase.auth.getSession().then(({ data }) => {
+      // The onAuthStateChange listener already fires INITIAL_SESSION with the
+      // same session and triggers loadRoles via apply(). Calling apply +
+      // loadRoles again here would flip rolesReady back to false and cause a
+      // visible flash/re-render across the app. Just flip loading off.
       apply(data.session);
-      loadRoles(data.session?.user?.id).finally(() => setLoading(false));
+      setLoading(false);
     });
 
     return () => sub.subscription.unsubscribe();
