@@ -501,21 +501,13 @@ function CustomerHome({
 
 type ProviderBooking = {
   id: string;
-  job_id: string;
+  lead_id: string;
   status: string;
   scheduled_at: string | null;
   amount: number | null;
-  time_confirmed_by_customer: boolean | null;
-  time_confirmed_by_provider: boolean | null;
-  time_proposed_by: string | null;
-  job: { category_slug: string; city_slug: string; address: string | null } | null;
-};
-
-type ProviderInvite = {
-  id: string;
-  job_id: string;
-  status: string;
-  job: { category_slug: string; city_slug: string; created_at: string } | null;
+  customer_confirmed_at: string | null;
+  provider_confirmed_at: string | null;
+  lead: { category_slug: string; city_slug: string; address: string | null } | null;
 };
 
 type ProviderProfile = {
@@ -539,7 +531,6 @@ function ProviderHome({
   const nav = useNavigate();
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [bookings, setBookings] = useState<ProviderBooking[] | null>(null);
-  const [invites, setInvites] = useState<ProviderInvite[] | null>(null);
   const [newJobsCount, setNewJobsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -555,36 +546,47 @@ function ProviderHome({
       }
       setProfile(prov as ProviderProfile);
 
-      const [bkRes, invRes, svcRes, areaRes] = await Promise.all([
+      const [bkRes, svcRes, areaRes] = await Promise.all([
         supabase
           .from("bookings")
           .select(
-            "id, job_id, status, scheduled_at, amount, time_confirmed_by_customer, time_confirmed_by_provider, time_proposed_by, job:job_requests(category_slug, city_slug, address)",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(city_slug, address, service_type:service_types(category_slug))",
           )
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
           .order("scheduled_at", { ascending: true, nullsFirst: false }),
-        supabase
-          .from("request_invitations")
-          .select("id, job_id, status, job:job_requests(category_slug, city_slug, created_at)")
-          .eq("provider_id", userId)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(10),
         supabase.from("provider_services").select("category_slug").eq("provider_id", userId),
         supabase.from("provider_service_areas").select("city_slug").eq("provider_id", userId),
       ]);
-      setBookings((bkRes.data ?? []) as unknown as ProviderBooking[]);
-      setInvites((invRes.data ?? []) as unknown as ProviderInvite[]);
+      setBookings(
+        (bkRes.data ?? []).map((b: any) => ({
+          ...b,
+          lead: b.lead
+            ? {
+                city_slug: b.lead.city_slug,
+                address: b.lead.address ?? null,
+                category_slug: Array.isArray(b.lead.service_type)
+                  ? b.lead.service_type[0]?.category_slug ?? ""
+                  : b.lead.service_type?.category_slug ?? "",
+              }
+            : null,
+        })) as ProviderBooking[],
+      );
 
       const cats = (svcRes.data ?? []).map((r) => r.category_slug);
       const cities = (areaRes.data ?? []).map((r) => r.city_slug);
       if (cats.length) {
-        let q = supabase
-          .from("job_requests")
-          .select("id", { count: "exact", head: true })
-          .in("status", ["open", "quoted"])
+        // Count active leads that match this provider's services + areas.
+        const { data: types } = await supabase
+          .from("service_types")
+          .select("id")
           .in("category_slug", cats);
+        const typeIds = (types ?? []).map((t) => t.id);
+        let q = supabase
+          .from("customer_leads")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .in("service_type_id", typeIds.length ? typeIds : ["00000000-0000-0000-0000-000000000000"]);
         if (cities.length) q = q.in("city_slug", cities);
         const { count } = await q;
         setNewJobsCount(count ?? 0);
@@ -600,17 +602,17 @@ function ProviderHome({
     return (bookings ?? []).filter((b) => {
       if (!b.scheduled_at) return false;
       const t = new Date(b.scheduled_at).getTime();
-      const confirmed = b.time_confirmed_by_customer && b.time_confirmed_by_provider;
+      const confirmed = b.customer_confirmed_at && b.provider_confirmed_at;
       return confirmed && t >= start.getTime() && t < end.getTime();
     });
   }, [bookings]);
 
   const awaitingMyTime = (bookings ?? []).filter(
-    (b) => b.scheduled_at && !b.time_confirmed_by_provider,
+    (b) => b.scheduled_at && !b.provider_confirmed_at,
   );
 
   const activeCount = bookings?.length ?? 0;
-  const attentionCount = awaitingMyTime.length + (invites?.length ?? 0);
+  const attentionCount = awaitingMyTime.length;
 
   return (
     <div className="space-y-5">
