@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
+import { ChevronRight, MapPin, Plus, Inbox, RotateCcw } from "lucide-react";
 
 export const Route = createFileRoute("/my-requests")({
   component: MyRequestsPage,
@@ -71,6 +71,16 @@ function MyRequestsPage() {
     enabled: !!user,
   });
 
+  const [view, setView] = useState<"active" | "past">("active");
+  const PAST = new Set(["completed", "cancelled"]);
+  const { active, past } = useMemo(() => {
+    const a: Row[] = [];
+    const p: Row[] = [];
+    (rows ?? []).forEach((r) => (PAST.has(r.status) ? p.push(r) : a.push(r)));
+    return { active: a, past: p };
+  }, [rows]);
+  const shown = view === "active" ? active : past;
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
 
@@ -94,6 +104,31 @@ function MyRequestsPage() {
             </Button>
           </Link>
         </div>
+
+        {rows && rows.length > 0 && (
+          <div className="mt-5 inline-flex rounded-xl border border-border bg-card p-1 text-sm">
+            <button
+              onClick={() => setView("active")}
+              className={`rounded-lg px-3 py-1.5 font-semibold transition ${
+                view === "active"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {L("Active", "လုပ်နေ")} ({active.length})
+            </button>
+            <button
+              onClick={() => setView("past")}
+              className={`rounded-lg px-3 py-1.5 font-semibold transition ${
+                view === "past"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {L("Past", "ပြီးခဲ့")} ({past.length})
+            </button>
+          </div>
+        )}
 
         {!rows && (
           <ul className="mt-6 grid gap-2">
@@ -124,14 +159,24 @@ function MyRequestsPage() {
           </div>
         )}
 
-        {rows && rows.length > 0 && (
+        {rows && rows.length > 0 && shown.length === 0 && (
+          <p className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            {view === "active"
+              ? L("No active requests.", "လုပ်နေသော တောင်းဆိုချက် မရှိ။")
+              : L("No past requests yet.", "ပြီးခဲ့သော တောင်းဆိုချက် မရှိ။")}
+          </p>
+        )}
+
+        {rows && rows.length > 0 && shown.length > 0 && (
           <ul className="mt-6 grid gap-2">
-            {rows.map((r) => {
+            {shown.map((r) => {
               const cat = CATEGORIES.find((c) => c.slug === r.category_slug);
               const city = CITIES.find((c) => c.slug === r.city_slug);
+              const isPast = PAST.has(r.status);
               return (
                 <li key={r.id}>
-                  <Link
+                  <div className="relative">
+                    <Link
                     to="/request/$jobId"
                     params={{ jobId: r.id }}
                     search={{ tab: "details" }}
@@ -156,7 +201,19 @@ function MyRequestsPage() {
                       </div>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
+                    </Link>
+                    {isPast && (
+                      <Link
+                        to="/request/new"
+                        search={{ cat: r.category_slug, sub: undefined, city: r.city_slug }}
+                        className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        {L("Book again", "ပြန်ဘုတ်ကင်")}
+                      </Link>
+                    )}
+                  </div>
                 </li>
               );
             })}
