@@ -89,7 +89,7 @@ export function AppBar() {
             <img
               src={logoUrl}
               alt="Fixido"
-              className="h-9 w-9 rounded-xl shadow-md shadow-primary/20"
+              className="h-9 w-9"
             />
             <span className="font-display text-base font-extrabold tracking-tight">Fixido</span>
           </Link>
