@@ -232,15 +232,13 @@ function ProviderProfilePage() {
             </>
           )}
         </div>
-        <p className="text-center text-xs text-muted-foreground">
-          {user
-            ? (lang === "en"
-              ? "Direct requests are sent only to this provider. They pay 2× the standard lead fee."
-              : "တိုက်ရိုက်တောင်းဆိုမှုသည် ဤပညာရှင်ထံသာ ပို့ပြီး ကြေး ၂ ဆ ဖြစ်ပါမည်။")
-            : (lang === "en"
+        {!user && (
+          <p className="text-center text-xs text-muted-foreground">
+            {lang === "en"
               ? "Browsing is free. You only need an account when you're ready to send a request."
-              : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။")}
-        </p>
+              : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
+          </p>
+        )}
       </main>
 
     </div>
