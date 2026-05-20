@@ -40,6 +40,7 @@ const searchSchema = z.object({
   sub: z.string().optional(),
   category: z.string().optional(),
   city: z.string().optional(),
+  directTo: z.string().optional(),
 });
 
 export const Route = createFileRoute("/request/new")({
@@ -78,6 +79,7 @@ function NewRequestPage() {
   const cat = aliased && CATEGORIES.some((c) => c.slug === aliased) ? aliased : undefined;
   const sub = search.sub;
   const initialCity = search.city;
+  const directTo = search.directTo;
   const { lang } = useI18n();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -85,6 +87,19 @@ function NewRequestPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [directProvider, setDirectProvider] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (!directTo) { setDirectProvider(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("providers")
+        .select("id, business_name")
+        .eq("id", directTo)
+        .maybeSingle();
+      if (data) setDirectProvider({ id: data.id, name: data.business_name ?? "Provider" });
+    })();
+  }, [directTo]);
 
   const [form, setForm] = useState({
     category: cat ?? "",
