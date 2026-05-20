@@ -93,19 +93,23 @@ export async function listMyUnlocks(providerId: string, statuses?: string[]) {
 
   if (leadIds.length === 0) return rows;
 
-  const leadEntries = await Promise.all(
-    leadIds.map(async (leadId) => {
-      const { data: lead, error: leadError } = await supabase.rpc("get_customer_lead", {
-        _lead_id: leadId,
-      });
-
-      if (leadError) throw leadError;
-
-      return [leadId, Array.isArray(lead) ? (lead[0] ?? null) : lead] as const;
-    }),
-  );
-
-  const leadMap = new Map(leadEntries);
+  // Batch fetch with a single RPC. Falls back to the per-lead RPC if the
+  // batch function isn't deployed yet.
+  const leadMap = new Map<string, any>();
+  const { data: batch, error: batchErr } = await supabase.rpc("get_customer_leads", {
+    _lead_ids: leadIds,
+  });
+  if (!batchErr && Array.isArray(batch)) {
+    for (const lead of batch) leadMap.set(lead.id, lead);
+  } else {
+    const entries = await Promise.all(
+      leadIds.map(async (leadId) => {
+        const { data: lead } = await supabase.rpc("get_customer_lead", { _lead_id: leadId });
+        return [leadId, Array.isArray(lead) ? (lead[0] ?? null) : lead] as const;
+      }),
+    );
+    for (const [k, v] of entries) leadMap.set(k, v);
+  }
   return rows.map((unlock) => ({
     ...unlock,
     customer_leads: leadMap.get(unlock.lead_id) ?? null,

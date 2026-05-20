@@ -64,7 +64,7 @@ function WalletPage() {
     listCreditPackages().then(setPackages).catch(() => {});
   }, [loading, user, roles, nav]);
 
-  if (loading || !user) return null;
+  // Render shell immediately; individual sections handle their own empty state.
 
   const balance = wallet?.balance_credits ?? 0;
   const lowBalance = balance < 1500;
@@ -90,7 +90,7 @@ function WalletPage() {
   };
 
   const handleSubmit = async () => {
-    if (!picked) return;
+    if (!picked || !user) return;
     if (!ref.trim()) return toast.error("Enter the transaction reference");
     if (!selectedMethod) return toast.error("Select a payment method");
     setBusy(true);
