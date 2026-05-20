@@ -59,18 +59,20 @@ function AdminPage() {
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin console</h1>
         <Tabs defaultValue="overview">
-          <TabsList className="flex w-full flex-wrap gap-1">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="pricing">Lead pricing</TabsTrigger>
-            <TabsTrigger value="topups">Top-ups</TabsTrigger>
-            <TabsTrigger value="refunds">Refunds</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="audit">Audit log</TabsTrigger>
-            <TabsTrigger value="providers">Providers</TabsTrigger>
-            <TabsTrigger value="payments">Payment methods</TabsTrigger>
-            <TabsTrigger value="packages">Packages</TabsTrigger>
-            <TabsTrigger value="adjust">Adjust wallet</TabsTrigger>
-          </TabsList>
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+            <TabsList className="inline-flex h-auto w-max gap-1 p-1">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="pricing">Lead pricing</TabsTrigger>
+              <TabsTrigger value="topups">Top-ups</TabsTrigger>
+              <TabsTrigger value="refunds">Refunds</TabsTrigger>
+              <TabsTrigger value="revenue">Revenue</TabsTrigger>
+              <TabsTrigger value="audit">Audit log</TabsTrigger>
+              <TabsTrigger value="providers">Providers</TabsTrigger>
+              <TabsTrigger value="payments">Payment methods</TabsTrigger>
+              <TabsTrigger value="packages">Packages</TabsTrigger>
+              <TabsTrigger value="adjust">Adjust wallet</TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
           <TabsContent value="topups"><TopupsTab /></TabsContent>
