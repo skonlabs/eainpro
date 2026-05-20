@@ -764,52 +764,6 @@ function NewRequestPage() {
           );
         }
 
-      case "township-old":
-        return (
-          <StepShell
-            title={L("Which township?", "ဘယ်မြို့နယ်လဲ?")}
-            hint={L(
-              "Type your township and a nearby landmark if helpful.",
-              "မြို့နယ်နှင့် နီးစပ်ရာ နေရာကို ရိုက်ထည့်ပါ။",
-            )}
-          >
-            <Input
-              autoFocus
-              placeholder={L("e.g. Bahan, Hlaing, Yankin", "ဥပမာ — ဗဟန်း")}
-              value={form.township}
-              onChange={(e) => set("township", e.target.value)}
-              className="h-12 text-base"
-            />
-            <Input
-              placeholder={L(
-                "Area / landmark (optional)",
-                "ရပ်ကွက် / မှတ်တိုင် (ရွေး)",
-              )}
-              value={form.area}
-              onChange={(e) => set("area", e.target.value)}
-              className="mt-2 h-12 text-base"
-            />
-            <Input
-              placeholder={L(
-                "Street / building / unit (optional, kept private)",
-                "လမ်း / အဆောက်အအုံ (ရွေး)",
-              )}
-              value={form.address}
-              onChange={(e) => set("address", e.target.value)}
-              className="mt-2 h-12 text-base"
-            />
-            <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <p>
-                {L(
-                  "Your exact address is shared only after you confirm a provider.",
-                  "လိပ်စာအတိအကျကို အတည်ပြုပြီးမှသာ ပြသပါမည်။",
-                )}
-              </p>
-            </div>
-          </StepShell>
-        );
-
       case "photos":
         return (
           <StepShell
