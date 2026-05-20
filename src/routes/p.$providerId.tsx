@@ -296,14 +296,21 @@ function ProviderProfilePage() {
 
         <div className="rounded-2xl border border-border bg-card p-5">
           {user ? (
+            <>
             <Button
               onClick={openPicker}
               className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25"
             >
               {lang === "en"
-                ? `Send a request to ${p.business_name ?? "this provider"}`
-                : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
+                ? "Send one of my requests to this provider"
+                : "ကျွန်ုပ်၏ တောင်းဆိုမှုကို ဤပညာရှင်ထံ ပေးပို့ရန်"}
             </Button>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {lang === "en"
+                ? `Pick one of your existing requests to send directly to ${p.business_name ?? "this provider"}.`
+                : `ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ${p.business_name ?? "ဤပညာရှင်"} ထံသာ တိုက်ရိုက်ပေးပို့ပါ။`}
+            </p>
+            </>
           ) : (
             <>
               <Link
@@ -314,8 +321,8 @@ function ProviderProfilePage() {
               >
                 <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
                   {lang === "en"
-                    ? `Sign in to send a request to ${p.business_name ?? "this provider"}`
-                    : "တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
+                    ? "Sign in to send a request to this provider"
+                    : "ဤပညာရှင်ထံ တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
                 </Button>
               </Link>
               <p className="mt-3 text-center text-xs text-muted-foreground">
@@ -333,13 +340,13 @@ function ProviderProfilePage() {
           <DialogHeader>
             <DialogTitle>
               {lang === "en"
-                ? `Send to ${p.business_name ?? "this provider"}`
-                : `${p.business_name ?? "ဤပညာရှင်"} ထံ ပေးပို့ရန်`}
+                ? `Send a request to ${p.business_name ?? "this provider"}`
+                : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
             </DialogTitle>
             <DialogDescription>
               {lang === "en"
-                ? "Forward one of your existing requests, or start a new one. Only this provider will receive it."
-                : "ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ထပ်ပို့ပါ၊ သို့မဟုတ် အသစ်တစ်ခု စတင်ပါ။"}
+                ? "Pick one of your existing requests below. Only this provider will receive it — your original broadcast request is not affected."
+                : "အောက်တွင် ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ရွေးပါ။ ဤပညာရှင်သာ လက်ခံပါမည်။"}
             </DialogDescription>
           </DialogHeader>
 
