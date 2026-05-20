@@ -430,6 +430,17 @@ function NewRequestPage() {
       </div>
 
       <main className="mx-auto max-w-2xl px-4 pt-4 sm:px-6 sm:pt-8">
+        {directProvider && (
+          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/90">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p>
+              {L(
+                `Direct request to ${directProvider.name}. Only they will see this lead — fee is 2× the standard credit cost.`,
+                `${directProvider.name} သို့ တိုက်ရိုက် တောင်းဆို။ သူသာလျှင် မြင်ပါမည် — ကြေး ၂ ဆ ဖြစ်ပါမည်။`,
+              )}
+            </p>
+          </div>
+        )}
         {renderStep()}
       </main>
 
