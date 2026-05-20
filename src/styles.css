@@ -149,6 +149,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.68 0.10 210);
+  /* Navy tokens — dark navy approximates #1A2B4A */
+  --navy: oklch(0.32 0.07 255);
+  --navy-foreground: oklch(0.97 0.008 220);
+  --dark-navy: oklch(0.24 0.06 255);
+  --dark-navy-foreground: oklch(0.97 0.008 220);
   --status-pending: oklch(0.78 0.10 75);
   --status-pending-foreground: oklch(0.22 0.05 65);
   --status-active: oklch(0.76 0.08 190);
