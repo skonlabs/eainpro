@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/catalog";
+import { listAvailableLeads } from "@/lib/leads";
 import {
   Plus,
   ChevronRight,
@@ -575,21 +576,17 @@ function ProviderHome({
 
       const cats = (svcRes.data ?? []).map((r) => r.category_slug);
       const cities = (areaRes.data ?? []).map((r) => r.city_slug);
-      if (cats.length) {
-        // Count active leads that match this provider's services + areas.
-        const { data: types } = await supabase
-          .from("service_types")
-          .select("id")
-          .in("category_slug", cats);
-        const typeIds = (types ?? []).map((t) => t.id);
-        let q = supabase
-          .from("customer_leads")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "active")
-          .in("service_type_id", typeIds.length ? typeIds : ["00000000-0000-0000-0000-000000000000"]);
-        if (cities.length) q = q.in("city_slug", cities);
-        const { count } = await q;
-        setNewJobsCount(count ?? 0);
+      if (cats.length && cities.length) {
+        // Use the same source as the Leads page so the count always matches
+        // what the provider will actually see when they tap through.
+        try {
+          const leads = await listAvailableLeads(userId);
+          setNewJobsCount(leads.length);
+        } catch {
+          setNewJobsCount(0);
+        }
+      } else {
+        setNewJobsCount(0);
       }
     })();
   }, [userId, nav]);
@@ -637,7 +634,7 @@ function ProviderHome({
           icon={<TrendingUp className="h-4 w-4" />}
           label={L("New jobs", "အသစ်")}
           value={String(newJobsCount)}
-          to="/provider/dashboard"
+          to="/provider/leads"
         />
         <StatTile
           icon={<Star className="h-4 w-4" />}
@@ -751,7 +748,7 @@ function ProviderHome({
       {/* Quick actions */}
       <section className="grid grid-cols-2 gap-2">
         <QuickAction
-          to="/provider/dashboard"
+          to="/provider/leads"
           icon={<Briefcase className="h-5 w-5" />}
           title={L("Browse jobs", "အလုပ် ရှာ")}
           sub={L("Find new work", "အလုပ်အသစ်")}
