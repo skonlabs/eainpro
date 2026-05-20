@@ -47,6 +47,13 @@ function SignInPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-20">
+        {redirect?.startsWith("/request") && (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center text-sm text-foreground/90">
+            {lang === "en"
+              ? "Sign in to send your service request. Browsing providers stays free — an account is only needed to contact them."
+              : "ဝန်ဆောင်မှု တောင်းဆိုရန် အကောင့်ဝင်ပါ။ ဝန်ဆောင်မှုပေးသူများကို ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်ပြီး တောင်းဆိုရန်မှသာ အကောင့်လိုပါသည်။"}
+          </div>
+        )}
         <div className="text-center">
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground text-xl font-extrabold shadow-lg shadow-primary/25">
             E
