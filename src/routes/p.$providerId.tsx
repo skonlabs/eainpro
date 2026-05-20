@@ -1,12 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Heart, Star, BadgeCheck, MapPin } from "lucide-react";
+import { Heart, Star, BadgeCheck, MapPin, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/p/$providerId")({
   component: ProviderProfilePage,
@@ -29,11 +36,24 @@ function ProviderProfilePage() {
   const { providerId } = Route.useParams();
   const { user } = useAuth();
   const { lang } = useI18n();
+  const nav = useNavigate();
   const [p, setP] = useState<Provider | null>(null);
   const [services, setServices] = useState<{ category_slug: string; base_price: number | null }[]>([]);
   const [areas, setAreas] = useState<string[]>([]);
   const [favorite, setFavorite] = useState(false);
   const [reviews, setReviews] = useState<{ id: string; rating: number; comment: string | null; created_at: string }[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [myLeads, setMyLeads] = useState<
+    | null
+    | Array<{
+        id: string;
+        short_description: string;
+        created_at: string;
+        city_slug: string;
+        category_slug: string | null;
+      }>
+  >(null);
+  const [forwarding, setForwarding] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
