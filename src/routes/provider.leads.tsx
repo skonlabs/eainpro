@@ -51,17 +51,18 @@ function LeadsPage() {
       setHasServices((svc ?? []).length > 0);
       setHasAreas((ars ?? []).length > 0);
 
-      const [a, u, wn, ls] = await Promise.all([
+      // One query for all unlocks; partition by status client-side.
+      const [a, allUnlocks] = await Promise.all([
         listAvailableLeads(user.id),
-        listMyUnlocks(user.id, ["unlocked","contacted","quoted","completed"]),
-        listMyUnlocks(user.id, ["won"]),
-        listMyUnlocks(user.id, ["lost","customer_no_response","invalid"]),
+        listMyUnlocks(user.id),
       ]);
-
+      const inProgress = new Set(["unlocked","contacted","quoted","completed"]);
+      const wonSet = new Set(["won"]);
+      const lostSet = new Set(["lost","customer_no_response","invalid"]);
       setAvailable(a);
-      setUnlocked(u);
-      setWon(wn);
-      setLost(ls);
+      setUnlocked(allUnlocks.filter((u: any) => inProgress.has(u.status)));
+      setWon(allUnlocks.filter((u: any) => wonSet.has(u.status)));
+      setLost(allUnlocks.filter((u: any) => lostSet.has(u.status)));
     } catch (error) {
       console.error("Failed to load leads", error);
       setAvailable([]);
@@ -83,7 +84,8 @@ function LeadsPage() {
     refresh();
   }, [loading, rolesReady, user, roles, nav]);
 
-  if (loading || !user) return null;
+  // Render shell + skeletons immediately. Don't blank the page while auth
+  // or initial data is loading — that's the main source of perceived lag.
 
   const doUnlock = async () => {
     if (!pickedLead) return;
