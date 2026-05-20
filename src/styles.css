@@ -63,19 +63,19 @@
 
 :root {
   --radius: 0.875rem;
-  /* Ocean Deep: #0c2340 / #1a4a6e / #2d8a9e / #5cbdb9 */
+  /* Primary: teal #2BC4BE  ·  Secondary: dark navy #1A2B4A */
   --background: oklch(0.985 0.005 220);
   --foreground: oklch(0.21 0.06 255);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.06 255);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.06 255);
-  --primary: oklch(0.58 0.10 215);
-  --primary-foreground: oklch(0.99 0.005 220);
-  --primary-deep: oklch(0.36 0.08 240);
-  --primary-ink: oklch(0.21 0.06 255);
-  --secondary: oklch(0.955 0.012 220);
-  --secondary-foreground: oklch(0.30 0.06 245);
+  --primary: oklch(0.744 0.12 190.772);
+  --primary-foreground: oklch(0.291 0.061 261.579);
+  --primary-deep: oklch(0.55 0.10 190);
+  --primary-ink: oklch(0.291 0.061 261.579);
+  --secondary: oklch(0.291 0.061 261.579);
+  --secondary-foreground: oklch(0.99 0.005 220);
   --muted: oklch(0.965 0.008 220);
   --muted-foreground: oklch(0.50 0.025 235);
   --accent: oklch(0.76 0.08 190);
@@ -84,7 +84,7 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.92 0.012 220);
   --input: oklch(0.95 0.010 220);
-  --ring: oklch(0.58 0.10 215);
+  --ring: oklch(0.744 0.12 190.772);
   /* Status tokens — semantic, used by StatusBadge & banners */
   --status-pending: oklch(0.85 0.10 75);
   --status-pending-foreground: oklch(0.30 0.08 65);
@@ -97,9 +97,9 @@
   --status-cancelled: oklch(0.70 0.025 235);
   --status-cancelled-foreground: oklch(0.30 0.02 235);
   /* Elevation & gradient */
-  --shadow-card: 0 1px 2px rgb(12 35 64 / 0.05), 0 8px 24px -12px rgb(12 35 64 / 0.10);
-  --shadow-sheet: 0 24px 48px -16px rgb(12 35 64 / 0.20);
-  --gradient-hero: linear-gradient(135deg, oklch(0.21 0.06 255), oklch(0.58 0.10 215));
+  --shadow-card: 0 1px 2px rgb(26 43 74 / 0.05), 0 8px 24px -12px rgb(26 43 74 / 0.10);
+  --shadow-sheet: 0 24px 48px -16px rgb(26 43 74 / 0.20);
+  --gradient-hero: linear-gradient(135deg, oklch(0.291 0.061 261.579), oklch(0.744 0.12 190.772));
   /* Type */
   --font-display: "Sora", ui-sans-serif, system-ui, -apple-system, "Noto Sans Myanmar", "Padauk", sans-serif;
   --font-body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Noto Sans Myanmar", "Padauk", sans-serif;
@@ -125,11 +125,11 @@
   --card-foreground: oklch(0.97 0.008 220);
   --popover: oklch(0.24 0.05 250);
   --popover-foreground: oklch(0.97 0.008 220);
-  --primary: oklch(0.68 0.10 210);
+  --primary: oklch(0.744 0.12 190.772);
   --primary-foreground: oklch(0.18 0.045 250);
-  --primary-deep: oklch(0.30 0.07 245);
-  --primary-ink: oklch(0.97 0.008 220);
-  --secondary: oklch(0.30 0.05 250);
+  --primary-deep: oklch(0.50 0.10 190);
+  --primary-ink: oklch(0.18 0.045 250);
+  --secondary: oklch(0.291 0.061 261.579);
   --secondary-foreground: oklch(0.97 0.008 220);
   --muted: oklch(0.28 0.04 250);
   --muted-foreground: oklch(0.72 0.03 220);
@@ -139,7 +139,7 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.10 210);
+  --ring: oklch(0.744 0.12 190.772);
   --status-pending: oklch(0.78 0.10 75);
   --status-pending-foreground: oklch(0.22 0.05 65);
   --status-active: oklch(0.76 0.08 190);
@@ -152,7 +152,7 @@
   --status-cancelled-foreground: oklch(0.95 0.01 220);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.30), 0 8px 24px -12px rgb(0 0 0 / 0.50);
   --shadow-sheet: 0 24px 48px -16px rgb(0 0 0 / 0.60);
-  --gradient-hero: linear-gradient(135deg, oklch(0.24 0.05 250), oklch(0.58 0.10 215));
+  --gradient-hero: linear-gradient(135deg, oklch(0.291 0.061 261.579), oklch(0.744 0.12 190.772));
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
