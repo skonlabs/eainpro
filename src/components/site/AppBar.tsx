@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { NotificationBell } from "@/components/site/NotificationBell";
+import logoUrl from "@/assets/logo.svg";
 
 // Routes that act as tab roots — no back button on these.
 const TAB_ROOTS = new Set([
@@ -85,12 +86,11 @@ export function AppBar() {
       <div className="mx-auto flex h-14 max-w-screen-md items-center gap-2 px-3 sm:px-4">
         {isRoot ? (
           <Link to="/" className="flex items-center gap-2">
-            <span
-              className="grid h-9 w-9 place-items-center rounded-xl text-primary-foreground text-sm font-extrabold shadow-md shadow-primary/30"
-              style={{ background: "var(--gradient-hero)" }}
-            >
-              E
-            </span>
+            <img
+              src={logoUrl}
+              alt="Fixido"
+              className="h-9 w-9 rounded-xl shadow-md shadow-primary/20"
+            />
             <span className="font-display text-base font-extrabold tracking-tight">Fixido</span>
           </Link>
         ) : (
