@@ -56,6 +56,30 @@ function ProviderProfilePage() {
   >(null);
   const [forwarding, setForwarding] = useState<string | null>(null);
   const [alreadySent, setAlreadySent] = useState<Set<string>>(new Set());
+  const [confirm, setConfirm] = useState<
+    | null
+    | {
+        leadId: string;
+        directPrice: number;
+        orig: {
+          customer_name: string | null;
+          customer_phone: string | null;
+          city_slug: string;
+          address: string | null;
+          service_type_id: string;
+          urgency: string | null;
+          preferred_date: string | null;
+          preferred_time: string | null;
+          short_description: string;
+          full_description: string | null;
+          lead_price_credits: number | null;
+          max_provider_unlocks: number | null;
+          expires_at: string | null;
+          category_slug: string | null;
+        };
+      }
+  >(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -140,11 +164,10 @@ function ProviderProfilePage() {
     );
   };
 
-  const forwardLead = async (leadId: string) => {
+  const previewLead = async (leadId: string, category_slug: string | null) => {
     if (!user || !p) return;
     setForwarding(leadId);
     try {
-      // Load the original lead with all the fields needed to clone it.
       const { data: orig, error: origErr } = await supabase
         .from("customer_leads")
         .select(
@@ -155,7 +178,6 @@ function ProviderProfilePage() {
         .maybeSingle();
       if (origErr || !orig) throw origErr ?? new Error("Original request not found");
 
-      // Guard: don't allow the same request to be forwarded to the same provider twice.
       const { data: dup } = await supabase
         .from("customer_leads")
         .select("id")
@@ -180,6 +202,19 @@ function ProviderProfilePage() {
       }
 
       const directPrice = (orig.lead_price_credits ?? 500) * 2;
+      setConfirm({ leadId, directPrice, orig: { ...orig, category_slug } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setForwarding(null);
+    }
+  };
+
+  const confirmForward = async () => {
+    if (!user || !p || !confirm) return;
+    setSubmitting(true);
+    try {
+      const { orig, directPrice, leadId } = confirm;
       const { data: inserted, error: insErr } = await supabase
         .from("customer_leads")
         .insert({
@@ -203,7 +238,6 @@ function ProviderProfilePage() {
         .single();
       if (insErr || !inserted) throw insErr ?? new Error("Could not send request");
 
-      // Copy photos too.
       const { data: photos } = await supabase
         .from("lead_photos")
         .select("url, sort_order")
@@ -215,12 +249,13 @@ function ProviderProfilePage() {
       }
 
       toast.success(lang === "en" ? "Sent to provider" : "ပညာရှင်ထံ ပို့ပြီးပါပြီ");
+      setConfirm(null);
       setPickerOpen(false);
       nav({ to: "/request/$leadId", params: { leadId: inserted.id } });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
     } finally {
-      setForwarding(null);
+      setSubmitting(false);
     }
   };
 
@@ -375,21 +410,46 @@ function ProviderProfilePage() {
         </div>
       </main>
 
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+      <Dialog
+        open={pickerOpen}
+        onOpenChange={(o) => {
+          setPickerOpen(o);
+          if (!o) setConfirm(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {lang === "en"
-                ? `Send a request to ${p.business_name ?? "this provider"}`
-                : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
+              {confirm
+                ? lang === "en"
+                  ? "Confirm direct request"
+                  : "တိုက်ရိုက် တောင်းဆိုမှု အတည်ပြုပါ"
+                : lang === "en"
+                  ? `Send a request to ${p.business_name ?? "this provider"}`
+                  : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
             </DialogTitle>
             <DialogDescription>
-              {lang === "en"
-                ? "Pick one of your existing requests below. Only this provider will receive it — your original broadcast request is not affected."
-                : "အောက်တွင် ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ရွေးပါ။ ဤပညာရှင်သာ လက်ခံပါမည်။"}
+              {confirm
+                ? lang === "en"
+                  ? `Review what will be sent to ${p.business_name ?? "this provider"}.`
+                  : `${p.business_name ?? "ဤပညာရှင်"} ထံ ပေးပို့မည့်အရာကို ပြန်ကြည့်ပါ။`
+                : lang === "en"
+                  ? "Pick one of your existing requests below. Only this provider will receive it — your original broadcast request is not affected."
+                  : "အောက်တွင် ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ရွေးပါ။ ဤပညာရှင်သာ လက်ခံပါမည်။"}
             </DialogDescription>
           </DialogHeader>
 
+          {confirm ? (
+            <ConfirmPanel
+              lang={lang}
+              provider={p.business_name ?? "this provider"}
+              confirm={confirm}
+              submitting={submitting}
+              onBack={() => setConfirm(null)}
+              onConfirm={confirmForward}
+            />
+          ) : (
+          <>
           <div className="space-y-2">
             {myLeads === null && (
               <p className="py-6 text-center text-sm text-muted-foreground">
@@ -413,7 +473,7 @@ function ProviderProfilePage() {
                       <button
                         type="button"
                         disabled={forwarding === l.id || sent}
-                        onClick={() => forwardLead(l.id)}
+                        onClick={() => previewLead(l.id, l.category_slug)}
                         className="w-full rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary/40 disabled:opacity-60"
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -454,9 +514,127 @@ function ProviderProfilePage() {
               {lang === "en" ? "Start a new request" : "တောင်းဆိုမှု အသစ် စတင်ရန်"}
             </Button>
           </Link>
+          </>
+          )}
         </DialogContent>
       </Dialog>
 
+    </div>
+  );
+}
+
+function ConfirmPanel({
+  lang,
+  provider,
+  confirm,
+  submitting,
+  onBack,
+  onConfirm,
+}: {
+  lang: "en" | "my";
+  provider: string;
+  confirm: {
+    directPrice: number;
+    orig: {
+      short_description: string;
+      full_description: string | null;
+      city_slug: string;
+      address: string | null;
+      urgency: string | null;
+      preferred_date: string | null;
+      preferred_time: string | null;
+      lead_price_credits: number | null;
+      category_slug: string | null;
+    };
+  };
+  submitting: boolean;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const { orig, directPrice } = confirm;
+  const cat = CATEGORIES.find((c) => c.slug === orig.category_slug);
+  const city = CITIES.find((c) => c.slug === orig.city_slug);
+  const baseCost = orig.lead_price_credits ?? Math.round(directPrice / 2);
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {lang === "en" ? "Request" : "တောင်းဆိုမှု"}
+        </div>
+        <div className="mt-1 text-sm font-semibold">{orig.short_description}</div>
+        {orig.full_description && (
+          <p className="mt-1 text-xs text-muted-foreground">{orig.full_description}</p>
+        )}
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <dt className="text-muted-foreground">{lang === "en" ? "Service" : "ဝန်ဆောင်မှု"}</dt>
+            <dd className="font-medium">
+              {cat ? (lang === "en" ? cat.en : cat.my) : orig.category_slug ?? "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{lang === "en" ? "City" : "မြို့"}</dt>
+            <dd className="font-medium">
+              {city ? (lang === "en" ? city.en : city.my) : orig.city_slug}
+            </dd>
+          </div>
+          {orig.urgency && (
+            <div>
+              <dt className="text-muted-foreground">{lang === "en" ? "Urgency" : "အရေးပေါ်"}</dt>
+              <dd className="font-medium capitalize">{orig.urgency}</dd>
+            </div>
+          )}
+          {(orig.preferred_date || orig.preferred_time) && (
+            <div>
+              <dt className="text-muted-foreground">{lang === "en" ? "When" : "အချိန်"}</dt>
+              <dd className="font-medium">
+                {[orig.preferred_date, orig.preferred_time].filter(Boolean).join(" · ")}
+              </dd>
+            </div>
+          )}
+          {orig.address && (
+            <div className="col-span-2">
+              <dt className="text-muted-foreground">{lang === "en" ? "Address" : "လိပ်စာ"}</dt>
+              <dd className="font-medium">{orig.address}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-semibold">
+            {lang === "en" ? "Direct lead cost" : "တိုက်ရိုက် Lead ဈေး"}
+          </span>
+          <span className="text-lg font-bold text-primary">
+            {directPrice.toLocaleString()} {lang === "en" ? "credits" : "ခရက်ဒစ်"}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {lang === "en"
+            ? `Direct requests are charged at 2× the standard rate (${baseCost.toLocaleString()} × 2). Only ${provider} will receive this lead.`
+            : `တိုက်ရိုက် တောင်းဆိုမှုသည် စံနှုန်း၏ ၂ ဆ ဖြစ်သည် (${baseCost.toLocaleString()} × 2)။ ${provider} သာ လက်ခံပါမည်။`}
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 rounded-xl"
+          onClick={onBack}
+          disabled={submitting}
+        >
+          {lang === "en" ? "Back" : "နောက်သို့"}
+        </Button>
+        <Button
+          className="flex-1 rounded-xl"
+          onClick={onConfirm}
+          disabled={submitting}
+        >
+          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {lang === "en" ? "Confirm & send" : "အတည်ပြု ပေးပို့ရန်"}
+        </Button>
+      </div>
     </div>
   );
 }
