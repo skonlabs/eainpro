@@ -218,7 +218,12 @@ function Empty({ msg }: { msg: string }) {
 function LockedCard({ lead, onUnlock }: { lead: LeadPreview; onUnlock: () => void }) {
   const slotsLeft = lead.max_provider_unlocks - lead.current_unlock_count;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className={`rounded-2xl border bg-card p-4 ${lead.is_direct ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
+      {lead.is_direct && (
+        <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          Direct request · for you only
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-base font-semibold">{lead.service_name_en}</div>
