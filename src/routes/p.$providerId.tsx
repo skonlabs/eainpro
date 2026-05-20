@@ -296,6 +296,7 @@ function ProviderProfilePage() {
 
         <div className="rounded-2xl border border-border bg-card p-5">
           {user ? (
+            <>
             <Button
               onClick={openPicker}
               className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25"
@@ -309,6 +310,7 @@ function ProviderProfilePage() {
                 ? `Pick one of your existing requests to send directly to ${p.business_name ?? "this provider"}.`
                 : `ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ${p.business_name ?? "ဤပညာရှင်"} ထံသာ တိုက်ရိုက်ပေးပို့ပါ။`}
             </p>
+            </>
           ) : (
             <>
               <Link
