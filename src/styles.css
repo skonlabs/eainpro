@@ -89,6 +89,11 @@
   --border: oklch(0.92 0.012 220);
   --input: oklch(0.95 0.010 220);
   --ring: oklch(0.58 0.10 215);
+  /* Navy tokens — dark navy approximates #1A2B4A */
+  --navy: oklch(0.32 0.07 255);
+  --navy-foreground: oklch(0.97 0.008 220);
+  --dark-navy: oklch(0.24 0.06 255);
+  --dark-navy-foreground: oklch(0.97 0.008 220);
   /* Status tokens — semantic, used by StatusBadge & banners */
   --status-pending: oklch(0.85 0.10 75);
   --status-pending-foreground: oklch(0.30 0.08 65);
