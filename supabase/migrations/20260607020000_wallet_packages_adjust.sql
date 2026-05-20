@@ -76,7 +76,7 @@ begin
     (provider_id, transaction_type, amount_credits, balance_before, balance_after, description)
     values (p_provider_id, 'adjustment', p_delta, v_before, v_after, p_note);
 
-  insert into public.admin_audit_log (admin_id, action, target_table, target_id, details)
+  insert into public.admin_audit_logs (admin_id, action, target_table, target_id, details)
     values (v_admin, 'adjust_wallet', 'provider_wallets', p_provider_id,
             jsonb_build_object('delta', p_delta, 'note', p_note, 'new_balance', v_after));
 
