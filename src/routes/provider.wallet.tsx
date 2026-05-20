@@ -70,6 +70,8 @@ function WalletPage() {
   const lowBalance = balance < 1500;
   const selectedMethod = methods.find((m) => m.slug === methodSlug);
   const qrValue = (selectedMethod?.qr_payload?.trim() || selectedMethod?.phone_number?.trim() || "");
+  const qrImage = selectedMethod?.qr_image_url || "";
+  const hasQr = !!qrImage || !!qrValue;
   const pendingTopups = topups.filter((t) => t.status === "pending");
 
   const MIN_CUSTOM = 5000;
@@ -264,10 +266,14 @@ function WalletPage() {
             </div>
             {selectedMethod && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
-                {qrValue ? (
+                {hasQr ? (
                   <>
                     <div className="flex justify-center rounded-md bg-white p-3">
-                      <QRCodeSVG value={qrValue} size={160} />
+                      {qrImage ? (
+                        <img src={qrImage} alt={`${selectedMethod.label} QR`} className="h-40 w-40 object-contain" />
+                      ) : (
+                        <QRCodeSVG value={qrValue} size={160} />
+                      )}
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
                       Scan in {selectedMethod.label} and pay <strong>{fmt(picked?.mmk ?? 0)} MMK</strong>
@@ -294,7 +300,7 @@ function WalletPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPicked(null)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={busy || !file || !qrValue}>{busy ? "Submitting…" : "Submit for approval"}</Button>
+            <Button onClick={handleSubmit} disabled={busy || !file || !hasQr}>{busy ? "Submitting…" : "Submit for approval"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
