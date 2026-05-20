@@ -90,7 +90,7 @@ function WalletPage() {
   };
 
   const handleSubmit = async () => {
-    if (!picked) return;
+    if (!picked || !user) return;
     if (!ref.trim()) return toast.error("Enter the transaction reference");
     if (!selectedMethod) return toast.error("Select a payment method");
     setBusy(true);
