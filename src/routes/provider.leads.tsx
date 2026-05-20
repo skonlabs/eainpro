@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet } from "lucide-react";
+import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -269,25 +269,67 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
     } finally { setSaving(false); }
   };
 
-  if (!l) return null;
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <Unlock className="h-4 w-4 text-green-600" />
-            <span className="font-semibold">{l.customer_name}</span>
+            <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {l.city_slug} · {l.urgency} · unlocked {new Date(unlock.unlocked_at).toLocaleDateString()}
+            {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""} · unlocked {new Date(unlock.unlocked_at).toLocaleDateString()}
           </div>
         </div>
-        <a href={`tel:${l.customer_phone}`} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-          <Phone className="h-3 w-3" />{l.customer_phone}
-        </a>
+        {l?.customer_phone && (
+          <a href={`tel:${l.customer_phone}`} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+            <Phone className="h-3 w-3" />{l.customer_phone}
+          </a>
+        )}
       </div>
-      {l.address && <p className="mt-2 text-xs"><strong>Address:</strong> {l.address}</p>}
-      <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
+      {l?.address && <p className="mt-2 text-xs"><strong>Address:</strong> {l.address}</p>}
+      {(l?.full_description || l?.short_description) && (
+        <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
+      )}
+      {l?.preferred_date && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Preferred: {l.preferred_date}{l.preferred_time ? ` ${l.preferred_time}` : ""}
+        </p>
+      )}
+      {(l?.budget_min || l?.budget_max) && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Budget: {l.budget_min ? `${l.budget_min} ` : ""}{l.budget_max ? `- ${l.budget_max}` : ""} MMK
+        </p>
+      )}
+      {!l && (
+        <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-800">
+          Lead details temporarily unavailable. Try refreshing.
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {l?.customer_phone && (
+          <a href={`tel:${l.customer_phone}`} className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent">
+            <Phone className="h-3.5 w-3.5" /> Call customer
+          </a>
+        )}
+        <Link
+          to="/request/$leadId"
+          params={{ leadId: unlock.lead_id }}
+          search={{ tab: "messages" }}
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> Message customer
+        </Link>
+        <Link
+          to="/request/$leadId"
+          params={{ leadId: unlock.lead_id }}
+          search={{ tab: "details" }}
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+        >
+          View full request
+        </Link>
+      </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <select className="rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
