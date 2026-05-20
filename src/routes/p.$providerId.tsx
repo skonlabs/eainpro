@@ -522,3 +522,119 @@ function ProviderProfilePage() {
     </div>
   );
 }
+
+function ConfirmPanel({
+  lang,
+  provider,
+  confirm,
+  submitting,
+  onBack,
+  onConfirm,
+}: {
+  lang: "en" | "my";
+  provider: string;
+  confirm: {
+    directPrice: number;
+    orig: {
+      short_description: string;
+      full_description: string | null;
+      city_slug: string;
+      address: string | null;
+      urgency: string | null;
+      preferred_date: string | null;
+      preferred_time: string | null;
+      lead_price_credits: number | null;
+      category_slug: string | null;
+    };
+  };
+  submitting: boolean;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const { orig, directPrice } = confirm;
+  const cat = CATEGORIES.find((c) => c.slug === orig.category_slug);
+  const city = CITIES.find((c) => c.slug === orig.city_slug);
+  const baseCost = orig.lead_price_credits ?? Math.round(directPrice / 2);
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {lang === "en" ? "Request" : "တောင်းဆိုမှု"}
+        </div>
+        <div className="mt-1 text-sm font-semibold">{orig.short_description}</div>
+        {orig.full_description && (
+          <p className="mt-1 text-xs text-muted-foreground">{orig.full_description}</p>
+        )}
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <dt className="text-muted-foreground">{lang === "en" ? "Service" : "ဝန်ဆောင်မှု"}</dt>
+            <dd className="font-medium">
+              {cat ? (lang === "en" ? cat.en : cat.my) : orig.category_slug ?? "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{lang === "en" ? "City" : "မြို့"}</dt>
+            <dd className="font-medium">
+              {city ? (lang === "en" ? city.en : city.my) : orig.city_slug}
+            </dd>
+          </div>
+          {orig.urgency && (
+            <div>
+              <dt className="text-muted-foreground">{lang === "en" ? "Urgency" : "အရေးပေါ်"}</dt>
+              <dd className="font-medium capitalize">{orig.urgency}</dd>
+            </div>
+          )}
+          {(orig.preferred_date || orig.preferred_time) && (
+            <div>
+              <dt className="text-muted-foreground">{lang === "en" ? "When" : "အချိန်"}</dt>
+              <dd className="font-medium">
+                {[orig.preferred_date, orig.preferred_time].filter(Boolean).join(" · ")}
+              </dd>
+            </div>
+          )}
+          {orig.address && (
+            <div className="col-span-2">
+              <dt className="text-muted-foreground">{lang === "en" ? "Address" : "လိပ်စာ"}</dt>
+              <dd className="font-medium">{orig.address}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-semibold">
+            {lang === "en" ? "Direct lead cost" : "တိုက်ရိုက် Lead ဈေး"}
+          </span>
+          <span className="text-lg font-bold text-primary">
+            {directPrice.toLocaleString()} {lang === "en" ? "credits" : "ခရက်ဒစ်"}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {lang === "en"
+            ? `Direct requests are charged at 2× the standard rate (${baseCost.toLocaleString()} × 2). Only ${provider} will receive this lead.`
+            : `တိုက်ရိုက် တောင်းဆိုမှုသည် စံနှုန်း၏ ၂ ဆ ဖြစ်သည် (${baseCost.toLocaleString()} × 2)။ ${provider} သာ လက်ခံပါမည်။`}
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 rounded-xl"
+          onClick={onBack}
+          disabled={submitting}
+        >
+          {lang === "en" ? "Back" : "နောက်သို့"}
+        </Button>
+        <Button
+          className="flex-1 rounded-xl"
+          onClick={onConfirm}
+          disabled={submitting}
+        >
+          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {lang === "en" ? "Confirm & send" : "အတည်ပြု ပေးပို့ရန်"}
+        </Button>
+      </div>
+    </div>
+  );
+}
