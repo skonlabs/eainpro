@@ -139,9 +139,18 @@ function PricingTab() {
   };
   useEffect(() => { load(); }, []);
   const save = async (id: string, patch: any) => {
-    const { error } = await supabase.from("lead_pricing").update(patch).eq("id", id);
-    if (error) toast.error(error.message);
-    else toast.success("Saved");
+    const { data, error } = await supabase
+      .from("lead_pricing")
+      .update(patch)
+      .eq("id", id)
+      .select();
+    if (error) {
+      toast.error(error.message);
+    } else if (!data || data.length === 0) {
+      toast.error("Update blocked (admin permission required).");
+    } else {
+      toast.success("Saved");
+    }
     load();
   };
   if (!rows) return <Skeleton className="mt-4 h-64 w-full" />;
@@ -154,7 +163,7 @@ function PricingTab() {
             <th className="p-3">Price (credits)</th>
             <th className="p-3">Max unlocks</th>
             <th className="p-3">Refund</th>
-            <th className="p-3">Active</th>
+          <th className="p-3" title="When off, providers can no longer unlock new leads for this service. Existing leads are unaffected.">Active</th>
           </tr>
         </thead>
         <tbody>
