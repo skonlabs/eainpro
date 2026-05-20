@@ -303,8 +303,8 @@ function NewRequestPage() {
       ? Math.min(...active.map((p: { max_provider_unlocks: number }) => p.max_provider_unlocks))
       : 5;
     const subLabels = subSlugs
-      .map((slug) => subs.find((s) => s.slug === slug))
-      .map((s) => (s ? (lang === "en" ? s.en : s.my) : ""))
+      .map((slug: string) => subs.find((s) => s.slug === slug))
+      .map((s: { en: string; my: string } | undefined) => (s ? (lang === "en" ? s.en : s.my) : ""))
       .filter(Boolean)
       .join(", ");
     const shortDesc = (form.description || subLabels || subSlugs.join(", ")).slice(0, 140);
