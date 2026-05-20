@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { fmt } from "@/lib/wallet";
+import { QRCodeSVG } from "qrcode.react";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
