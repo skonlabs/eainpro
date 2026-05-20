@@ -64,7 +64,7 @@ function WalletPage() {
     listCreditPackages().then(setPackages).catch(() => {});
   }, [loading, user, roles, nav]);
 
-  if (loading || !user) return null;
+  // Render shell immediately; individual sections handle their own empty state.
 
   const balance = wallet?.balance_credits ?? 0;
   const lowBalance = balance < 1500;
