@@ -184,61 +184,75 @@ function ProviderProfilePage() {
           </ul>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          {user ? (
-            <>
-              <Link
-                to="/request/new"
-                search={{
-                  category: services[0]?.category_slug,
-                  directTo: p.id,
-                }}
-              >
-                <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-                  {lang === "en" ? `Request ${p.business_name ?? "this provider"}` : "ဤပညာရှင်ကို တိုက်ရိုက် တောင်းရန်"}
-                </Button>
-              </Link>
-              <Link
-                to="/request/new"
-                search={{ category: services[0]?.category_slug }}
-              >
-                <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
-                  {lang === "en" ? "Post to all providers" : "အားလုံးထံ တင်ရန်"}
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/signin"
-                search={{
-                  redirect: `/request/new?directTo=${p.id}${services[0]?.category_slug ? `&category=${services[0].category_slug}` : ""}`,
-                }}
-              >
-                <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-                  {lang === "en" ? `Sign in to request ${p.business_name ?? "this provider"}` : "တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
-                </Button>
-              </Link>
-              <Link
-                to="/signin"
-                search={{
-                  redirect: `/request/new${services[0]?.category_slug ? `?category=${services[0].category_slug}` : ""}`,
-                }}
-              >
-                <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
-                  {lang === "en" ? "Sign in to post to all providers" : "အားလုံးထံ တင်ရန် ဝင်ပါ"}
-                </Button>
-              </Link>
-            </>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="text-sm font-semibold">
+            {lang === "en" ? "Send a request" : "တောင်းဆိုမှု ပေးပို့ရန်"}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {lang === "en"
+              ? `Send your job to ${p.business_name ?? "this provider"} only, or let us match you with up to 5 providers for this service.`
+              : `${p.business_name ?? "ဤပညာရှင်"} ထံသာ ပေးပို့မလား၊ သို့မဟုတ် သင့်အလုပ်အတွက် ပညာရှင် ၅ ဦးအထိ ကိုက်ညီစေချင်ပါသလား။`}
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {user ? (
+              <>
+                <Link
+                  to="/request/new"
+                  search={{
+                    category: services[0]?.category_slug,
+                    directTo: p.id,
+                  }}
+                >
+                  <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
+                    {lang === "en"
+                      ? `Send only to ${p.business_name ?? "this provider"}`
+                      : `${p.business_name ?? "ဤပညာရှင်"} ထံသာ ပေးပို့ရန်`}
+                  </Button>
+                </Link>
+                <Link
+                  to="/request/new"
+                  search={{ category: services[0]?.category_slug }}
+                >
+                  <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
+                    {lang === "en" ? "Get quotes from up to 5 providers" : "ပညာရှင် ၅ ဦးထံမှ စျေးနှုန်း ရယူရန်"}
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/signin"
+                  search={{
+                    redirect: `/request/new?directTo=${p.id}${services[0]?.category_slug ? `&category=${services[0].category_slug}` : ""}`,
+                  }}
+                >
+                  <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
+                    {lang === "en"
+                      ? `Sign in to send only to ${p.business_name ?? "this provider"}`
+                      : "တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
+                  </Button>
+                </Link>
+                <Link
+                  to="/signin"
+                  search={{
+                    redirect: `/request/new${services[0]?.category_slug ? `?category=${services[0].category_slug}` : ""}`,
+                  }}
+                >
+                  <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
+                    {lang === "en" ? "Sign in to get quotes from up to 5 providers" : "ပညာရှင် ၅ ဦးထံ တောင်းရန် ဝင်ပါ"}
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+          {!user && (
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {lang === "en"
+                ? "Browsing is free. You only need an account when you're ready to send a request."
+                : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
+            </p>
           )}
         </div>
-        {!user && (
-          <p className="text-center text-xs text-muted-foreground">
-            {lang === "en"
-              ? "Browsing is free. You only need an account when you're ready to send a request."
-              : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
-          </p>
-        )}
       </main>
 
     </div>
