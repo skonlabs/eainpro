@@ -196,13 +196,29 @@ function TopupsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"pending"|"approved"|"rejected">("pending");
   const load = async () => {
-    const { data } = await supabase
+    setRows(null);
+    const { data, error } = await supabase
       .from("provider_credit_topups")
-      .select("*, providers(business_name)")
+      .select("*")
       .eq("status", filter)
       .order("created_at", { ascending: false })
       .limit(100);
-    setRows(data ?? []);
+    if (error) {
+      toast.error(`Load top-ups failed: ${error.message}`);
+      setRows([]);
+      return;
+    }
+    const list = data ?? [];
+    const ids = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (ids.length) {
+      const { data: provs } = await supabase
+        .from("providers")
+        .select("id, business_name")
+        .in("id", ids);
+      nameMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? ""]));
+    }
+    setRows(list.map((r) => ({ ...r, providers: { business_name: nameMap.get(r.provider_id) ?? null } })));
   };
   useEffect(() => { load(); }, [filter]);
   const approve = async (id: string) => {
