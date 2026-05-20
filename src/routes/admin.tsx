@@ -179,6 +179,10 @@ function PricingTab() {
 function PricingRow({ row, onSave }: { row: any; onSave: (id: string, p: any) => void }) {
   const [price, setPrice] = useState(row.price_credits);
   const [max, setMax] = useState(row.max_provider_unlocks);
+  const [active, setActive] = useState<boolean>(!!row.is_active);
+  const [refund, setRefund] = useState<boolean>(!!row.refund_allowed);
+  useEffect(() => { setActive(!!row.is_active); }, [row.is_active]);
+  useEffect(() => { setRefund(!!row.refund_allowed); }, [row.refund_allowed]);
   return (
     <tr className="border-t border-border">
       <td className="p-3">
@@ -192,10 +196,10 @@ function PricingRow({ row, onSave }: { row: any; onSave: (id: string, p: any) =>
         <Input type="number" className="w-20" value={max} onChange={(e) => setMax(parseInt(e.target.value || "1", 10))} onBlur={() => max !== row.max_provider_unlocks && onSave(row.id, { max_provider_unlocks: max })} />
       </td>
       <td className="p-3">
-        <Switch checked={row.refund_allowed} onCheckedChange={(v) => onSave(row.id, { refund_allowed: v })} />
+        <Switch checked={refund} onCheckedChange={(v) => { setRefund(v); onSave(row.id, { refund_allowed: v }); }} />
       </td>
       <td className="p-3">
-        <Switch checked={row.is_active} onCheckedChange={(v) => onSave(row.id, { is_active: v })} />
+        <Switch checked={active} onCheckedChange={(v) => { setActive(v); onSave(row.id, { is_active: v }); }} />
       </td>
     </tr>
   );
