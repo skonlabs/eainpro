@@ -50,6 +50,7 @@ function ProviderProfilePage() {
         short_description: string;
         created_at: string;
         city_slug: string;
+        service_type_id: string;
         category_slug: string | null;
       }>
   >(null);
@@ -405,11 +406,12 @@ function ProviderProfilePage() {
                   const matches =
                     !l.category_slug || providerCategorySet.has(l.category_slug);
                   const cat = CATEGORIES.find((c) => c.slug === l.category_slug);
+                  const sent = alreadySent.has(`${l.service_type_id}::${l.short_description}`);
                   return (
                     <li key={l.id}>
                       <button
                         type="button"
-                        disabled={forwarding === l.id}
+                        disabled={forwarding === l.id || sent}
                         onClick={() => forwardLead(l.id)}
                         className="w-full rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary/40 disabled:opacity-60"
                       >
@@ -426,6 +428,13 @@ function ProviderProfilePage() {
                           {" · "}
                           {new Date(l.created_at).toLocaleDateString()}
                         </div>
+                        {sent && (
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            {lang === "en"
+                              ? "Already sent to this provider."
+                              : "ဤပညာရှင်ထံ ပေးပို့ပြီးပါပြီ။"}
+                          </p>
+                        )}
                         {!matches && (
                           <p className="mt-1 text-[10px] text-amber-600">
                             {lang === "en"
