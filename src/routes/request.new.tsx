@@ -273,31 +273,44 @@ function NewRequestPage() {
       nav({ to: "/signin", search: { redirect: "/request/new" } });
       return;
     }
-    const subSlug = form.subcategories[0] ?? null;
-    if (!subSlug) {
+    const subSlugs = form.subcategories;
+    if (subSlugs.length === 0) {
       setErr(L("Please pick a service type.", "ဝန်ဆောင်မှု ရွေးပါ။"));
       return;
     }
     setSubmitting(true);
-    const { data: st, error: stErr } = await supabase
+    const { data: sts, error: stErr } = await supabase
       .from("service_types")
-      .select("id")
+      .select("id, slug")
       .eq("category_slug", form.category)
-      .eq("slug", subSlug)
-      .maybeSingle();
-    if (stErr || !st?.id) {
+      .in("slug", subSlugs);
+    if (stErr || !sts || sts.length === 0) {
       setSubmitting(false);
       setErr(L("Service type not configured. Please contact support.", "ဝန်ဆောင်မှု အသေးစိတ် မရှိသေးပါ။"));
       return;
     }
-    const { data: pricing } = await supabase
+    const stIds = sts.map((r: { id: string }) => r.id);
+    const primaryId = sts[0].id;
+    const { data: pricingRows } = await supabase
       .from("lead_pricing")
       .select("price_credits, max_provider_unlocks, is_active")
-      .eq("service_type_id", st.id)
-      .maybeSingle();
-    const priceCredits = pricing?.is_active ? pricing.price_credits : 500;
-    const maxUnlocks = pricing?.is_active ? pricing.max_provider_unlocks : 5;
-    const shortDesc = (form.description || "").slice(0, 140) || subSlug;
+      .in("service_type_id", stIds);
+    const active = (pricingRows ?? []).filter((p: { is_active: boolean }) => p.is_active);
+    const priceCredits = active.length
+      ? active.reduce((sum: number, p: { price_credits: number }) => sum + (p.price_credits ?? 0), 0)
+      : 500 * subSlugs.length;
+    const maxUnlocks = active.length
+      ? Math.min(...active.map((p: { max_provider_unlocks: number }) => p.max_provider_unlocks))
+      : 5;
+    const subLabels = subSlugs
+      .map((slug: string) => subs.find((s) => s.slug === slug))
+      .map((s: { en: string; my: string } | undefined) => (s ? (lang === "en" ? s.en : s.my) : ""))
+      .filter(Boolean)
+      .join(", ");
+    const shortDesc = (form.description || subLabels || subSlugs.join(", ")).slice(0, 140);
+    const fullDesc = [subLabels && `Services: ${subLabels}`, form.description]
+      .filter(Boolean)
+      .join("\n\n") || null;
     const expiresAt = new Date(
       Date.now() + (form.urgency === "today" ? 48 : 7 * 24) * 3600 * 1000,
     ).toISOString();
@@ -309,12 +322,12 @@ function NewRequestPage() {
         customer_phone: form.contactPhone || "",
         city_slug: form.city,
         address: form.address || null,
-        service_type_id: st.id,
+        service_type_id: primaryId,
         urgency: form.urgency,
         preferred_date: form.customDate || null,
         preferred_time: form.window || null,
         short_description: shortDesc,
-        full_description: form.description || null,
+        full_description: fullDesc,
         lead_price_credits: priceCredits,
         max_provider_unlocks: maxUnlocks,
         expires_at: expiresAt,
@@ -492,8 +505,8 @@ function NewRequestPage() {
               "ဘယ်လို အကူအညီ လိုသလဲ?",
             )}
             hint={L(
-              "Tap the service you need.",
-              "လိုအပ်သော ဝန်ဆောင်မှု တစ်ခုကို နှိပ်ပါ။",
+              "Tap all that apply. You'll be charged per selected service.",
+              "လိုအပ်သမျှကို နှိပ်ပါ။ ရွေးထားသည့် ဝန်ဆောင်မှုအလိုက် ကြေး တွက်ပါမည်။",
             )}
           >
             <div className="grid gap-2 sm:grid-cols-2">
@@ -502,14 +515,26 @@ function NewRequestPage() {
                   key={s.slug}
                   active={form.subcategories.includes(s.slug)}
                   onClick={() => {
-                    setForm((f) => ({ ...f, subcategories: [s.slug] }));
-                    advanceAfterSelection();
+                    setForm((f) => ({
+                      ...f,
+                      subcategories: f.subcategories.includes(s.slug)
+                        ? f.subcategories.filter((x: string) => x !== s.slug)
+                        : [...f.subcategories, s.slug],
+                    }));
                   }}
                 >
                   {L(s.en, s.my)}
                 </BigChoice>
               ))}
             </div>
+            {form.subcategories.length > 0 && (
+              <p className="mt-3 text-xs font-semibold text-primary">
+                {L(
+                  `${form.subcategories.length} selected`,
+                  `${form.subcategories.length} ခု ရွေးထား`,
+                )}
+              </p>
+            )}
           </StepShell>
         );
 
