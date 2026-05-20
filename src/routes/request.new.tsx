@@ -54,7 +54,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/request/new")({
   validateSearch: searchSchema,
   component: NewRequestPage,
-  head: () => ({ meta: [{ title: "Request a service — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Request a service — Fixido" }] }),
 });
 
 type StepKind =

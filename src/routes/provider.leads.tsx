@@ -15,7 +15,7 @@ import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, Message
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
-  head: () => ({ meta: [{ title: "Leads — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Leads — Fixido" }] }),
 });
 
 const STATUS_OPTIONS = ["unlocked","contacted","quoted","won","lost","customer_no_response","invalid","completed"] as const;

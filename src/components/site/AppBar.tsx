@@ -54,7 +54,7 @@ function titleFor(pathname: string, lang: "en" | "my") {
   if (pathname.startsWith("/p/")) return lang === "en" ? "Provider" : "ပညာရှင်";
   if (pathname.startsWith("/request/")) return lang === "en" ? "Job" : "အလုပ်";
   if (pathname.startsWith("/jobs/")) return lang === "en" ? "Job" : "အလုပ်";
-  return "Eain Pro";
+  return "Fixido";
 }
 
 export function AppBar() {
@@ -91,7 +91,7 @@ export function AppBar() {
             >
               E
             </span>
-            <span className="font-display text-base font-extrabold tracking-tight">Eain Pro</span>
+            <span className="font-display text-base font-extrabold tracking-tight">Fixido</span>
           </Link>
         ) : (
           <button

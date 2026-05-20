@@ -9,7 +9,7 @@ import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
 
 export const Route = createFileRoute("/my-requests")({
   component: MyRequestsPage,
-  head: () => ({ meta: [{ title: "My Requests — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "My Requests — Fixido" }] }),
 });
 
 function MyRequestsPage() {

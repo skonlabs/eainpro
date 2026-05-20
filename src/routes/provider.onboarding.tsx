@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/provider/onboarding")({
   component: OnboardingPage,
-  head: () => ({ meta: [{ title: "Provider onboarding — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Provider onboarding — Fixido" }] }),
 });
 
 function OnboardingPage() {

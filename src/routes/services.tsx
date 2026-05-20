@@ -16,8 +16,8 @@ export const Route = createFileRoute("/services")({
   component: ServicesRouteShell,
   head: () => ({
     meta: [
-      { title: "All services — Eain Pro" },
-      { name: "description", content: "Browse all home service categories available on Eain Pro." },
+      { title: "All services — Fixido" },
+      { name: "description", content: "Browse all home service categories available on Fixido." },
     ],
   }),
 });

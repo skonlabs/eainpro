@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
-  head: () => ({ meta: [{ title: "Admin — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Admin — Fixido" }] }),
 });
 
 type ProviderRow = {

@@ -8,7 +8,7 @@ import { Loader2, KeyRound, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
-  head: () => ({ meta: [{ title: "Reset password — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Reset password — Fixido" }] }),
 });
 
 function ResetPasswordPage() {

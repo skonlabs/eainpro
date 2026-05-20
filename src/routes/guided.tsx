@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/guided")({
   component: GuidedPage,
-  head: () => ({ meta: [{ title: "Help me choose — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Help me choose — Fixido" }] }),
 });
 
 type Step = {
