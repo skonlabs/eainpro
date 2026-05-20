@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "customer" | "provider" | "admin";
 
@@ -27,8 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [sessionReady, setSessionReady] = useState(false);
-  // loading = true until the initial session check + roles fetch both complete.
-  // rolesReady tracks whether the roles slice is current for the active session.
   const [rolesReady, setRolesReady] = useState(false);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
@@ -52,12 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let lastUserId: string | null | undefined = undefined;
     let lastToken: string | null | undefined = undefined;
+    let signedOut = false;
 
     const apply = (s: Session | null) => {
+      // Once the tab has explicitly signed out, ignore any late-arriving
+      // SIGNED_IN / TOKEN_REFRESHED events so an old user can't rehydrate.
+      if (signedOut && s) return;
       const nextUserId = s?.user?.id ?? null;
       const nextToken = s?.access_token ?? null;
-      // Skip no-op updates so consumers don't re-render / re-fetch when
-      // Supabase emits INITIAL_SESSION + TOKEN_REFRESHED with the same user.
       if (nextUserId === lastUserId && nextToken === lastToken) return;
       const userChanged = nextUserId !== lastUserId;
       lastUserId = nextUserId;
@@ -70,22 +70,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Listener FIRST (per Supabase guidance), then getSession.
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
+      if (e === "SIGNED_IN") signedOut = false;
+      if (e === "SIGNED_OUT") {
+        signedOut = true;
+        lastUserId = null;
+        lastToken = null;
+      }
+      apply(s);
+    });
+
+    // Cross-tab safety: if another tab clears the auth token, drop session here.
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === SUPABASE_AUTH_STORAGE_KEY && !ev.newValue) {
+        signedOut = true;
+        lastUserId = null;
+        lastToken = null;
+        setSession(null);
+        setRoles([]);
+        setRolesReady(true);
+      }
+    };
+    if (typeof window !== "undefined")
+      window.addEventListener("storage", onStorage);
 
     supabase.auth.getSession().then(({ data }) => {
-      // The onAuthStateChange listener already fires INITIAL_SESSION with the
-      // same session and triggers loadRoles via apply(). Calling apply +
-      // loadRoles again here would flip rolesReady back to false and cause a
-      // visible flash/re-render across the app. Just mark the session ready.
       apply(data.session);
       setSessionReady(true);
     });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      sub.subscription.unsubscribe();
+      if (typeof window !== "undefined")
+        window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
-  // Stabilise the user reference: only change identity when the user id flips.
   const userId = session?.user?.id ?? null;
   const user = useMemo(() => session?.user ?? null, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const loading = !sessionReady || !rolesReady;
@@ -98,18 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       rolesReady,
       signOut: async () => {
-        // Optimistically clear local state so the UI updates immediately,
-        // even if the network call is slow or fails.
+        // Optimistically clear local state.
         setSession(null);
         setRoles([]);
         setRolesReady(true);
+        // scope: "local" — "global" silently fails (without clearing local
+        // storage) when the access token is already expired.
         try {
-          await supabase.auth.signOut({ scope: "global" });
+          await supabase.auth.signOut({ scope: "local" });
         } catch {
-          // ignore — we still want to nuke local creds below
+          /* ignore */
         }
-        // Belt-and-suspenders: wipe any lingering supabase auth tokens from
-        // localStorage so a stale entry can't auto-rehydrate the session.
+        // Wipe any lingering supabase auth tokens so a stale entry (or a
+        // late TOKEN_REFRESHED write) can't auto-rehydrate the session.
         try {
           if (typeof window !== "undefined") {
             const keys: string[] = [];
@@ -120,9 +141,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
             keys.forEach((k) => window.localStorage.removeItem(k));
+            try {
+              window.sessionStorage.clear();
+            } catch {
+              /* ignore */
+            }
           }
         } catch {
-          /* ignore storage errors */
+          /* ignore */
+        }
+        // Hard reload to home — guarantees no in-memory cache / route loader
+        // keeps the old user's data on screen.
+        if (typeof window !== "undefined") {
+          window.location.replace("/");
         }
       },
       refreshRoles: () => loadRoles(session?.user?.id),
