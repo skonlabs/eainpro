@@ -91,10 +91,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Book trusted cleaners, plumbers, electricians, AC technicians, painters and movers in Yangon, Mandalay and across Myanmar." },
       { name: "author", content: "Fixido" },
       { property: "og:title", content: "Fixido — Trusted home services in Myanmar" },
-      { property: "og:description", content: "Book trusted cleaners, plumbers, electricians, AC technicians, painters and movers across Myanmar." },
+      { property: "og:description", content: "Book trusted cleaners, plumbers, electricians, AC technicians, painters and movers in Yangon, Mandalay and across Myanmar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Fixido — Trusted home services in Myanmar" },
+      { name: "twitter:description", content: "Book trusted cleaners, plumbers, electricians, AC technicians, painters and movers in Yangon, Mandalay and across Myanmar." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76913998-118d-4ec0-820f-1886f7f63905/id-preview-f1b082f0--b2445c85-f613-46a5-a1e1-eb965ed41336.lovable.app-1779297128625.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76913998-118d-4ec0-820f-1886f7f63905/id-preview-f1b082f0--b2445c85-f613-46a5-a1e1-eb965ed41336.lovable.app-1779297128625.png" },
     ],
     links: [
       {
