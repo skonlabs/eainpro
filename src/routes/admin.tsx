@@ -34,6 +34,7 @@ function AdminPage() {
   const { user, roles, loading } = useAuth();
   const nav = useNavigate();
   const isAdmin = roles.includes("admin");
+  const [tab, setTab] = useState<string>("overview");
 
   useEffect(() => {
     if (loading) return;
@@ -58,7 +59,7 @@ function AdminPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin console</h1>
-        <Tabs defaultValue="overview">
+        <Tabs value={tab} onValueChange={setTab}>
           <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             <TabsList className="inline-flex h-auto w-max gap-1 p-1">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -73,7 +74,7 @@ function AdminPage() {
               <TabsTrigger value="adjust">Adjust wallet</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="overview"><OverviewTab /></TabsContent>
+          <TabsContent value="overview"><OverviewTab onJump={setTab} /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
           <TabsContent value="topups"><TopupsTab /></TabsContent>
           <TabsContent value="refunds"><RefundsTab /></TabsContent>
@@ -89,7 +90,7 @@ function AdminPage() {
   );
 }
 
-function OverviewTab() {
+function OverviewTab({ onJump }: { onJump: (tab: string) => void }) {
   const [stats, setStats] = useState<any>(null);
   useEffect(() => {
     (async () => {
@@ -105,18 +106,23 @@ function OverviewTab() {
   }, []);
   if (!stats) return <Skeleton className="mt-4 h-32 w-full" />;
   const cards = [
-    { k: "Leads", v: stats.leads },
-    { k: "Unlocks", v: stats.unlocks },
-    { k: "Revenue (credits)", v: fmt(stats.revenue) },
-    { k: "Pending top-ups", v: stats.pending },
+    { k: "Leads", v: stats.leads, tab: "refunds" },
+    { k: "Unlocks", v: stats.unlocks, tab: "refunds" },
+    { k: "Revenue (credits)", v: fmt(stats.revenue), tab: "revenue" },
+    { k: "Pending top-ups", v: stats.pending, tab: "topups" },
   ];
   return (
     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
       {cards.map((c) => (
-        <div key={c.k} className="rounded-2xl border border-border bg-card p-4">
+        <button
+          key={c.k}
+          type="button"
+          onClick={() => onJump(c.tab)}
+          className="rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary/60 hover:bg-accent/40 focus:outline-none focus:ring-2 focus:ring-primary"
+        >
           <div className="text-2xl font-bold">{c.v}</div>
           <div className="text-xs text-muted-foreground">{c.k}</div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -190,13 +196,29 @@ function TopupsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"pending"|"approved"|"rejected">("pending");
   const load = async () => {
-    const { data } = await supabase
+    setRows(null);
+    const { data, error } = await supabase
       .from("provider_credit_topups")
-      .select("*, providers(business_name)")
+      .select("*")
       .eq("status", filter)
       .order("created_at", { ascending: false })
       .limit(100);
-    setRows(data ?? []);
+    if (error) {
+      toast.error(`Load top-ups failed: ${error.message}`);
+      setRows([]);
+      return;
+    }
+    const list = data ?? [];
+    const ids = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (ids.length) {
+      const { data: provs } = await supabase
+        .from("providers")
+        .select("id, business_name")
+        .in("id", ids);
+      nameMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? ""]));
+    }
+    setRows(list.map((r) => ({ ...r, providers: { business_name: nameMap.get(r.provider_id) ?? null } })));
   };
   useEffect(() => { load(); }, [filter]);
   const approve = async (id: string) => {
@@ -260,17 +282,38 @@ function RefundsTab() {
   const [amount, setAmount] = useState<number>(0);
   const [reason, setReason] = useState("");
   const load = async () => {
-    let query = supabase
+    setUnlocks(null);
+    const { data, error } = await supabase
       .from("provider_lead_unlocks")
-      .select("*, customer_leads(customer_name, customer_phone, city_slug, service_type_id), providers(business_name)")
+      .select("*")
       .order("unlocked_at", { ascending: false })
       .limit(50);
-    if (q.trim()) {
-      // simple filter by provider business_name or phone
-      query = query as any;
+    if (error) {
+      toast.error(`Load unlocks failed: ${error.message}`);
+      setUnlocks([]);
+      return;
     }
-    const { data } = await query;
-    setUnlocks(data ?? []);
+    const list = data ?? [];
+    const provIds = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
+    const leadIds = [...new Set(list.map((r) => r.lead_id).filter(Boolean))];
+    const [{ data: provs }, leadRes] = await Promise.all([
+      provIds.length
+        ? supabase.from("providers").select("id, business_name").in("id", provIds)
+        : Promise.resolve({ data: [] as any[] }),
+      leadIds.length
+        ? supabase.rpc("get_customer_leads", { _lead_ids: leadIds })
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const provMap = new Map((provs ?? []).map((p: any) => [p.id, p.business_name ?? null]));
+    const leads = Array.isArray(leadRes?.data) ? leadRes.data : [];
+    const leadMap = new Map(leads.map((l: any) => [l.id, l]));
+    setUnlocks(
+      list.map((u) => ({
+        ...u,
+        providers: { business_name: provMap.get(u.provider_id) ?? null },
+        customer_leads: leadMap.get(u.lead_id) ?? null,
+      })),
+    );
   };
   useEffect(() => { load(); }, []);
   const filtered = (unlocks ?? []).filter((u) => {
