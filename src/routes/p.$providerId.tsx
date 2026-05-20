@@ -54,6 +54,7 @@ function ProviderProfilePage() {
       }>
   >(null);
   const [forwarding, setForwarding] = useState<string | null>(null);
+  const [alreadySent, setAlreadySent] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -100,25 +101,36 @@ function ProviderProfilePage() {
     if (!user || !p) return;
     setPickerOpen(true);
     if (myLeads !== null) return;
-    const { data, error } = await supabase
-      .from("customer_leads")
-      .select("id, short_description, created_at, city_slug, service_type:service_types(category_slug)")
-      .eq("customer_id", user.id)
-      .eq("status", "active")
-      .is("directed_provider_id", null)
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const [{ data, error }, { data: sent }] = await Promise.all([
+      supabase
+        .from("customer_leads")
+        .select("id, short_description, created_at, city_slug, service_type_id, service_type:service_types(category_slug)")
+        .eq("customer_id", user.id)
+        .eq("status", "active")
+        .is("directed_provider_id", null)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("customer_leads")
+        .select("short_description, service_type_id")
+        .eq("customer_id", user.id)
+        .eq("directed_provider_id", p.id),
+    ]);
     if (error) {
       toast.error(error.message);
       setMyLeads([]);
       return;
     }
+    setAlreadySent(
+      new Set((sent ?? []).map((r: any) => `${r.service_type_id}::${r.short_description}`)),
+    );
     setMyLeads(
       (data ?? []).map((r: any) => ({
         id: r.id,
         short_description: r.short_description,
         created_at: r.created_at,
         city_slug: r.city_slug,
+        service_type_id: r.service_type_id,
         category_slug: r.service_type?.category_slug ?? null,
       })),
     );
@@ -138,6 +150,30 @@ function ProviderProfilePage() {
         .eq("customer_id", user.id)
         .maybeSingle();
       if (origErr || !orig) throw origErr ?? new Error("Original request not found");
+
+      // Guard: don't allow the same request to be forwarded to the same provider twice.
+      const { data: dup } = await supabase
+        .from("customer_leads")
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("directed_provider_id", p.id)
+        .eq("service_type_id", orig.service_type_id)
+        .eq("short_description", orig.short_description)
+        .limit(1)
+        .maybeSingle();
+      if (dup) {
+        toast.error(
+          lang === "en"
+            ? "You've already sent this request to this provider."
+            : "ဤတောင်းဆိုမှုကို ဤပညာရှင်ထံ ပေးပို့ပြီးပါပြီ။",
+        );
+        setAlreadySent((prev) => {
+          const next = new Set(prev);
+          next.add(`${orig.service_type_id}::${orig.short_description}`);
+          return next;
+        });
+        return;
+      }
 
       const directPrice = (orig.lead_price_credits ?? 500) * 2;
       const { data: inserted, error: insErr } = await supabase
