@@ -34,6 +34,7 @@ function AdminPage() {
   const { user, roles, loading } = useAuth();
   const nav = useNavigate();
   const isAdmin = roles.includes("admin");
+  const [tab, setTab] = useState<string>("overview");
 
   useEffect(() => {
     if (loading) return;
@@ -58,7 +59,7 @@ function AdminPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin console</h1>
-        <Tabs defaultValue="overview">
+        <Tabs value={tab} onValueChange={setTab}>
           <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             <TabsList className="inline-flex h-auto w-max gap-1 p-1">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -73,7 +74,7 @@ function AdminPage() {
               <TabsTrigger value="adjust">Adjust wallet</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="overview"><OverviewTab /></TabsContent>
+          <TabsContent value="overview"><OverviewTab onJump={setTab} /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
           <TabsContent value="topups"><TopupsTab /></TabsContent>
           <TabsContent value="refunds"><RefundsTab /></TabsContent>
