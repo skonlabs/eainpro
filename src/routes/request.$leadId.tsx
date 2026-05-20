@@ -84,6 +84,13 @@ function LeadPage() {
   const [tab, setTab] = useState(sp.tab ?? "details");
   const [providerHasUnlock, setProviderHasUnlock] = useState(false);
 
+  // Keep the active tab in sync with the URL search param so deep links like
+  // /request/$id?tab=messages work even when the user is already on the page.
+  useEffect(() => {
+    if (sp.tab && sp.tab !== tab) setTab(sp.tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp.tab]);
+
   const isProvider = roles.includes("provider");
   const isCustomer = !!user && lead?.customer_id === user.id;
 
