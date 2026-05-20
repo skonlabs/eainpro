@@ -57,37 +57,59 @@ export async function listAvailableLeads(providerId: string) {
   const cats = new Set((services ?? []).map((s) => s.category_slug));
   const cities = new Set((areas ?? []).map((a) => a.city_slug));
 
-  // Two streams: matched-area leads (open to all) + leads directly addressed to me.
-  const queries: Promise<{ data: LeadPreview[] | null; error: unknown }>[] = [];
+  // Two streams: matched-area leads (open to all) + leads directly addressed
+  // to me. Both depend on the `directed_provider_id` column added by the
+  // 20260613 migration — if the database hasn't been migrated yet, fall back
+  // to the legacy (matched-area-only) query so the page still loads.
+  const seen = new Set<string>();
+  const data: LeadPreview[] = [];
+  const isUndefinedColumn = (err: unknown) =>
+    !!err && typeof err === "object" &&
+    (("code" in err && (err as { code?: string }).code === "42703") ||
+      ("message" in err && /directed_provider_id/i.test(String((err as { message?: string }).message ?? ""))));
+
+  let directedMissing = false;
   if (cats.size > 0 && cities.size > 0) {
-    queries.push(
+    const baseQuery = () =>
       supabase
         .from("lead_previews")
         .select("*")
-        .is("directed_provider_id", null)
         .in("category_slug", Array.from(cats))
         .in("city_slug", Array.from(cities))
         .eq("status", "active")
         .order("created_at", { ascending: false })
-        .limit(100) as unknown as Promise<{ data: LeadPreview[] | null; error: unknown }>,
-    );
+        .limit(100);
+    const tried = await baseQuery().is("directed_provider_id", null);
+    if (tried.error && isUndefinedColumn(tried.error)) {
+      directedMissing = true;
+      const legacy = await baseQuery();
+      if (legacy.error) throw legacy.error;
+      for (const row of (legacy.data ?? []) as LeadPreview[]) {
+        if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
+      }
+    } else if (tried.error) {
+      throw tried.error;
+    } else {
+      for (const row of (tried.data ?? []) as LeadPreview[]) {
+        if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
+      }
+    }
   }
-  queries.push(
-    supabase
+
+  if (!directedMissing) {
+    const direct = await supabase
       .from("lead_previews")
       .select("*")
       .eq("directed_provider_id", providerId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
-      .limit(100) as unknown as Promise<{ data: LeadPreview[] | null; error: unknown }>,
-  );
-  const results = await Promise.all(queries);
-  for (const r of results) if (r.error) throw r.error;
-  const seen = new Set<string>();
-  const data: LeadPreview[] = [];
-  for (const r of results) for (const row of r.data ?? []) {
-    if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
+      .limit(100);
+    if (direct.error && !isUndefinedColumn(direct.error)) throw direct.error;
+    for (const row of ((direct.data ?? []) as LeadPreview[])) {
+      if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
+    }
   }
+
   if (data.length === 0) return [];
 
   // exclude already-unlocked
