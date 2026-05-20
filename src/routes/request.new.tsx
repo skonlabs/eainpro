@@ -492,8 +492,8 @@ function NewRequestPage() {
               "ဘယ်လို အကူအညီ လိုသလဲ?",
             )}
             hint={L(
-              "Tap the service you need.",
-              "လိုအပ်သော ဝန်ဆောင်မှု တစ်ခုကို နှိပ်ပါ။",
+              "Tap all that apply. You'll be charged per selected service.",
+              "လိုအပ်သမျှကို နှိပ်ပါ။ ရွေးထားသည့် ဝန်ဆောင်မှုအလိုက် ကြေး တွက်ပါမည်။",
             )}
           >
             <div className="grid gap-2 sm:grid-cols-2">
@@ -502,14 +502,26 @@ function NewRequestPage() {
                   key={s.slug}
                   active={form.subcategories.includes(s.slug)}
                   onClick={() => {
-                    setForm((f) => ({ ...f, subcategories: [s.slug] }));
-                    advanceAfterSelection();
+                    setForm((f) => ({
+                      ...f,
+                      subcategories: f.subcategories.includes(s.slug)
+                        ? f.subcategories.filter((x) => x !== s.slug)
+                        : [...f.subcategories, s.slug],
+                    }));
                   }}
                 >
                   {L(s.en, s.my)}
                 </BigChoice>
               ))}
             </div>
+            {form.subcategories.length > 0 && (
+              <p className="mt-3 text-xs font-semibold text-primary">
+                {L(
+                  `${form.subcategories.length} selected`,
+                  `${form.subcategories.length} ခု ရွေးထား`,
+                )}
+              </p>
+            )}
           </StepShell>
         );
 
