@@ -70,18 +70,19 @@ export async function listAvailableLeads(providerId: string) {
 
   let directedMissing = false;
   if (cats.size > 0 && cities.size > 0) {
-    let q = supabase
-      .from("lead_previews")
-      .select("*")
-      .in("category_slug", Array.from(cats))
-      .in("city_slug", Array.from(cities))
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    const tried = await q.is("directed_provider_id", null);
+    const baseQuery = () =>
+      supabase
+        .from("lead_previews")
+        .select("*")
+        .in("category_slug", Array.from(cats))
+        .in("city_slug", Array.from(cities))
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(100);
+    const tried = await baseQuery().is("directed_provider_id", null);
     if (tried.error && isUndefinedColumn(tried.error)) {
       directedMissing = true;
-      const legacy = await q;
+      const legacy = await baseQuery();
       if (legacy.error) throw legacy.error;
       for (const row of (legacy.data ?? []) as LeadPreview[]) {
         if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
