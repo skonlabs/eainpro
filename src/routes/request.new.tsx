@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ function NewRequestPage() {
   const initialCity = search.city;
   const directTo = search.directTo;
   const { lang } = useI18n();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
@@ -402,6 +402,56 @@ function NewRequestPage() {
       };
     });
   };
+
+  // Gate: home owners must be signed in to start a request.
+  // Browsing providers/reviews is allowed without an account, but creating
+  // a request requires an authenticated customer.
+  if (!authLoading && !user) {
+    const redirectTarget = (() => {
+      const params = new URLSearchParams();
+      if (cat) params.set("cat", cat);
+      if (sub) params.set("sub", sub);
+      if (initialCity) params.set("city", initialCity);
+      if (directTo) params.set("directTo", directTo);
+      const qs = params.toString();
+      return qs ? `/request/new?${qs}` : "/request/new";
+    })();
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <main className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-20">
+          <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h1 className="mt-4 text-xl font-bold tracking-tight">
+              {L("Sign in to send your request", "တောင်းဆိုရန် အကောင့်ဝင်ပါ")}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {L(
+                "You can browse providers and reviews freely, but you need an account to send a service request so providers can reach you.",
+                "ဝန်ဆောင်မှုပေးသူများနှင့် သုံးသပ်ချက်များကို လွတ်လပ်စွာ ကြည့်ရှုနိုင်သော်လည်း တောင်းဆိုမှု ပေးပို့ရန် အကောင့်တစ်ခု လိုအပ်ပါသည်။",
+              )}
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <Link to="/signin" search={{ redirect: redirectTarget }}>
+                <Button className="h-11 w-full rounded-xl font-semibold">
+                  {L("Sign in to continue", "ဝင်ရောက်ပြီး ဆက်လုပ်ရန်")}
+                </Button>
+              </Link>
+              <Link to="/signup" search={{ as: "customer", redirect: redirectTarget }}>
+                <Button variant="outline" className="h-11 w-full rounded-xl font-semibold">
+                  {L("Create a free account", "အကောင့်အသစ် ဖွင့်ရန်")}
+                </Button>
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {L("Takes less than a minute.", "တစ်မိနစ်အတွင်း ပြီးပါမည်။")}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-44">
