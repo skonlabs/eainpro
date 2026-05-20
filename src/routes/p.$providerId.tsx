@@ -399,8 +399,8 @@ function ProviderProfilePage() {
             {myLeads && myLeads.length === 0 && (
               <p className="py-2 text-sm text-muted-foreground">
                 {lang === "en"
-                  ? "You don't have any open requests yet."
-                  : "ဖွင့်ထားသော တောင်းဆိုမှု မရှိသေးပါ။"}
+                  ? "You don't have any open requests that match this provider's services."
+                  : "ဤပညာရှင်၏ ဝန်ဆောင်မှုနှင့် ကိုက်ညီသော ဖွင့်ထားသည့် တောင်းဆိုမှု မရှိသေးပါ။"}
               </p>
             )}
             {myLeads && myLeads.length > 0 && (
