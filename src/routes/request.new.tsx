@@ -40,6 +40,7 @@ const searchSchema = z.object({
   sub: z.string().optional(),
   category: z.string().optional(),
   city: z.string().optional(),
+  directTo: z.string().optional(),
 });
 
 export const Route = createFileRoute("/request/new")({
@@ -78,6 +79,7 @@ function NewRequestPage() {
   const cat = aliased && CATEGORIES.some((c) => c.slug === aliased) ? aliased : undefined;
   const sub = search.sub;
   const initialCity = search.city;
+  const directTo = search.directTo;
   const { lang } = useI18n();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -85,6 +87,19 @@ function NewRequestPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [directProvider, setDirectProvider] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (!directTo) { setDirectProvider(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("providers")
+        .select("id, business_name")
+        .eq("id", directTo)
+        .maybeSingle();
+      if (data) setDirectProvider({ id: data.id, name: data.business_name ?? "Provider" });
+    })();
+  }, [directTo]);
 
   const [form, setForm] = useState({
     category: cat ?? "",
@@ -296,9 +311,10 @@ function NewRequestPage() {
       .select("price_credits, max_provider_unlocks, is_active")
       .in("service_type_id", stIds);
     const active = (pricingRows ?? []).filter((p: { is_active: boolean }) => p.is_active);
-    const priceCredits = active.length
+    let priceCredits = active.length
       ? active.reduce((sum: number, p: { price_credits: number }) => sum + (p.price_credits ?? 0), 0)
       : 500 * subSlugs.length;
+    if (directProvider) priceCredits = priceCredits * 2;
     const maxUnlocks = active.length
       ? Math.min(...active.map((p: { max_provider_unlocks: number }) => p.max_provider_unlocks))
       : 5;
@@ -331,6 +347,7 @@ function NewRequestPage() {
         lead_price_credits: priceCredits,
         max_provider_unlocks: maxUnlocks,
         expires_at: expiresAt,
+        directed_provider_id: directProvider?.id ?? null,
       })
       .select("id")
       .single();
@@ -413,6 +430,17 @@ function NewRequestPage() {
       </div>
 
       <main className="mx-auto max-w-2xl px-4 pt-4 sm:px-6 sm:pt-8">
+        {directProvider && (
+          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/90">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p>
+              {L(
+                `Direct request to ${directProvider.name}. Only they will see this lead — fee is 2× the standard credit cost.`,
+                `${directProvider.name} သို့ တိုက်ရိုက် တောင်းဆို။ သူသာလျှင် မြင်ပါမည် — ကြေး ၂ ဆ ဖြစ်ပါမည်။`,
+              )}
+            </p>
+          </div>
+        )}
         {renderStep()}
       </main>
 

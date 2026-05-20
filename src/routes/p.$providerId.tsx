@@ -184,20 +184,32 @@ function ProviderProfilePage() {
           </ul>
         </div>
 
-        {services.length > 0 && (
-          <Link to="/request/new" search={{ category: services[0].category_slug }}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link
+            to="/request/new"
+            search={{
+              category: services[0]?.category_slug,
+              directTo: p.id,
+            }}
+          >
             <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-              {lang === "en" ? "Request a service" : "ဝန်ဆောင်မှု တောင်းရန်"}
+              {lang === "en" ? `Request ${p.business_name ?? "this provider"}` : "ဤပညာရှင်ကို တိုက်ရိုက် တောင်းရန်"}
             </Button>
           </Link>
-        )}
-        {services.length === 0 && (
-          <Link to="/request/new">
-            <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-              {lang === "en" ? "Request a service" : "ဝန်ဆောင်မှု တောင်းရန်"}
+          <Link
+            to="/request/new"
+            search={{ category: services[0]?.category_slug }}
+          >
+            <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
+              {lang === "en" ? "Post to all providers" : "အားလုံးထံ တင်ရန်"}
             </Button>
           </Link>
-        )}
+        </div>
+        <p className="text-center text-xs text-muted-foreground">
+          {lang === "en"
+            ? "Direct requests are sent only to this provider. They pay 2× the standard lead fee."
+            : "တိုက်ရိုက်တောင်းဆိုမှုသည် ဤပညာရှင်ထံသာ ပို့ပြီး ကြေး ၂ ဆ ဖြစ်ပါမည်။"}
+        </p>
       </main>
 
     </div>

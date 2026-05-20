@@ -22,6 +22,8 @@ export type LeadPreview = {
   expires_at: string | null;
   created_at: string;
   photo_count: number;
+  directed_provider_id: string | null;
+  is_direct: boolean;
 };
 
 export const UNLOCK_ERROR_MESSAGES: Record<string, string> = {
@@ -54,20 +56,42 @@ export async function listAvailableLeads(providerId: string) {
   ]);
   const cats = new Set((services ?? []).map((s) => s.category_slug));
   const cities = new Set((areas ?? []).map((a) => a.city_slug));
-  if (cats.size === 0 || cities.size === 0) return [];
 
-  const { data, error } = await supabase
-    .from("lead_previews")
-    .select("*")
-    .in("category_slug", Array.from(cats))
-    .in("city_slug", Array.from(cities))
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(100);
-  if (error) throw error;
+  // Two streams: matched-area leads (open to all) + leads directly addressed to me.
+  const queries: Promise<{ data: LeadPreview[] | null; error: unknown }>[] = [];
+  if (cats.size > 0 && cities.size > 0) {
+    queries.push(
+      supabase
+        .from("lead_previews")
+        .select("*")
+        .is("directed_provider_id", null)
+        .in("category_slug", Array.from(cats))
+        .in("city_slug", Array.from(cities))
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(100) as unknown as Promise<{ data: LeadPreview[] | null; error: unknown }>,
+    );
+  }
+  queries.push(
+    supabase
+      .from("lead_previews")
+      .select("*")
+      .eq("directed_provider_id", providerId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(100) as unknown as Promise<{ data: LeadPreview[] | null; error: unknown }>,
+  );
+  const results = await Promise.all(queries);
+  for (const r of results) if (r.error) throw r.error;
+  const seen = new Set<string>();
+  const data: LeadPreview[] = [];
+  for (const r of results) for (const row of r.data ?? []) {
+    if (!seen.has(row.id)) { seen.add(row.id); data.push(row); }
+  }
+  if (data.length === 0) return [];
 
   // exclude already-unlocked
-  const ids = (data ?? []).map((l: LeadPreview) => l.id);
+  const ids = data.map((l) => l.id);
   if (ids.length === 0) return [];
   const { data: unlocked } = await supabase
     .from("provider_lead_unlocks")
@@ -75,7 +99,7 @@ export async function listAvailableLeads(providerId: string) {
     .eq("provider_id", providerId)
     .in("lead_id", ids);
   const unlockedSet = new Set((unlocked ?? []).map((u) => u.lead_id));
-  return (data ?? []).filter((l: LeadPreview) => !unlockedSet.has(l.id));
+  return data.filter((l) => !unlockedSet.has(l.id));
 }
 
 export async function listMyUnlocks(providerId: string, statuses?: string[]) {
