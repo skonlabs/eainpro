@@ -493,8 +493,8 @@ function NewRequestPage() {
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p>
               {L(
-                `Direct request to ${directProvider.name}. Only they will see this lead — fee is 2× the standard credit cost.`,
-                `${directProvider.name} သို့ တိုက်ရိုက် တောင်းဆို။ သူသာလျှင် မြင်ပါမည် — ကြေး ၂ ဆ ဖြစ်ပါမည်။`,
+                `You're sending this request directly to ${directProvider.name}. Only they will receive it.`,
+                `${directProvider.name} ထံသို့သာ တိုက်ရိုက် ပေးပို့ပါမည်။ သူသာလျှင် လက်ခံရရှိပါမည်။`,
               )}
             </p>
           </div>
