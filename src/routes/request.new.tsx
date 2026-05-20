@@ -505,7 +505,7 @@ function NewRequestPage() {
                     setForm((f) => ({
                       ...f,
                       subcategories: f.subcategories.includes(s.slug)
-                        ? f.subcategories.filter((x) => x !== s.slug)
+                        ? f.subcategories.filter((x: string) => x !== s.slug)
                         : [...f.subcategories, s.slug],
                     }));
                   }}
