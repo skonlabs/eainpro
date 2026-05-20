@@ -282,17 +282,38 @@ function RefundsTab() {
   const [amount, setAmount] = useState<number>(0);
   const [reason, setReason] = useState("");
   const load = async () => {
-    let query = supabase
+    setUnlocks(null);
+    const { data, error } = await supabase
       .from("provider_lead_unlocks")
-      .select("*, customer_leads(customer_name, customer_phone, city_slug, service_type_id), providers(business_name)")
+      .select("*")
       .order("unlocked_at", { ascending: false })
       .limit(50);
-    if (q.trim()) {
-      // simple filter by provider business_name or phone
-      query = query as any;
+    if (error) {
+      toast.error(`Load unlocks failed: ${error.message}`);
+      setUnlocks([]);
+      return;
     }
-    const { data } = await query;
-    setUnlocks(data ?? []);
+    const list = data ?? [];
+    const provIds = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
+    const leadIds = [...new Set(list.map((r) => r.lead_id).filter(Boolean))];
+    const [{ data: provs }, leadRes] = await Promise.all([
+      provIds.length
+        ? supabase.from("providers").select("id, business_name").in("id", provIds)
+        : Promise.resolve({ data: [] as any[] }),
+      leadIds.length
+        ? supabase.rpc("get_customer_leads", { _lead_ids: leadIds })
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const provMap = new Map((provs ?? []).map((p: any) => [p.id, p.business_name ?? null]));
+    const leads = Array.isArray(leadRes?.data) ? leadRes.data : [];
+    const leadMap = new Map(leads.map((l: any) => [l.id, l]));
+    setUnlocks(
+      list.map((u) => ({
+        ...u,
+        providers: { business_name: provMap.get(u.provider_id) ?? null },
+        customer_leads: leadMap.get(u.lead_id) ?? null,
+      })),
+    );
   };
   useEffect(() => { load(); }, []);
   const filtered = (unlocks ?? []).filter((u) => {
