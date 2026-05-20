@@ -311,9 +311,10 @@ function NewRequestPage() {
       .select("price_credits, max_provider_unlocks, is_active")
       .in("service_type_id", stIds);
     const active = (pricingRows ?? []).filter((p: { is_active: boolean }) => p.is_active);
-    const priceCredits = active.length
+    let priceCredits = active.length
       ? active.reduce((sum: number, p: { price_credits: number }) => sum + (p.price_credits ?? 0), 0)
       : 500 * subSlugs.length;
+    if (directProvider) priceCredits = priceCredits * 2;
     const maxUnlocks = active.length
       ? Math.min(...active.map((p: { max_provider_unlocks: number }) => p.max_provider_unlocks))
       : 5;
@@ -346,6 +347,7 @@ function NewRequestPage() {
         lead_price_credits: priceCredits,
         max_provider_unlocks: maxUnlocks,
         expires_at: expiresAt,
+        directed_provider_id: directProvider?.id ?? null,
       })
       .select("id")
       .single();
