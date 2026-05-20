@@ -65,6 +65,7 @@ function AdminPage() {
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="audit">Audit log</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            <TabsTrigger value="payments">Payment methods</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
@@ -73,6 +74,7 @@ function AdminPage() {
           <TabsContent value="revenue"><RevenueTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
           <TabsContent value="providers"><ProvidersTab /></TabsContent>
+          <TabsContent value="payments"><PaymentMethodsTab /></TabsContent>
         </Tabs>
       </main>
     </div>
