@@ -62,23 +62,21 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 function Index() {
   const { lang } = useI18n();
   const { user, roles, loading: authLoading } = useAuth();
-  const nav = useNavigate();
 
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const isProvider = roles.includes("provider");
   const isAdmin = roles.includes("admin");
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) nav({ to: "/signin", search: { redirect: "/" } });
-  }, [authLoading, user, nav]);
-
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="grid min-h-[40vh] place-items-center text-sm text-muted-foreground">
         {L("Loading…", "ခဏစောင့်ပါ…")}
       </div>
     );
+  }
+
+  if (!user) {
+    return <GuestHome lang={lang} L={L} />;
   }
 
   const firstName =
