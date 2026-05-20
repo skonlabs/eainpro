@@ -551,3 +551,112 @@ function PaymentMethodCard({ row, onSave }: { row: any; onSave: (slug: string, p
     </div>
   );
 }
+
+function PackagesTab() {
+  const [rows, setRows] = useState<any[] | null>(null);
+  const load = async () => {
+    const { data } = await supabase.from("credit_packages").select("*").order("sort_order");
+    setRows(data ?? []);
+  };
+  useEffect(() => { load(); }, []);
+  const save = async (id: string, patch: any) => {
+    const { error } = await supabase.from("credit_packages")
+      .update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("Saved"); load(); }
+  };
+  if (!rows) return <Skeleton className="mt-4 h-48 w-full" />;
+  return (
+    <div className="mt-4 space-y-3">
+      {rows.map((p) => <PackageRow key={p.id} row={p} onSave={save} />)}
+      <p className="text-xs text-muted-foreground">Add new packages via SQL — edits to existing packages take effect immediately.</p>
+    </div>
+  );
+}
+
+function PackageRow({ row, onSave }: { row: any; onSave: (id: string, p: any) => void }) {
+  const [name, setName] = useState(row.name_en ?? "");
+  const [price, setPrice] = useState<number>(row.price_mmk ?? 0);
+  const [credits, setCredits] = useState<number>(row.credits ?? 0);
+  const [bonus, setBonus] = useState<number>(row.bonus_credits ?? 0);
+  const [badge, setBadge] = useState<string>(row.badge_en ?? "");
+  const [active, setActive] = useState<boolean>(row.is_active);
+  return (
+    <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-card p-3 sm:grid-cols-7 sm:items-end">
+      <div className="sm:col-span-2">
+        <label className="text-[10px] uppercase text-muted-foreground">Name</label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-[10px] uppercase text-muted-foreground">Price MMK</label>
+        <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+      </div>
+      <div>
+        <label className="text-[10px] uppercase text-muted-foreground">Credits</label>
+        <Input type="number" value={credits} onChange={(e) => setCredits(Number(e.target.value))} />
+      </div>
+      <div>
+        <label className="text-[10px] uppercase text-muted-foreground">Bonus</label>
+        <Input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} />
+      </div>
+      <div>
+        <label className="text-[10px] uppercase text-muted-foreground">Badge</label>
+        <Input value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="Popular" />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1 text-xs">
+          <Switch checked={active} onCheckedChange={(v) => { setActive(v); onSave(row.id, { is_active: v }); }} /> Active
+        </div>
+        <Button size="sm" onClick={() => onSave(row.id, { name_en: name, price_mmk: price, credits, bonus_credits: bonus, badge_en: badge || null })}>Save</Button>
+      </div>
+    </div>
+  );
+}
+
+function AdjustWalletTab() {
+  const [providerId, setProviderId] = useState("");
+  const [delta, setDelta] = useState<string>("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [providers, setProviders] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("providers").select("id,business_name").order("business_name").limit(200)
+      .then(({ data }) => setProviders(data ?? []));
+  }, []);
+  const submit = async () => {
+    const n = Number(delta);
+    if (!providerId) return toast.error("Pick a provider");
+    if (!n || isNaN(n)) return toast.error("Enter a non-zero amount");
+    if (!note.trim()) return toast.error("Note is required for audit log");
+    setBusy(true);
+    const { data, error } = await supabase.rpc("adjust_wallet", { p_provider_id: providerId, p_delta: n, p_note: note.trim() });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    if (!data?.ok) return toast.error(data?.error ?? "Failed");
+    toast.success(`Adjusted. New balance: ${data.balance}`);
+    setDelta(""); setNote("");
+  };
+  return (
+    <div className="mt-4 max-w-xl space-y-3 rounded-2xl border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground">
+        Manually credit (positive) or debit (negative) a provider's wallet. Recorded as an <strong>adjustment</strong> transaction with your note in the audit log.
+      </p>
+      <div>
+        <Label className="text-xs">Provider</Label>
+        <select className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          value={providerId} onChange={(e) => setProviderId(e.target.value)}>
+          <option value="">— Select provider —</option>
+          {providers.map((p) => <option key={p.id} value={p.id}>{p.business_name ?? p.id.slice(0,8)}</option>)}
+        </select>
+      </div>
+      <div>
+        <Label className="text-xs">Amount (credits, negative to debit)</Label>
+        <Input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="e.g. 5000 or -2000" />
+      </div>
+      <div>
+        <Label className="text-xs">Reason / note *</Label>
+        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Goodwill credit / correction for ticket #123" />
+      </div>
+      <Button className="w-full" onClick={submit} disabled={busy}>{busy ? "Applying…" : "Apply adjustment"}</Button>
+    </div>
+  );
+}
