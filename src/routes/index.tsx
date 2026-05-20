@@ -748,7 +748,7 @@ function ProviderHome({
       {/* Quick actions */}
       <section className="grid grid-cols-2 gap-2">
         <QuickAction
-          to="/provider/dashboard"
+          to="/provider/leads"
           icon={<Briefcase className="h-5 w-5" />}
           title={L("Browse jobs", "အလုပ် ရှာ")}
           sub={L("Find new work", "အလုပ်အသစ်")}
