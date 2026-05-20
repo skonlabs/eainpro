@@ -98,7 +98,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       rolesReady,
       signOut: async () => {
-        await supabase.auth.signOut();
+        // Optimistically clear local state so the UI updates immediately,
+        // even if the network call is slow or fails.
+        setSession(null);
+        setRoles([]);
+        setRolesReady(true);
+        try {
+          await supabase.auth.signOut({ scope: "global" });
+        } catch {
+          // ignore — we still want to nuke local creds below
+        }
+        // Belt-and-suspenders: wipe any lingering supabase auth tokens from
+        // localStorage so a stale entry can't auto-rehydrate the session.
+        try {
+          if (typeof window !== "undefined") {
+            const keys: string[] = [];
+            for (let i = 0; i < window.localStorage.length; i++) {
+              const k = window.localStorage.key(i);
+              if (k && (k.startsWith("sb-") || k.includes("supabase.auth"))) {
+                keys.push(k);
+              }
+            }
+            keys.forEach((k) => window.localStorage.removeItem(k));
+          }
+        } catch {
+          /* ignore storage errors */
+        }
       },
       refreshRoles: () => loadRoles(session?.user?.id),
     }),

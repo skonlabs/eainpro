@@ -280,7 +280,14 @@ function AccountPage() {
             className="text-destructive"
             onClick={async () => {
               await signOut();
-              nav({ to: "/" });
+              // Hard reload to "/" so every in-memory cache, query, and
+              // subscription is reset — prevents the previous user's data
+              // (or session) from auto-rehydrating.
+              if (typeof window !== "undefined") {
+                window.location.replace("/");
+              } else {
+                nav({ to: "/" });
+              }
             }}
           >
             <LogOut className="mr-1 h-4 w-4" />
