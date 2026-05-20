@@ -94,6 +94,96 @@ function ProviderProfilePage() {
 
   const [notFound, setNotFound] = useState(false);
 
+  const providerCategorySet = new Set(services.map((s) => s.category_slug));
+
+  const openPicker = async () => {
+    if (!user || !p) return;
+    setPickerOpen(true);
+    if (myLeads !== null) return;
+    const { data, error } = await supabase
+      .from("customer_leads")
+      .select("id, short_description, created_at, city_slug, service_type:service_types(category_slug)")
+      .eq("customer_id", user.id)
+      .eq("status", "active")
+      .is("directed_provider_id", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) {
+      toast.error(error.message);
+      setMyLeads([]);
+      return;
+    }
+    setMyLeads(
+      (data ?? []).map((r: any) => ({
+        id: r.id,
+        short_description: r.short_description,
+        created_at: r.created_at,
+        city_slug: r.city_slug,
+        category_slug: r.service_type?.category_slug ?? null,
+      })),
+    );
+  };
+
+  const forwardLead = async (leadId: string) => {
+    if (!user || !p) return;
+    setForwarding(leadId);
+    try {
+      // Load the original lead with all the fields needed to clone it.
+      const { data: orig, error: origErr } = await supabase
+        .from("customer_leads")
+        .select(
+          "customer_name, customer_phone, city_slug, address, service_type_id, urgency, preferred_date, preferred_time, short_description, full_description, lead_price_credits, max_provider_unlocks, expires_at",
+        )
+        .eq("id", leadId)
+        .eq("customer_id", user.id)
+        .maybeSingle();
+      if (origErr || !orig) throw origErr ?? new Error("Original request not found");
+
+      const directPrice = (orig.lead_price_credits ?? 500) * 2;
+      const { data: inserted, error: insErr } = await supabase
+        .from("customer_leads")
+        .insert({
+          customer_id: user.id,
+          customer_name: orig.customer_name,
+          customer_phone: orig.customer_phone,
+          city_slug: orig.city_slug,
+          address: orig.address,
+          service_type_id: orig.service_type_id,
+          urgency: orig.urgency,
+          preferred_date: orig.preferred_date,
+          preferred_time: orig.preferred_time,
+          short_description: orig.short_description,
+          full_description: orig.full_description,
+          lead_price_credits: directPrice,
+          max_provider_unlocks: 1,
+          expires_at: orig.expires_at,
+          directed_provider_id: p.id,
+        })
+        .select("id")
+        .single();
+      if (insErr || !inserted) throw insErr ?? new Error("Could not send request");
+
+      // Copy photos too.
+      const { data: photos } = await supabase
+        .from("lead_photos")
+        .select("url, sort_order")
+        .eq("lead_id", leadId);
+      if (photos?.length) {
+        await supabase.from("lead_photos").insert(
+          photos.map((ph) => ({ lead_id: inserted.id, url: ph.url, sort_order: ph.sort_order })),
+        );
+      }
+
+      toast.success(lang === "en" ? "Sent to provider" : "ပညာရှင်ထံ ပို့ပြီးပါပြီ");
+      setPickerOpen(false);
+      nav({ to: "/request/$leadId", params: { leadId: inserted.id } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setForwarding(null);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
