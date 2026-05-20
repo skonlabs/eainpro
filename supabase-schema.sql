@@ -1,5 +1,5 @@
 -- =====================================================================
--- Eain Pro — Myanmar home services marketplace
+-- Fixido — Myanmar home services marketplace
 -- Run this in the Supabase SQL editor for project pjgxzkjgxhfbcbbockyk.
 -- Safe to re-run (uses IF NOT EXISTS / on conflict).
 -- =====================================================================

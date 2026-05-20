@@ -14,7 +14,7 @@ import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut, Briefcase } from
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
-  head: () => ({ meta: [{ title: "Account — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Account — Fixido" }] }),
 });
 
 type Profile = {

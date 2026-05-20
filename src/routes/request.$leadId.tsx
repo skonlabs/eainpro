@@ -16,7 +16,7 @@ const search = z.object({ tab: z.string().optional() });
 export const Route = createFileRoute("/request/$leadId")({
   validateSearch: search,
   component: LeadPage,
-  head: () => ({ meta: [{ title: "Request — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Request — Fixido" }] }),
 });
 
 type Lead = {

@@ -18,7 +18,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/signup")({
   validateSearch: searchSchema,
   component: SignUpPage,
-  head: () => ({ meta: [{ title: "Create account — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Create account — Fixido" }] }),
 });
 
 function SignUpPage() {
@@ -102,7 +102,7 @@ function SignUpPage() {
             {L("Create your account", "အကောင့်ဖွင့်ပါ")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {L("Join Eain Pro — Myanmar's home services marketplace", "Eain Pro သို့ ဝင်ရောက်ပါ")}
+            {L("Join Fixido — Myanmar's home services marketplace", "Fixido သို့ ဝင်ရောက်ပါ")}
           </p>
         </div>
 

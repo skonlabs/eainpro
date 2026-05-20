@@ -15,7 +15,7 @@ const searchSchema = z.object({ redirect: z.string().optional() });
 export const Route = createFileRoute("/signin")({
   validateSearch: searchSchema,
   component: SignInPage,
-  head: () => ({ meta: [{ title: "Sign in — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Fixido" }] }),
 });
 
 function SignInPage() {
@@ -62,7 +62,7 @@ function SignInPage() {
             {lang === "en" ? "Welcome back" : "ပြန်လာကြိုဆိုပါသည်"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "en" ? "Sign in to your Eain Pro account" : "သင်၏ Eain Pro အကောင့်သို့ ဝင်ရောက်ပါ"}
+            {lang === "en" ? "Sign in to your Fixido account" : "သင်၏ Fixido အကောင့်သို့ ဝင်ရောက်ပါ"}
           </p>
         </div>
 
@@ -108,7 +108,7 @@ function SignInPage() {
           </p>
 
           <div className="rounded-2xl border border-border bg-card/60 p-4 text-center text-sm text-muted-foreground">
-            {lang === "en" ? "New to Eain Pro?" : "Eain Pro သို့ အသစ်ရောက်ပါသလား?"}{" "}
+            {lang === "en" ? "New to Fixido?" : "Fixido သို့ အသစ်ရောက်ပါသလား?"}{" "}
             <Link to="/signup" search={{ as: undefined }} className="font-semibold text-primary hover:underline">
               {lang === "en" ? "Create an account" : "အကောင့်ဖွင့်ရန်"}
             </Link>

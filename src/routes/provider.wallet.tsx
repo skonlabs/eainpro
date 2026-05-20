@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/provider/wallet")({
   component: WalletPage,
-  head: () => ({ meta: [{ title: "Wallet — Eain Pro" }] }),
+  head: () => ({ meta: [{ title: "Wallet — Fixido" }] }),
 });
 
 function WalletPage() {

@@ -5,7 +5,7 @@ export type Lang = "en" | "my";
 type Dict = Record<string, { en: string; my: string }>;
 
 export const T: Dict = {
-  brand: { en: "Eain Pro", my: "အိမ်ပရို" },
+  brand: { en: "Fixido", my: "Fixido" },
   tagline: {
     en: "Trusted home services for every Myanmar home.",
     my: "မြန်မာအိမ်တိုင်းအတွက် ယုံကြည်စိတ်ချရသော အိမ်တွင်းဝန်ဆောင်မှုများ။",
