@@ -17,7 +17,15 @@ import {
   WINDOW_OPTIONS,
   CONTACT_OPTIONS,
   BUDGET_OPTIONS,
+  TOWNSHIPS,
 } from "@/lib/catalog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft,
   Check,
@@ -675,7 +683,12 @@ function NewRequestPage() {
                 <BigChoice
                   key={c.slug}
                   active={form.city === c.slug}
-                  onClick={() => pick("city", c.slug)}
+                  onClick={() => {
+                    // Reset township when city changes so the dropdown
+                    // doesn't show a value from a different city.
+                    if (form.city !== c.slug) set("township", "");
+                    pick("city", c.slug);
+                  }}
                 >
                   {L(c.en, c.my)}
                 </BigChoice>
@@ -685,50 +698,71 @@ function NewRequestPage() {
         );
 
       case "township":
-        return (
-          <StepShell
-            title={L("Which township?", "ဘယ်မြို့နယ်လဲ?")}
-            hint={L(
-              "Type your township and a nearby landmark if helpful.",
-              "မြို့နယ်နှင့် နီးစပ်ရာ နေရာကို ရိုက်ထည့်ပါ။",
-            )}
-          >
-            <Input
-              autoFocus
-              placeholder={L("e.g. Bahan, Hlaing, Yankin", "ဥပမာ — ဗဟန်း")}
-              value={form.township}
-              onChange={(e) => set("township", e.target.value)}
-              className="h-12 text-base"
-            />
-            <Input
-              placeholder={L(
-                "Area / landmark (optional)",
-                "ရပ်ကွက် / မှတ်တိုင် (ရွေး)",
+        {
+          const cityTownships = TOWNSHIPS[form.city] ?? [];
+          const cityName = CITIES.find((c) => c.slug === form.city);
+          const cityLabel = cityName ? L(cityName.en, cityName.my) : form.city;
+          return (
+            <StepShell
+              title={L(
+                `Which township in ${cityLabel}?`,
+                "ဘယ်မြို့နယ်လဲ?",
               )}
-              value={form.area}
-              onChange={(e) => set("area", e.target.value)}
-              className="mt-2 h-12 text-base"
-            />
-            <Input
-              placeholder={L(
-                "Street / building / unit (optional, kept private)",
-                "လမ်း / အဆောက်အအုံ (ရွေး)",
+              hint={L(
+                "Pick your township so we can match nearby providers.",
+                "မြို့နယ်ကို ရွေးပါ — အနီးအနား ဝန်ဆောင်မှုပေးသူ ရှာပေးပါမည်။",
               )}
-              value={form.address}
-              onChange={(e) => set("address", e.target.value)}
-              className="mt-2 h-12 text-base"
-            />
-            <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <p>
-                {L(
-                  "Your exact address is shared only after you confirm a provider.",
-                  "လိပ်စာအတိအကျကို အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+            >
+              <Select
+                value={form.township || undefined}
+                onValueChange={(v) => set("township", v)}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue
+                    placeholder={L("Select township…", "မြို့နယ် ရွေးပါ…")}
+                  />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {cityTownships.map((t) => (
+                    <SelectItem key={t.slug} value={L(t.en, t.my)}>
+                      {L(t.en, t.my)}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={L("Other", "အခြား")}>
+                    {L("Other / not listed", "အခြား")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder={L(
+                  "Area / landmark (optional)",
+                  "ရပ်ကွက် / မှတ်တိုင် (ရွေး)",
                 )}
-              </p>
-            </div>
-          </StepShell>
-        );
+                value={form.area}
+                onChange={(e) => set("area", e.target.value)}
+                className="mt-2 h-12 text-base"
+              />
+              <Input
+                placeholder={L(
+                  "Street / building / unit (optional, kept private)",
+                  "လမ်း / အဆောက်အအုံ (ရွေး)",
+                )}
+                value={form.address}
+                onChange={(e) => set("address", e.target.value)}
+                className="mt-2 h-12 text-base"
+              />
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p>
+                  {L(
+                    "Your exact address is shared only after you confirm a provider.",
+                    "လိပ်စာအတိအကျကို အတည်ပြုပြီးမှသာ ပြသပါမည်။",
+                  )}
+                </p>
+              </div>
+            </StepShell>
+          );
+        }
 
       case "photos":
         return (

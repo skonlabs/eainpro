@@ -100,6 +100,90 @@ export const CITIES: { slug: string; en: string; my: string }[] = [
   { slug: "monywa", en: "Monywa", my: "မုံရွာ" },
 ];
 
+// Townships grouped by city slug. Covers the main townships customers
+// typically book services in. "Other" lets users proceed when their
+// township isn't listed.
+export const TOWNSHIPS: Record<string, { slug: string; en: string; my: string }[]> = {
+  yangon: [
+    { slug: "ahlone", en: "Ahlone", my: "အလုံ" },
+    { slug: "bahan", en: "Bahan", my: "ဗဟန်း" },
+    { slug: "botataung", en: "Botataung", my: "ဗိုလ်တထောင်" },
+    { slug: "dagon", en: "Dagon", my: "ဒဂုံ" },
+    { slug: "dagon-seikkan", en: "Dagon Seikkan", my: "ဒဂုံဆိပ်ကမ်း" },
+    { slug: "dawbon", en: "Dawbon", my: "ဒေါပုံ" },
+    { slug: "east-dagon", en: "East Dagon", my: "ဒဂုံအရှေ့" },
+    { slug: "hlaing", en: "Hlaing", my: "လှိုင်" },
+    { slug: "hlaingthaya", en: "Hlaingthaya", my: "လှိုင်သာယာ" },
+    { slug: "insein", en: "Insein", my: "အင်းစိန်" },
+    { slug: "kamayut", en: "Kamayut", my: "ကမာရွတ်" },
+    { slug: "kyauktada", en: "Kyauktada", my: "ကျောက်တံတား" },
+    { slug: "kyimyindaing", en: "Kyimyindaing", my: "ကြည့်မြင်တိုင်" },
+    { slug: "lanmadaw", en: "Lanmadaw", my: "လမ်းမတော်" },
+    { slug: "latha", en: "Latha", my: "လသာ" },
+    { slug: "mayangone", en: "Mayangone", my: "မရမ်းကုန်း" },
+    { slug: "mingala-taungnyunt", en: "Mingala Taungnyunt", my: "မင်္ဂလာတောင်ညွန့်" },
+    { slug: "mingalardon", en: "Mingaladon", my: "မင်္ဂလာဒုံ" },
+    { slug: "north-dagon", en: "North Dagon", my: "ဒဂုံမြောက်" },
+    { slug: "north-okkalapa", en: "North Okkalapa", my: "မြောက်ဥက္ကလာပ" },
+    { slug: "pabedan", en: "Pabedan", my: "ပန်းဘဲတန်း" },
+    { slug: "pazundaung", en: "Pazundaung", my: "ပုဇွန်တောင်" },
+    { slug: "sanchaung", en: "Sanchaung", my: "စမ်းချောင်း" },
+    { slug: "seikkan", en: "Seikkan", my: "ဆိပ်ကမ်း" },
+    { slug: "shwepyithar", en: "Shwepyithar", my: "ရွှေပြည်သာ" },
+    { slug: "south-dagon", en: "South Dagon", my: "ဒဂုံတောင်" },
+    { slug: "south-okkalapa", en: "South Okkalapa", my: "တောင်ဥက္ကလာပ" },
+    { slug: "tamwe", en: "Tamwe", my: "တာမွေ" },
+    { slug: "thaketa", en: "Thaketa", my: "သာကေတ" },
+    { slug: "thingangyun", en: "Thingangyun", my: "သင်္ဃန်းကျွန်း" },
+    { slug: "thaketa-2", en: "Thanlyin", my: "သန်လျင်" },
+    { slug: "yankin", en: "Yankin", my: "ရန်ကင်း" },
+  ],
+  mandalay: [
+    { slug: "aungmyethazan", en: "Aungmyethazan", my: "အောင်မြေသာစံ" },
+    { slug: "chanayethazan", en: "Chanayethazan", my: "ချမ်းအေးသာစံ" },
+    { slug: "chanmyathazi", en: "Chanmyathazi", my: "ချမ်းမြသာစည်" },
+    { slug: "mahaaungmye", en: "Mahaaungmye", my: "မဟာအောင်မြေ" },
+    { slug: "pyigyitagon", en: "Pyigyitagon", my: "ပြည်ကြီးတံခွန်" },
+    { slug: "amarapura", en: "Amarapura", my: "အမရပူရ" },
+    { slug: "patheingyi", en: "Patheingyi", my: "ပုသိမ်ကြီး" },
+  ],
+  naypyidaw: [
+    { slug: "zabuthiri", en: "Zabuthiri", my: "ဇမ္ဗူသီရိ" },
+    { slug: "zeyathiri", en: "Zeyathiri", my: "ဇေယျာသီရိ" },
+    { slug: "pobbathiri", en: "Pobbathiri", my: "ပုဗ္ဗသီရိ" },
+    { slug: "ottarathiri", en: "Ottarathiri", my: "ဥတ္တရသီရိ" },
+    { slug: "dekkhinathiri", en: "Dekkhinathiri", my: "ဒက္ခိဏသီရိ" },
+    { slug: "pyinmana", en: "Pyinmana", my: "ပျဉ်းမနား" },
+    { slug: "lewe", en: "Lewe", my: "လယ်ဝေး" },
+    { slug: "tatkon", en: "Tatkon", my: "တပ်ကုန်း" },
+  ],
+  bago: [
+    { slug: "bago-town", en: "Bago", my: "ပဲခူး" },
+    { slug: "taungoo", en: "Taungoo", my: "တောင်ငူ" },
+    { slug: "pyay", en: "Pyay", my: "ပြည်" },
+  ],
+  mawlamyine: [
+    { slug: "mawlamyine-town", en: "Mawlamyine", my: "မော်လမြိုင်" },
+    { slug: "mudon", en: "Mudon", my: "မုဒုံ" },
+    { slug: "thanbyuzayat", en: "Thanbyuzayat", my: "သံဖြူဇရပ်" },
+  ],
+  taunggyi: [
+    { slug: "taunggyi-town", en: "Taunggyi", my: "တောင်ကြီး" },
+    { slug: "shwenyaung", en: "Shwenyaung", my: "ရွှေညောင်" },
+    { slug: "kalaw", en: "Kalaw", my: "ကလော" },
+  ],
+  pathein: [
+    { slug: "pathein-town", en: "Pathein", my: "ပုသိမ်" },
+    { slug: "chaungtha", en: "Chaungtha", my: "ချောင်းသာ" },
+    { slug: "ngwesaung", en: "Ngwesaung", my: "ငွေဆောင်" },
+  ],
+  monywa: [
+    { slug: "monywa-town", en: "Monywa", my: "မုံရွာ" },
+    { slug: "budalin", en: "Budalin", my: "ဘုတလင်" },
+    { slug: "salingyi", en: "Salingyi", my: "ဆားလင်းကြီး" },
+  ],
+};
+
 // --- Per-category guided questions ------------------------------------
 export type QuestionOption = { value: string; en: string; my: string };
 export type Question = {
