@@ -125,15 +125,18 @@ function ProviderProfilePage() {
     setAlreadySent(
       new Set((sent ?? []).map((r: any) => `${r.service_type_id}::${r.short_description}`)),
     );
+    const providerCats = new Set(services.map((s) => s.category_slug));
     setMyLeads(
-      (data ?? []).map((r: any) => ({
-        id: r.id,
-        short_description: r.short_description,
-        created_at: r.created_at,
-        city_slug: r.city_slug,
-        service_type_id: r.service_type_id,
-        category_slug: r.service_type?.category_slug ?? null,
-      })),
+      (data ?? [])
+        .map((r: any) => ({
+          id: r.id,
+          short_description: r.short_description,
+          created_at: r.created_at,
+          city_slug: r.city_slug,
+          service_type_id: r.service_type_id,
+          category_slug: r.service_type?.category_slug ?? null,
+        }))
+        .filter((r) => r.category_slug && providerCats.has(r.category_slug)),
     );
   };
 
@@ -403,8 +406,6 @@ function ProviderProfilePage() {
             {myLeads && myLeads.length > 0 && (
               <ul className="max-h-72 space-y-2 overflow-y-auto">
                 {myLeads.map((l) => {
-                  const matches =
-                    !l.category_slug || providerCategorySet.has(l.category_slug);
                   const cat = CATEGORIES.find((c) => c.slug === l.category_slug);
                   const sent = alreadySent.has(`${l.service_type_id}::${l.short_description}`);
                   return (
@@ -433,13 +434,6 @@ function ProviderProfilePage() {
                             {lang === "en"
                               ? "Already sent to this provider."
                               : "ဤပညာရှင်ထံ ပေးပို့ပြီးပါပြီ။"}
-                          </p>
-                        )}
-                        {!matches && (
-                          <p className="mt-1 text-[10px] text-amber-600">
-                            {lang === "en"
-                              ? "Note: this provider may not cover this service."
-                              : "ဤပညာရှင်သည် ဤဝန်ဆောင်မှုမှာ မဖြစ်နိုင်ပါ။"}
                           </p>
                         )}
                       </button>
