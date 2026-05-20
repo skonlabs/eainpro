@@ -56,6 +56,30 @@ function ProviderProfilePage() {
   >(null);
   const [forwarding, setForwarding] = useState<string | null>(null);
   const [alreadySent, setAlreadySent] = useState<Set<string>>(new Set());
+  const [confirm, setConfirm] = useState<
+    | null
+    | {
+        leadId: string;
+        directPrice: number;
+        orig: {
+          customer_name: string | null;
+          customer_phone: string | null;
+          city_slug: string;
+          address: string | null;
+          service_type_id: string;
+          urgency: string | null;
+          preferred_date: string | null;
+          preferred_time: string | null;
+          short_description: string;
+          full_description: string | null;
+          lead_price_credits: number | null;
+          max_provider_unlocks: number | null;
+          expires_at: string | null;
+          category_slug: string | null;
+        };
+      }
+  >(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -140,11 +164,10 @@ function ProviderProfilePage() {
     );
   };
 
-  const forwardLead = async (leadId: string) => {
+  const previewLead = async (leadId: string, category_slug: string | null) => {
     if (!user || !p) return;
     setForwarding(leadId);
     try {
-      // Load the original lead with all the fields needed to clone it.
       const { data: orig, error: origErr } = await supabase
         .from("customer_leads")
         .select(
@@ -155,7 +178,6 @@ function ProviderProfilePage() {
         .maybeSingle();
       if (origErr || !orig) throw origErr ?? new Error("Original request not found");
 
-      // Guard: don't allow the same request to be forwarded to the same provider twice.
       const { data: dup } = await supabase
         .from("customer_leads")
         .select("id")
@@ -180,6 +202,19 @@ function ProviderProfilePage() {
       }
 
       const directPrice = (orig.lead_price_credits ?? 500) * 2;
+      setConfirm({ leadId, directPrice, orig: { ...orig, category_slug } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setForwarding(null);
+    }
+  };
+
+  const confirmForward = async () => {
+    if (!user || !p || !confirm) return;
+    setSubmitting(true);
+    try {
+      const { orig, directPrice, leadId } = confirm;
       const { data: inserted, error: insErr } = await supabase
         .from("customer_leads")
         .insert({
@@ -203,7 +238,6 @@ function ProviderProfilePage() {
         .single();
       if (insErr || !inserted) throw insErr ?? new Error("Could not send request");
 
-      // Copy photos too.
       const { data: photos } = await supabase
         .from("lead_photos")
         .select("url, sort_order")
@@ -215,12 +249,13 @@ function ProviderProfilePage() {
       }
 
       toast.success(lang === "en" ? "Sent to provider" : "ပညာရှင်ထံ ပို့ပြီးပါပြီ");
+      setConfirm(null);
       setPickerOpen(false);
       nav({ to: "/request/$leadId", params: { leadId: inserted.id } });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
     } finally {
-      setForwarding(null);
+      setSubmitting(false);
     }
   };
 
