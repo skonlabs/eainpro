@@ -410,21 +410,46 @@ function ProviderProfilePage() {
         </div>
       </main>
 
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+      <Dialog
+        open={pickerOpen}
+        onOpenChange={(o) => {
+          setPickerOpen(o);
+          if (!o) setConfirm(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {lang === "en"
-                ? `Send a request to ${p.business_name ?? "this provider"}`
-                : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
+              {confirm
+                ? lang === "en"
+                  ? "Confirm direct request"
+                  : "တိုက်ရိုက် တောင်းဆိုမှု အတည်ပြုပါ"
+                : lang === "en"
+                  ? `Send a request to ${p.business_name ?? "this provider"}`
+                  : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
             </DialogTitle>
             <DialogDescription>
-              {lang === "en"
-                ? "Pick one of your existing requests below. Only this provider will receive it — your original broadcast request is not affected."
-                : "အောက်တွင် ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ရွေးပါ။ ဤပညာရှင်သာ လက်ခံပါမည်။"}
+              {confirm
+                ? lang === "en"
+                  ? `Review what will be sent to ${p.business_name ?? "this provider"}.`
+                  : `${p.business_name ?? "ဤပညာရှင်"} ထံ ပေးပို့မည့်အရာကို ပြန်ကြည့်ပါ။`
+                : lang === "en"
+                  ? "Pick one of your existing requests below. Only this provider will receive it — your original broadcast request is not affected."
+                  : "အောက်တွင် ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ရွေးပါ။ ဤပညာရှင်သာ လက်ခံပါမည်။"}
             </DialogDescription>
           </DialogHeader>
 
+          {confirm ? (
+            <ConfirmPanel
+              lang={lang}
+              provider={p.business_name ?? "this provider"}
+              confirm={confirm}
+              submitting={submitting}
+              onBack={() => setConfirm(null)}
+              onConfirm={confirmForward}
+            />
+          ) : (
+          <>
           <div className="space-y-2">
             {myLeads === null && (
               <p className="py-6 text-center text-sm text-muted-foreground">
@@ -448,7 +473,7 @@ function ProviderProfilePage() {
                       <button
                         type="button"
                         disabled={forwarding === l.id || sent}
-                        onClick={() => forwardLead(l.id)}
+                        onClick={() => previewLead(l.id, l.category_slug)}
                         className="w-full rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary/40 disabled:opacity-60"
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -489,6 +514,8 @@ function ProviderProfilePage() {
               {lang === "en" ? "Start a new request" : "တောင်းဆိုမှု အသစ် စတင်ရန်"}
             </Button>
           </Link>
+          </>
+          )}
         </DialogContent>
       </Dialog>
 
