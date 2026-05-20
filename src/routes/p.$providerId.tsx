@@ -295,75 +295,121 @@ function ProviderProfilePage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="text-sm font-semibold">
-            {lang === "en" ? "Send a request" : "တောင်းဆိုမှု ပေးပို့ရန်"}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {lang === "en"
-              ? `Send your job to ${p.business_name ?? "this provider"} only, or let us match you with up to 5 providers for this service.`
-              : `${p.business_name ?? "ဤပညာရှင်"} ထံသာ ပေးပို့မလား၊ သို့မဟုတ် သင့်အလုပ်အတွက် ပညာရှင် ၅ ဦးအထိ ကိုက်ညီစေချင်ပါသလား။`}
-          </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {user ? (
-              <>
-                <Link
-                  to="/request/new"
-                  search={{
-                    category: services[0]?.category_slug,
-                    directTo: p.id,
-                  }}
-                >
-                  <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-                    {lang === "en"
-                      ? `Send only to ${p.business_name ?? "this provider"}`
-                      : `${p.business_name ?? "ဤပညာရှင်"} ထံသာ ပေးပို့ရန်`}
-                  </Button>
-                </Link>
-                <Link
-                  to="/request/new"
-                  search={{ category: services[0]?.category_slug }}
-                >
-                  <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
-                    {lang === "en" ? "Get quotes from up to 5 providers" : "ပညာရှင် ၅ ဦးထံမှ စျေးနှုန်း ရယူရန်"}
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/signin"
-                  search={{
-                    redirect: `/request/new?directTo=${p.id}${services[0]?.category_slug ? `&category=${services[0].category_slug}` : ""}`,
-                  }}
-                >
-                  <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-                    {lang === "en"
-                      ? `Sign in to send only to ${p.business_name ?? "this provider"}`
-                      : "တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
-                  </Button>
-                </Link>
-                <Link
-                  to="/signin"
-                  search={{
-                    redirect: `/request/new${services[0]?.category_slug ? `?category=${services[0].category_slug}` : ""}`,
-                  }}
-                >
-                  <Button variant="outline" className="w-full rounded-2xl py-6 text-base font-bold">
-                    {lang === "en" ? "Sign in to get quotes from up to 5 providers" : "ပညာရှင် ၅ ဦးထံ တောင်းရန် ဝင်ပါ"}
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-          {!user && (
-            <p className="mt-3 text-center text-xs text-muted-foreground">
+          {user ? (
+            <Button
+              onClick={openPicker}
+              className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25"
+            >
               {lang === "en"
-                ? "Browsing is free. You only need an account when you're ready to send a request."
-                : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
-            </p>
+                ? `Send a request to ${p.business_name ?? "this provider"}`
+                : `${p.business_name ?? "ဤပညာရှင်"} ထံ တောင်းဆိုမှု ပေးပို့ရန်`}
+            </Button>
+          ) : (
+            <>
+              <Link
+                to="/signin"
+                search={{
+                  redirect: `/p/${p.id}`,
+                }}
+              >
+                <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
+                  {lang === "en"
+                    ? `Sign in to send a request to ${p.business_name ?? "this provider"}`
+                    : "တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
+                </Button>
+              </Link>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                {lang === "en"
+                  ? "Browsing is free. You only need an account when you're ready to send a request."
+                  : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
+              </p>
+            </>
           )}
         </div>
       </main>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "en"
+                ? `Send to ${p.business_name ?? "this provider"}`
+                : `${p.business_name ?? "ဤပညာရှင်"} ထံ ပေးပို့ရန်`}
+            </DialogTitle>
+            <DialogDescription>
+              {lang === "en"
+                ? "Forward one of your existing requests, or start a new one. Only this provider will receive it."
+                : "ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ထပ်ပို့ပါ၊ သို့မဟုတ် အသစ်တစ်ခု စတင်ပါ။"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            {myLeads === null && (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+              </p>
+            )}
+            {myLeads && myLeads.length === 0 && (
+              <p className="py-2 text-sm text-muted-foreground">
+                {lang === "en"
+                  ? "You don't have any open requests yet."
+                  : "ဖွင့်ထားသော တောင်းဆိုမှု မရှိသေးပါ။"}
+              </p>
+            )}
+            {myLeads && myLeads.length > 0 && (
+              <ul className="max-h-72 space-y-2 overflow-y-auto">
+                {myLeads.map((l) => {
+                  const matches =
+                    !l.category_slug || providerCategorySet.has(l.category_slug);
+                  const cat = CATEGORIES.find((c) => c.slug === l.category_slug);
+                  return (
+                    <li key={l.id}>
+                      <button
+                        type="button"
+                        disabled={forwarding === l.id}
+                        onClick={() => forwardLead(l.id)}
+                        className="w-full rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary/40 disabled:opacity-60"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-semibold">
+                            {l.short_description}
+                          </span>
+                          {forwarding === l.id && (
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {cat ? (lang === "en" ? cat.en : cat.my) : l.category_slug ?? ""}
+                          {" · "}
+                          {new Date(l.created_at).toLocaleDateString()}
+                        </div>
+                        {!matches && (
+                          <p className="mt-1 text-[10px] text-amber-600">
+                            {lang === "en"
+                              ? "Note: this provider may not cover this service."
+                              : "ဤပညာရှင်သည် ဤဝန်ဆောင်မှုမှာ မဖြစ်နိုင်ပါ။"}
+                          </p>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <Link
+            to="/request/new"
+            search={{ category: services[0]?.category_slug, directTo: p.id }}
+            onClick={() => setPickerOpen(false)}
+          >
+            <Button variant="outline" className="mt-2 w-full rounded-xl">
+              <Plus className="mr-1 h-4 w-4" />
+              {lang === "en" ? "Start a new request" : "တောင်းဆိုမှု အသစ် စတင်ရန်"}
+            </Button>
+          </Link>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
