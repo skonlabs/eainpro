@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/catalog";
+import { listAvailableLeads } from "@/lib/leads";
 import {
   Plus,
   ChevronRight,
