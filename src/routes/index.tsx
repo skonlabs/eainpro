@@ -634,7 +634,7 @@ function ProviderHome({
           icon={<TrendingUp className="h-4 w-4" />}
           label={L("New jobs", "အသစ်")}
           value={String(newJobsCount)}
-          to="/provider/dashboard"
+          to="/provider/leads"
         />
         <StatTile
           icon={<Star className="h-4 w-4" />}
