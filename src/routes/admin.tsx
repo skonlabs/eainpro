@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { fmt } from "@/lib/wallet";
+import { QRCodeSVG } from "qrcode.react";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -65,6 +67,7 @@ function AdminPage() {
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="audit">Audit log</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            <TabsTrigger value="payments">Payment methods</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="pricing"><PricingTab /></TabsContent>
@@ -73,6 +76,7 @@ function AdminPage() {
           <TabsContent value="revenue"><RevenueTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
           <TabsContent value="providers"><ProvidersTab /></TabsContent>
+          <TabsContent value="payments"><PaymentMethodsTab /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -473,5 +477,73 @@ function ProvidersTabInner() {
         </li>
       ))}
     </ul>
+  );
+}
+
+const METHOD_SLUGS = ["kbzpay", "ayapay", "cbpay", "wavepay"] as const;
+
+function PaymentMethodsTab() {
+  const [rows, setRows] = useState<any[] | null>(null);
+  const load = async () => {
+    const { data } = await supabase
+      .from("payment_methods")
+      .select("*")
+      .in("slug", METHOD_SLUGS as unknown as string[])
+      .order("slug");
+    setRows(data ?? []);
+  };
+  useEffect(() => { load(); }, []);
+  const save = async (slug: string, patch: any) => {
+    const { error } = await supabase
+      .from("payment_methods")
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("slug", slug);
+    if (error) toast.error(error.message);
+    else { toast.success("Saved"); load(); }
+  };
+  if (!rows) return <Skeleton className="mt-4 h-48 w-full" />;
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {rows.map((r) => <PaymentMethodCard key={r.slug} row={r} onSave={save} />)}
+    </div>
+  );
+}
+
+function PaymentMethodCard({ row, onSave }: { row: any; onSave: (slug: string, patch: any) => void }) {
+  const [phone, setPhone] = useState(row.phone_number ?? "");
+  const [name, setName] = useState(row.account_name ?? "");
+  const [payload, setPayload] = useState(row.qr_payload ?? "");
+  const [active, setActive] = useState<boolean>(row.is_active);
+  const qrValue = payload.trim() || phone.trim();
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="font-semibold">{row.label}</div>
+        <div className="flex items-center gap-2 text-xs">
+          <span>Active</span>
+          <Switch checked={active} onCheckedChange={(v) => { setActive(v); onSave(row.slug, { is_active: v }); }} />
+        </div>
+      </div>
+      <div>
+        <Label className="text-xs">Phone number</Label>
+        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" />
+      </div>
+      <div>
+        <Label className="text-xs">Account name</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Account holder" />
+      </div>
+      <div>
+        <Label className="text-xs">QR payload (optional — overrides phone)</Label>
+        <Input value={payload} onChange={(e) => setPayload(e.target.value)} placeholder="Paste app QR string" />
+      </div>
+      {qrValue && (
+        <div className="flex justify-center rounded-lg bg-white p-3">
+          <QRCodeSVG value={qrValue} size={140} />
+        </div>
+      )}
+      <Button size="sm" className="w-full" onClick={() => onSave(row.slug, { phone_number: phone, account_name: name, qr_payload: payload })}>
+        Save
+      </Button>
+    </div>
   );
 }

@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, Plus, CheckCircle2, Clock, XCircle, Sparkles } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/provider/wallet")({
   component: WalletPage,
@@ -24,7 +26,8 @@ function WalletPage() {
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<CreditPackage | null>(null);
   const [ref, setRef] = useState("");
-  const [method, setMethod] = useState("KBZPay");
+  const [methods, setMethods] = useState<any[]>([]);
+  const [methodSlug, setMethodSlug] = useState<string>("kbzpay");
   const [file, setFile] = useState<File | null>(null);
 
   const refresh = async () => {
@@ -44,22 +47,36 @@ function WalletPage() {
     if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/wallet" } });
     if (!roles.includes("provider")) return void nav({ to: "/provider/onboarding" });
     refresh();
+    (async () => {
+      const { data } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("is_active", true)
+        .order("slug");
+      setMethods(data ?? []);
+      if (data && data.length && !data.find((m) => m.slug === "kbzpay")) {
+        setMethodSlug(data[0].slug);
+      }
+    })();
   }, [loading, user, roles, nav]);
 
   if (loading || !user) return null;
 
   const balance = wallet?.balance_credits ?? 0;
   const lowBalance = balance < 1500;
+  const selectedMethod = methods.find((m) => m.slug === methodSlug);
+  const qrValue = (selectedMethod?.qr_payload?.trim() || selectedMethod?.phone_number?.trim() || "");
 
   const handleSubmit = async () => {
     if (!picked) return;
     if (!ref.trim()) return toast.error("Enter the transaction reference");
+    if (!selectedMethod) return toast.error("Select a payment method");
     setBusy(true);
     try {
       await submitTopup({
         providerId: user.id,
         pkg: picked,
-        paymentMethod: method,
+        paymentMethod: selectedMethod.label,
         paymentReference: ref.trim(),
         proofFile: file,
       });
@@ -175,29 +192,46 @@ function WalletPage() {
             <DialogTitle>{picked?.name} — {fmt(picked?.mmk ?? 0)} MMK</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">
-              Transfer <strong>{fmt(picked?.mmk ?? 0)} MMK</strong> via KBZPay / Wave / AYAPay to{" "}
-              <strong>09-xxx-xxx-xxx</strong>, then enter the transaction reference below. You will get{" "}
-              <strong>{fmt(picked?.total ?? 0)} credits</strong> after admin approval.
-            </p>
             <div>
               <Label>Payment method</Label>
-              <select className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={method} onChange={(e) => setMethod(e.target.value)}>
-                <option>KBZPay</option><option>WavePay</option><option>AYAPay</option><option>Bank transfer</option>
+              <select className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={methodSlug} onChange={(e) => setMethodSlug(e.target.value)}>
+                {methods.length === 0 && <option value="">No methods configured</option>}
+                {methods.map((m) => <option key={m.slug} value={m.slug}>{m.label}</option>)}
               </select>
             </div>
+            {selectedMethod && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                {qrValue ? (
+                  <>
+                    <div className="flex justify-center rounded-md bg-white p-3">
+                      <QRCodeSVG value={qrValue} size={160} />
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Scan in {selectedMethod.label} and pay <strong>{fmt(picked?.mmk ?? 0)} MMK</strong>
+                    </p>
+                    {selectedMethod.phone_number && (
+                      <p className="text-xs">📱 {selectedMethod.phone_number}{selectedMethod.account_name ? ` · ${selectedMethod.account_name}` : ""}</p>
+                    )}
+                    {selectedMethod.instructions && <p className="mt-1 text-xs text-muted-foreground">{selectedMethod.instructions}</p>}
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Admin hasn't configured this method yet. Pick another or contact support.</p>
+                )}
+              </div>
+            )}
             <div>
               <Label>Transaction reference</Label>
               <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. KBZ123456789" />
             </div>
             <div>
-              <Label>Payment proof (optional)</Label>
+              <Label>Payment proof (screenshot) *</Label>
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <p className="mt-1 text-[11px] text-muted-foreground">Credits will be added only after admin approves your proof.</p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPicked(null)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={busy}>{busy ? "Submitting…" : "Submit for approval"}</Button>
+            <Button onClick={handleSubmit} disabled={busy || !file || !qrValue}>{busy ? "Submitting…" : "Submit for approval"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
