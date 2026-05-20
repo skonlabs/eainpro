@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { CREDIT_PACKAGES, getWallet, listTransactions, listMyTopups, submitTopup, fmt, type CreditPackage } from "@/lib/wallet";
+import { CREDIT_PACKAGES, listCreditPackages, getWallet, listTransactions, listMyTopups, submitTopup, fmt, type CreditPackage } from "@/lib/wallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,9 @@ function WalletPage() {
   const [topups, setTopups] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<CreditPackage | null>(null);
+  const [packages, setPackages] = useState<CreditPackage[]>(CREDIT_PACKAGES);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customAmount, setCustomAmount] = useState("");
   const [ref, setRef] = useState("");
   const [methods, setMethods] = useState<any[]>([]);
   const [methodSlug, setMethodSlug] = useState<string>("kbzpay");
@@ -58,6 +61,7 @@ function WalletPage() {
         setMethodSlug(data[0].slug);
       }
     })();
+    listCreditPackages().then(setPackages).catch(() => {});
   }, [loading, user, roles, nav]);
 
   if (loading || !user) return null;
@@ -66,6 +70,24 @@ function WalletPage() {
   const lowBalance = balance < 1500;
   const selectedMethod = methods.find((m) => m.slug === methodSlug);
   const qrValue = (selectedMethod?.qr_payload?.trim() || selectedMethod?.phone_number?.trim() || "");
+  const pendingTopups = topups.filter((t) => t.status === "pending");
+
+  const MIN_CUSTOM = 5000;
+  const customMmk = Math.max(0, Math.round((Number(customAmount) || 0) / 1000) * 1000);
+
+  const openCustom = () => {
+    if (customMmk < MIN_CUSTOM) return toast.error(`Minimum top-up is ${fmt(MIN_CUSTOM)} MMK`);
+    setPicked({
+      id: "custom",
+      slug: "custom",
+      name: "Custom amount",
+      mmk: customMmk,
+      credits: customMmk,
+      bonus: 0,
+      total: customMmk,
+    });
+    setCustomOpen(false);
+  };
 
   const handleSubmit = async () => {
     if (!picked) return;
@@ -98,33 +120,39 @@ function WalletPage() {
           <Link to="/provider/leads" className="text-sm text-primary hover:underline">View leads →</Link>
         </div>
 
-        {/* Balance card */}
-        <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 to-primary/5 p-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Wallet className="h-4 w-4" /> Current balance
+        {/* Balance card — gradient hero */}
+        <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-6 text-primary-foreground shadow-lg">
+          <div className="flex items-center gap-2 text-xs opacity-80">
+            <Wallet className="h-4 w-4" /> Wallet balance
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {!wallet ? <Skeleton className="h-10 w-32" /> : (
-              <>
-                <span className="text-4xl font-bold">{fmt(balance)}</span>
-                <span className="text-sm text-muted-foreground">credits ({fmt(balance)} MMK)</span>
-              </>
-            )}
+          <div className="mt-2 text-4xl font-bold tabular-nums">
+            {!wallet ? "—" : fmt(balance)}
           </div>
+          <div className="mt-1 text-xs opacity-75">Available credits (1 credit = 1 MMK)</div>
           {lowBalance && wallet && (
-            <p className="mt-3 text-xs text-destructive">⚠ Low balance — add credits to keep unlocking leads.</p>
+            <p className="mt-3 text-xs rounded-md bg-destructive/30 px-2 py-1 inline-block">⚠ Low balance — top up to keep unlocking leads.</p>
           )}
         </div>
+
+        {pendingTopups.length > 0 && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <div className="font-semibold">{pendingTopups.length} top-up{pendingTopups.length>1?"s":""} pending review</div>
+              <div className="opacity-80">Credits will appear after admin approval — usually within a few hours.</div>
+            </div>
+          </div>
+        )}
 
         {/* Packages */}
         <section>
           <h2 className="mb-3 text-base font-semibold">Credit packages</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {CREDIT_PACKAGES.map((p) => (
+            {packages.map((p) => (
               <div key={p.id} className={`relative rounded-2xl border p-4 ${p.popular ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                {p.popular && (
+                {p.badge && (
                   <span className="absolute -top-2 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                    <Sparkles className="inline h-3 w-3" /> Best value
+                    <Sparkles className="inline h-3 w-3" /> {p.badge}
                   </span>
                 )}
                 <div className="text-sm font-semibold">{p.name}</div>
@@ -138,6 +166,14 @@ function WalletPage() {
                 </Button>
               </div>
             ))}
+            <button
+              onClick={() => { setCustomAmount(""); setCustomOpen(true); }}
+              className="rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 text-left transition hover:bg-primary/10"
+            >
+              <div className="text-sm font-semibold text-primary">Custom amount</div>
+              <div className="mt-1 text-xs text-muted-foreground">Multiples of 1,000 — minimum {fmt(MIN_CUSTOM)} MMK</div>
+              <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"><Plus className="h-3 w-3" /> Enter amount</div>
+            </button>
           </div>
         </section>
 
@@ -185,6 +221,33 @@ function WalletPage() {
           )}
         </section>
       </main>
+
+      {/* Custom amount picker */}
+      <Dialog open={customOpen} onOpenChange={setCustomOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Custom top-up amount</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            <Label>Amount (MMK)</Label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={MIN_CUSTOM}
+              step={1000}
+              value={customAmount}
+              onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="50000"
+            />
+            <p className="text-xs text-muted-foreground">
+              Rounded to nearest 1,000 — min {fmt(MIN_CUSTOM)} MMK.{" "}
+              {customMmk > 0 && <span className="font-semibold text-primary">→ {fmt(customMmk)} MMK = {fmt(customMmk)} credits</span>}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCustomOpen(false)}>Cancel</Button>
+            <Button onClick={openCustom} disabled={customMmk < MIN_CUSTOM}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!picked} onOpenChange={(o) => !o && setPicked(null)}>
         <DialogContent>
