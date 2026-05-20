@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { NotificationBell } from "@/components/site/NotificationBell";
-import logoUrl from "@/assets/logo.svg";
+import logoUrl from "@/assets/logo.png";
 
 // Routes that act as tab roots — no back button on these.
 const TAB_ROOTS = new Set([
