@@ -91,7 +91,7 @@ export function AppBar() {
               alt="Fixido"
               className="h-9 w-9"
             />
-            <span className="font-display text-base font-extrabold tracking-tight">Fixido</span>
+            <span className="font-display text-lg font-extrabold tracking-tight">Fixido</span>
           </Link>
         ) : (
           <button
@@ -104,13 +104,13 @@ export function AppBar() {
           </button>
         )}
 
-        <h1 className="flex-1 truncate font-display text-base font-extrabold tracking-tight">
+        <h1 className="flex-1 truncate font-display text-lg font-extrabold tracking-tight">
           {isRoot ? "" : title}
         </h1>
 
         <button
           onClick={() => setLang(lang === "en" ? "my" : "en")}
-          className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary"
+          className="min-w-12 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
           aria-label="Toggle language"
         >
           {lang === "en" ? "မြန်" : "EN"}
