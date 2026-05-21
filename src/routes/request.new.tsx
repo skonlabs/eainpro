@@ -312,6 +312,7 @@ function NewRequestPage() {
       .in("slug", subSlugs);
     if (stErr || !sts || sts.length === 0) {
       setSubmitting(false);
+      submittingRef.current = false;
       setErr(L("Service type not configured. Please contact support.", "ဝန်ဆောင်မှု အသေးစိတ် မရှိသေးပါ။"));
       return;
     }
@@ -364,6 +365,7 @@ function NewRequestPage() {
       .single();
     if (leadErr || !lead) {
       setSubmitting(false);
+      submittingRef.current = false;
       setErr(leadErr?.message ?? L("Failed to create request.", "မအောင်မြင်ပါ။"));
       return;
     }
