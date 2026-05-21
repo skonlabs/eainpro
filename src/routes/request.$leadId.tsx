@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, Phone, Send, CheckCircle2, Star, Lock, XCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Send, CheckCircle2, Star, Lock, XCircle, AlertTriangle } from "lucide-react";
 
 const search = z.object({ tab: z.string().optional() });
 
@@ -647,14 +647,32 @@ function BookingPanel({
   const [busy, setBusy] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  const [hasReview, setHasReview] = useState<boolean | null>(null);
+  const [hasMyReview, setHasMyReview] = useState<boolean | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
+  const [reportText, setReportText] = useState("");
+  const [reported, setReported] = useState(false);
+
+  const myRole: "customer" | "provider" | null = isCustomer ? "customer" : (isProvider && booking?.provider_id === userId ? "provider" : null);
 
   useEffect(() => {
-    if (booking?.status === "completed") {
-      supabase.from("reviews").select("id").eq("booking_id", booking.id).maybeSingle()
-        .then(({ data }) => setHasReview(!!data));
-    }
-  }, [booking?.id, booking?.status]);
+    if (!booking || booking.status !== "completed" || !myRole) return;
+    supabase
+      .from("reviews")
+      .select("id")
+      .eq("booking_id", booking.id)
+      .eq("rated_by", myRole)
+      .maybeSingle()
+      .then(({ data }) => setHasMyReview(!!data));
+    // also load existing report flag
+    supabase
+      .from("reports")
+      .select("id")
+      .eq("booking_id", booking.id)
+      .eq("reporter_id", userId)
+      .maybeSingle()
+      .then(({ data }) => setReported(!!data));
+  }, [booking?.id, booking?.status, myRole, userId]);
 
   if (!booking) {
     return (
@@ -691,6 +709,7 @@ function BookingPanel({
   };
 
   const submitReview = async () => {
+    if (!myRole) return;
     setBusy(true);
     const { error } = await supabase.from("reviews").insert({
       booking_id: booking.id,
@@ -698,11 +717,31 @@ function BookingPanel({
       provider_id: booking.provider_id,
       rating,
       comment: comment || null,
+      rated_by: myRole,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    setHasReview(true);
+    setHasMyReview(true);
     toast.success(L("Thanks for the review!", "ကျေးဇူးတင်ပါသည်!"));
+  };
+
+  const submitReport = async () => {
+    if (!reportText.trim()) { toast.error(L("Tell us what happened", "ဖြစ်ပျက်ပုံ ပြောပါ")); return; }
+    setBusy(true);
+    const targetId = myRole === "customer" ? booking.provider_id : booking.customer_id;
+    const { error } = await supabase.from("reports").insert({
+      reporter_id: userId,
+      target_user_id: targetId,
+      booking_id: booking.id,
+      lead_id: lead.id,
+      kind: reportKind,
+      reason: reportText.trim(),
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setReported(true);
+    setReportOpen(false);
+    toast.success(L("Report submitted", "တိုင်ကြားပြီး"));
   };
 
   return (
@@ -733,9 +772,11 @@ function BookingPanel({
         <Button onClick={cancel} disabled={busy} variant="outline" className="w-full">{L("Cancel booking", "ပယ်ဖျက်")}</Button>
       )}
 
-      {booking.status === "completed" && isCustomer && hasReview === false && (
+      {booking.status === "completed" && myRole && hasMyReview === false && (
         <div className="space-y-2 rounded-xl border border-border bg-background p-3">
-          <div className="text-sm font-semibold">{L("Leave a review", "သုံးသပ်")}</div>
+          <div className="text-sm font-semibold">
+            {myRole === "customer" ? L("Rate the provider", "ပညာရှင်ကို အဆင့်ပေး") : L("Rate the customer", "ဖောက်သည်ကို အဆင့်ပေး")}
+          </div>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <button key={n} onClick={() => setRating(n)} className={n <= rating ? "text-amber-500" : "text-muted-foreground"}>
@@ -747,8 +788,61 @@ function BookingPanel({
           <Button onClick={submitReview} disabled={busy} className="w-full">{L("Submit", "ပေးပို့")}</Button>
         </div>
       )}
-      {booking.status === "completed" && hasReview && (
-        <p className="text-xs text-muted-foreground">{L("Review submitted.", "သုံးသပ်ပြီး။")}</p>
+      {booking.status === "completed" && hasMyReview && (
+        <p className="text-xs text-muted-foreground">{L("Your review was submitted.", "သင်၏ သုံးသပ်ချက် ပေးပို့ပြီး။")}</p>
+      )}
+
+      {booking.status === "completed" && myRole && (
+        <div className="border-t border-border/60 pt-3">
+          {reported ? (
+            <p className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <AlertTriangle className="h-3 w-3" /> {L("You've reported this booking. Admin will review.", "တိုင်ကြားပြီး။ Admin စစ်ဆေးပါမည်။")}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 hover:underline"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              {myRole === "customer" ? L("Report the provider", "ပညာရှင်ကို တိုင်ကြား") : L("Report the customer", "ဖောက်သည်ကို တိုင်ကြား")}
+            </button>
+          )}
+        </div>
+      )}
+      {reportOpen && (
+        <div className="space-y-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+          <div className="font-semibold">{L("What happened?", "ဘာဖြစ်ခဲ့သလဲ?")}</div>
+          <select
+            className="w-full rounded-md border border-border bg-background p-2 text-sm"
+            value={reportKind}
+            onChange={(e) => setReportKind(e.target.value as typeof reportKind)}
+          >
+            {myRole === "customer" ? (
+              <>
+                <option value="bad_quality">Poor quality of work</option>
+                <option value="no_show">Provider did not show up</option>
+                <option value="rude">Rude or unprofessional</option>
+                <option value="fraud">Fraud / overcharged</option>
+                <option value="other">Other</option>
+              </>
+            ) : (
+              <>
+                <option value="no_show">Customer no-show</option>
+                <option value="rude">Rude or abusive</option>
+                <option value="fraud">Fraud / refused to pay</option>
+                <option value="other">Other</option>
+              </>
+            )}
+          </select>
+          <Textarea rows={3} value={reportText} onChange={(e) => setReportText(e.target.value)} placeholder={L("Details", "အသေးစိတ်")} />
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => setReportOpen(false)} disabled={busy}>{L("Cancel", "ပယ်")}</Button>
+            <Button variant="destructive" size="sm" className="flex-1" onClick={submitReport} disabled={busy || !reportText.trim()}>
+              {busy ? L("Sending…", "ပို့နေ…") : L("Submit", "တိုင်ကြား")}
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
