@@ -19,13 +19,17 @@ export function CustomerCancelCard({
 
   const cancel = async () => {
     setBusy(true);
-    const { error } = await supabase
-      .from("customer_leads")
-      .update({ status: "cancelled" })
-      .eq("id", leadId);
+    const { error } = await supabase.rpc("cancel_customer_lead", { p_lead_id: leadId });
     setBusy(false);
     setConfirming(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = error.message?.includes("HAS_ACTIVE_BOOKING")
+        ? L("This request already has a booking and can't be cancelled here.", "ဘုတ်ကင်ရှိပြီးသား ဖြစ်နေ၍ ပယ်ဖျက်၍မရပါ။")
+        : error.message?.includes("NOT_OWNER")
+        ? L("You can only cancel your own request.", "ကိုယ်ပိုင်တောင်းဆိုမှုသာ ပယ်ဖျက်နိုင်ပါသည်။")
+        : error.message;
+      return toast.error(msg);
+    }
     onCancelled();
   };
 
