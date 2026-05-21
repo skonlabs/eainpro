@@ -394,6 +394,13 @@ export function CustomerHome({
             {requests.slice(0, 4).map((r) => {
               const cat = CATEGORIES.find((c) => c.slug === r.category_slug);
               const Icon = ICONS[cat?.icon ?? "Hammer"] ?? Hammer;
+              const catLabel = cat ? (lang === "en" ? cat.en : cat.my) : r.category_slug;
+              const title = r.short_description?.trim() || catLabel;
+              const posted = relTime(r.created_at, lang);
+              const preferred = r.preferred_date
+                ? `${new Date(r.preferred_date).toLocaleDateString(lang === "en" ? "en" : "my-MM", { month: "short", day: "numeric" })}${r.preferred_time ? ` · ${r.preferred_time.slice(0, 5)}` : ""}`
+                : null;
+              const metaBits = [catLabel, preferred ?? L(`Posted ${posted}`, `တင်ခဲ့ ${posted}`)].filter(Boolean) as string[];
               return (
                 <li key={r.id}>
                   <Link
@@ -405,12 +412,21 @@ export function CustomerHome({
                       <Icon className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">
-                        {cat ? (lang === "en" ? cat.en : cat.my) : r.category_slug}
+                      <div className="truncate text-sm font-semibold">{title}</div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {metaBits.join(" · ")}
                       </div>
-                      <div className="truncate text-xs text-muted-foreground">
-                        {r.area ?? L("Any area", "နေရာအားလုံး")}
-                      </div>
+                      {(r.quotes_count > 0 || r.area) && (
+                        <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                          {r.quotes_count > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
+                              <Inbox className="h-3 w-3" />
+                              {L(`${r.quotes_count} quote${r.quotes_count > 1 ? "s" : ""}`, `စျေး ${r.quotes_count}`)}
+                            </span>
+                          )}
+                          {r.area && <span className="truncate">{r.area}</span>}
+                        </div>
+                      )}
                     </div>
                     <StatusPill status={r.status} />
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -423,4 +439,16 @@ export function CustomerHome({
       </section>
     </div>
   );
+}
+
+function relTime(iso: string, lang: Lang) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return lang === "en" ? "just now" : "ယခုပင်";
+  if (m < 60) return lang === "en" ? `${m}m ago` : `${m} မိနစ်`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return lang === "en" ? `${h}h ago` : `${h} နာရီ`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return lang === "en" ? `${d}d ago` : `${d} ရက်`;
+  return new Date(iso).toLocaleDateString(lang === "en" ? "en" : "my-MM", { month: "short", day: "numeric" });
 }
