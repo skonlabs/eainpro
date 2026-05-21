@@ -236,6 +236,7 @@ function LeadPage() {
             <DetailsCard
               lead={lead}
               photos={photos}
+              serviceName={serviceName}
               isProvider={isProvider}
               isCustomer={isCustomer}
               hasUnlock={providerHasUnlock}
