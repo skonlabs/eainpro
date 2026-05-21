@@ -25,7 +25,7 @@ function SignUpPage() {
   const { as, redirect } = Route.useSearch();
   const { lang } = useI18n();
   const nav = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, roles, rolesReady } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -34,13 +34,20 @@ function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const defaultDestination = roles.includes("provider")
+    ? "/provider/dashboard"
+    : roles.includes("admin")
+      ? "/admin"
+      : "/";
 
   useEffect(() => {
-    if (!authLoading && user && !needsConfirm) {
-      const dest = role === "provider" ? "/provider/onboarding" : "/";
+    if (!authLoading && rolesReady && user && !needsConfirm) {
+      const dest = role === "provider" && !roles.includes("provider")
+        ? "/provider/onboarding"
+        : defaultDestination;
       nav({ to: safeRedirect(redirect, dest), replace: true });
     }
-  }, [authLoading, user, role, redirect, nav, needsConfirm]);
+  }, [authLoading, rolesReady, user, role, redirect, nav, needsConfirm, roles, defaultDestination]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +64,6 @@ function SignUpPage() {
       setNeedsConfirm(true);
       return;
     }
-    const defaultDest = role === "provider" ? "/provider/onboarding" : "/";
-    nav({ to: safeRedirect(redirect, defaultDest) });
   };
 
   if (needsConfirm) {

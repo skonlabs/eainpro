@@ -3,9 +3,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
@@ -24,10 +27,15 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [sessionReady, setSessionReady] = useState(false);
   const [rolesReady, setRolesReady] = useState(false);
+  const lastResolvedAuthState = useRef<string | undefined>(undefined);
+  const lastSessionKey = useRef<string | undefined>(undefined);
+  const suppressAuthEventsRef = useRef(false);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
     setRolesReady(false);
@@ -48,45 +56,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    let lastUserId: string | null | undefined = undefined;
-    let lastToken: string | null | undefined = undefined;
-    let signedOut = false;
+    let active = true;
 
-    const apply = (s: Session | null) => {
-      // Once the tab has explicitly signed out, ignore any late-arriving
-      // SIGNED_IN / TOKEN_REFRESHED events so an old user can't rehydrate.
-      if (signedOut && s) return;
-      const nextUserId = s?.user?.id ?? null;
-      const nextToken = s?.access_token ?? null;
-      if (nextUserId === lastUserId && nextToken === lastToken) return;
-      const userChanged = nextUserId !== lastUserId;
-      lastUserId = nextUserId;
-      lastToken = nextToken;
-      setSession(s);
-      if (userChanged) {
-        setTimeout(() => {
-          loadRoles(nextUserId ?? undefined);
-        }, 0);
+    const apply = async (s: Session | null) => {
+      if (!active) return;
+
+      const nextKey = `${s?.user?.id ?? "guest"}|${s?.access_token ?? ""}`;
+      if (lastSessionKey.current === nextKey) {
+        setSessionReady(true);
+        if (!s?.user) setRolesReady(true);
+        return;
       }
+
+      lastSessionKey.current = nextKey;
+      setSession(s);
+      setSessionReady(true);
+      await loadRoles(s?.user?.id);
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
-      if (e === "SIGNED_IN") signedOut = false;
+      if (suppressAuthEventsRef.current && e !== "SIGNED_OUT" && s) return;
       if (e === "SIGNED_OUT") {
-        signedOut = true;
-        lastUserId = null;
-        lastToken = null;
+        suppressAuthEventsRef.current = false;
+        lastSessionKey.current = "guest|";
       }
-      apply(s);
+      void apply(s);
     });
 
     // Cross-tab safety: if another tab clears the auth token, drop session here.
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === SUPABASE_AUTH_STORAGE_KEY && !ev.newValue) {
-        signedOut = true;
-        lastUserId = null;
-        lastToken = null;
+        suppressAuthEventsRef.current = false;
+        lastSessionKey.current = "guest|";
         setSession(null);
+        setSessionReady(true);
         setRoles([]);
         setRolesReady(true);
       }
@@ -95,11 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.addEventListener("storage", onStorage);
 
     supabase.auth.getSession().then(({ data }) => {
-      apply(data.session);
-      setSessionReady(true);
+      void apply(data.session);
     });
 
     return () => {
+      active = false;
       sub.subscription.unsubscribe();
       if (typeof window !== "undefined")
         window.removeEventListener("storage", onStorage);
@@ -110,6 +113,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = useMemo(() => session?.user ?? null, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const loading = !sessionReady || !rolesReady;
 
+  useEffect(() => {
+    if (!sessionReady || !rolesReady) return;
+
+    const nextAuthState = `${session?.user?.id ?? "guest"}|${[...roles].sort().join(",")}`;
+    if (lastResolvedAuthState.current === undefined) {
+      lastResolvedAuthState.current = nextAuthState;
+      return;
+    }
+    if (lastResolvedAuthState.current === nextAuthState) return;
+    lastResolvedAuthState.current = nextAuthState;
+
+    void (async () => {
+      await queryClient.cancelQueries();
+      if (session?.user) {
+        await queryClient.invalidateQueries();
+      } else {
+        queryClient.clear();
+      }
+      await router.invalidate();
+    })();
+  }, [queryClient, roles, rolesReady, router, session?.user, sessionReady]);
+
   const value: AuthCtx = useMemo(
     () => ({
       user,
@@ -119,9 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rolesReady,
       signOut: async () => {
         // Optimistically clear local state.
+        suppressAuthEventsRef.current = true;
+        lastSessionKey.current = "guest|";
         setSession(null);
+        setSessionReady(true);
         setRoles([]);
         setRolesReady(true);
+        await queryClient.cancelQueries();
+        queryClient.clear();
         // scope: "local" — "global" silently fails (without clearing local
         // storage) when the access token is already expired.
         try {
@@ -150,15 +180,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           /* ignore */
         }
-        // Hard reload to home — guarantees no in-memory cache / route loader
-        // keeps the old user's data on screen.
-        if (typeof window !== "undefined") {
-          window.location.replace("/");
-        }
+        await router.invalidate();
+        await router.navigate({ to: "/", replace: true });
       },
       refreshRoles: () => loadRoles(session?.user?.id),
     }),
-    [user, session, roles, loading, rolesReady],
+    [user, session, roles, loading, rolesReady, queryClient, router],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
