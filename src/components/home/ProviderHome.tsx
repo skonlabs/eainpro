@@ -38,6 +38,8 @@ type ProviderBooking = {
   amount: number | null;
   customer_confirmed_at: string | null;
   provider_confirmed_at: string | null;
+  time_confirmed_by_customer: boolean | null;
+  time_confirmed_by_provider: boolean | null;
   lead: { category_slug: string; city_slug: string; address: string | null } | null;
 };
 
@@ -81,7 +83,7 @@ export function ProviderHome({
         supabase
           .from("bookings")
           .select(
-            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(city_slug, address, service_type:service_types(category_slug))",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, time_confirmed_by_customer, time_confirmed_by_provider, lead:customer_leads(city_slug, address, service_type:service_types(category_slug))",
           )
           .eq("provider_id", userId)
           .in("status", ["accepted", "on_the_way", "started", "in_progress"])
@@ -127,13 +129,13 @@ export function ProviderHome({
     return (bookings ?? []).filter((b) => {
       if (!b.scheduled_at) return false;
       const t = new Date(b.scheduled_at).getTime();
-      const confirmed = b.customer_confirmed_at && b.provider_confirmed_at;
+      const confirmed = b.time_confirmed_by_customer && b.time_confirmed_by_provider;
       return confirmed && t >= start.getTime() && t < end.getTime();
     });
   }, [bookings]);
 
   const awaitingMyTime = (bookings ?? []).filter(
-    (b) => b.scheduled_at && !b.provider_confirmed_at,
+    (b) => b.scheduled_at && !b.time_confirmed_by_provider,
   );
 
   const activeCount = bookings?.length ?? 0;
