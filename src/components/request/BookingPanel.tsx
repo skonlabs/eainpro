@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star, AlertTriangle, Phone, MessageCircle, MapPin, ShieldCheck, User } from "lucide-react";
 import { RescheduleControl } from "./RescheduleControl";
 import type { Lead, Booking, T } from "./types";
+import { Field, FieldLabel } from "./Field";
 
 const NEXT_STATUS: Record<string, { key: string; en: string; my: string }> = {
   accepted: { key: "on_the_way", en: "On the way", my: "လမ်းပေါ်" },
@@ -234,18 +235,16 @@ export function BookingPanel({
       )}
 
       <div className="flex items-center justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Status", "အခြေအနေ")}</div>
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{booking.status.replace(/_/g, " ")}</span>
+        <FieldLabel>{L("Status", "အခြေအနေ")}</FieldLabel>
+        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold capitalize text-primary">{booking.status.replace(/_/g, " ")}</span>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-muted/30 p-3.5">
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Amount", "ပမာဏ")}</div>
-          <div className="mt-1.5 text-sm font-semibold text-foreground">{booking.amount ? `${Number(booking.amount).toLocaleString()} MMK` : "—"}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Scheduled", "သတ်မှတ်")}</div>
-          <div className="mt-1.5 text-sm font-medium text-foreground">{booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleString() : "—"}</div>
-        </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+        <Field label={L("Amount", "ပမာဏ")}>
+          <span className="font-semibold">{booking.amount ? `${Number(booking.amount).toLocaleString()} MMK` : "—"}</span>
+        </Field>
+        <Field label={L("Scheduled", "သတ်မှတ်")}>
+          {booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleString() : "—"}
+        </Field>
       </div>
 
       {booking.status !== "completed" && booking.status !== "cancelled" && (
