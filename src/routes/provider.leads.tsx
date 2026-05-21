@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle } from "lucide-react";
 import { X as XIcon } from "lucide-react";
+import { WonLeadCard } from "@/components/provider/WonLeadCard";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -180,7 +181,7 @@ function LeadsPage() {
 
           <TabsContent value="won" className="space-y-3">
             {won.length === 0 ? <Empty msg="No won jobs yet." /> :
-              won.map((u) => <UnlockedCard key={u.id} unlock={u} onChange={refresh} />)}
+              won.map((u) => <WonLeadCard key={u.id} unlock={u} userId={user!.id} onChange={refresh} />)}
           </TabsContent>
 
           <TabsContent value="lost" className="space-y-3">
