@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { BottomNav } from "@/components/site/BottomNav";
 import { AppBar } from "@/components/site/AppBar";
+import { BlockedBanner } from "@/components/site/BlockedBanner";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -143,6 +144,7 @@ function RootComponent() {
         <I18nProvider>
           <div className="flex min-h-screen flex-col bg-background">
             <AppBar />
+            <BlockedBanner />
             <main className="mx-auto w-full max-w-screen-md flex-1 px-3 pb-24 pt-3 sm:px-4">
               <Outlet />
             </main>

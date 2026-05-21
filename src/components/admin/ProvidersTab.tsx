@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { BlockUserDialog } from "./BlockUserDialog";
 
 type ProviderRow = {
   id: string;
@@ -13,6 +14,8 @@ type ProviderRow = {
   rating_avg: number;
   jobs_completed: number;
   created_at: string;
+  is_blocked?: boolean;
+  block_type?: "soft" | "hard" | null;
 };
 
 export function ProvidersTab() {
@@ -23,7 +26,21 @@ export function ProvidersTab() {
       .from("providers")
       .select("id, business_name, is_verified, is_suspended, rating_avg, jobs_completed, created_at")
       .order("created_at", { ascending: false });
-    setProviders((data ?? []) as ProviderRow[]);
+    const list = (data ?? []) as ProviderRow[];
+    if (list.length > 0) {
+      const ids = list.map((p) => p.id);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, is_blocked, block_type")
+        .in("id", ids);
+      const map = new Map((profs ?? []).map((p) => [p.id, p]));
+      for (const p of list) {
+        const pr = map.get(p.id) as { is_blocked?: boolean; block_type?: "soft" | "hard" | null } | undefined;
+        p.is_blocked = !!pr?.is_blocked;
+        p.block_type = pr?.block_type ?? null;
+      }
+    }
+    setProviders(list);
   };
   useEffect(() => { refresh(); }, []);
   const setVerified = async (id: string, v: boolean) => {
@@ -46,6 +63,7 @@ export function ProvidersTab() {
               <span className="font-medium">{p.business_name ?? "—"}</span>
               {p.is_verified && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Verified</span>}
               {p.is_suspended && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Suspended</span>}
+              {p.is_blocked && <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Blocked{p.block_type ? ` · ${p.block_type}` : ""}</span>}
             </div>
             <div className="mt-0.5 text-xs text-muted-foreground">{p.rating_avg.toFixed(1)}★ · {p.jobs_completed} jobs</div>
           </div>
@@ -56,6 +74,13 @@ export function ProvidersTab() {
             <Button size="sm" variant="ghost" className={p.is_suspended ? "" : "text-destructive hover:bg-destructive/10"} onClick={() => setSuspended(p.id, !p.is_suspended)}>
               {p.is_suspended ? "Unsuspend" : "Suspend"}
             </Button>
+            <BlockUserDialog
+              userId={p.id}
+              userLabel={p.business_name ?? p.id.slice(0, 8)}
+              isBlocked={!!p.is_blocked}
+              blockType={p.block_type ?? null}
+              onChanged={refresh}
+            />
           </div>
         </li>
       ))}

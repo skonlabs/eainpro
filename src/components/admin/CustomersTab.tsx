@@ -4,9 +4,12 @@ import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { BlockUserDialog } from "./BlockUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function CustomersTab() {
   const [q, setQ] = useState("");
+  const qc = useQueryClient();
   const { data: rows } = useQuery({
     queryKey: ["admin", "customers"],
     queryFn: async () => {
@@ -28,7 +31,21 @@ export function CustomersTab() {
           if (!cur.phone && r.customer_phone) cur.phone = r.customer_phone;
         }
       }
-      return Array.from(map.values()).sort((a, b) => b.leads - a.leads);
+      const list = Array.from(map.values()).sort((a, b) => b.leads - a.leads);
+      if (list.length > 0) {
+        const ids = list.map((r) => r.id);
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, is_blocked, block_type")
+          .in("id", ids);
+        const pmap = new Map((profs ?? []).map((p) => [p.id, p]));
+        for (const r of list) {
+          const pr = pmap.get(r.id) as { is_blocked?: boolean; block_type?: "soft" | "hard" | null } | undefined;
+          r.is_blocked = !!pr?.is_blocked;
+          r.block_type = pr?.block_type ?? null;
+        }
+      }
+      return list;
     },
   });
   const filtered = (rows ?? []).filter((r) => {
@@ -44,7 +61,7 @@ export function CustomersTab() {
         <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase">
-              <tr><th className="p-3">Name</th><th className="p-3">Phone</th><th className="p-3">Leads</th><th className="p-3">Last activity</th></tr>
+              <tr><th className="p-3">Name</th><th className="p-3">Phone</th><th className="p-3">Leads</th><th className="p-3">Last activity</th><th className="p-3">Status</th><th className="p-3 text-right">Action</th></tr>
             </thead>
             <tbody>
               {filtered.map((c) => (
@@ -53,6 +70,24 @@ export function CustomersTab() {
                   <td className="p-3"><a href={`tel:${c.phone}`} className="text-primary">{c.phone ?? "—"}</a></td>
                   <td className="p-3">{c.leads}</td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(c.last).toLocaleString()}</td>
+                  <td className="p-3">
+                    {c.is_blocked ? (
+                      <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                        Blocked{c.block_type ? ` · ${c.block_type}` : ""}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Active</span>
+                    )}
+                  </td>
+                  <td className="p-3 text-right">
+                    <BlockUserDialog
+                      userId={c.id}
+                      userLabel={c.name ?? c.phone ?? c.id.slice(0, 8)}
+                      isBlocked={!!c.is_blocked}
+                      blockType={c.block_type ?? null}
+                      onChanged={() => qc.invalidateQueries({ queryKey: ["admin", "customers"] })}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
