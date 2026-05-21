@@ -49,6 +49,7 @@ function LeadPage() {
 
   const isProvider = roles.includes("provider");
   const isCustomer = !!user && lead?.customer_id === user.id;
+  const isCancelled = lead?.status === "cancelled" || lead?.status === "closed" || lead?.status === "expired";
 
   useEffect(() => {
     if (authLoading) return;
@@ -215,7 +216,7 @@ function LeadPage() {
           </TabsContent>
 
           <TabsContent value="quotes" className="space-y-3">
-            {isProvider && providerHasUnlock && !booking && (
+            {isProvider && providerHasUnlock && !booking && !isCancelled && (
               <ProviderQuoteForm
                 leadId={lead.id}
                 providerId={user.id}
@@ -232,11 +233,16 @@ function LeadPage() {
                 }}
               />
             )}
-            {isProvider && !providerHasUnlock && (
+            {isProvider && !providerHasUnlock && !isCancelled && (
               <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm">
                 <Lock className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
                 <p>{L("Unlock this lead to send a quote.", "စျေးပေးရန် Lead ကို ဖွင့်ပါ။")}</p>
                 <Link to="/provider/leads" className="mt-2 inline-block text-sm font-semibold text-primary">{L("Go to leads", "Lead များ")}</Link>
+              </div>
+            )}
+            {isCancelled && (
+              <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4 text-center text-xs text-muted-foreground">
+                {L("This request was cancelled. No further actions are allowed.", "ဤတောင်းဆိုမှု ပယ်ဖျက်ပြီးပါပြီ။ နောက်ထပ် လုပ်ဆောင်ချက်များ မရပါ။")}
               </div>
             )}
 
@@ -250,9 +256,10 @@ function LeadPage() {
                   <QuoteCard
                     key={q.id}
                     quote={q}
-                    isCustomer={isCustomer}
+                    isCustomer={isCustomer && !isCancelled}
                     isMine={q.provider_id === user.id}
                     booking={booking}
+                    locked={isCancelled}
                     L={L}
                     onAccept={async () => {
                       const { data, error } = await supabase.rpc("accept_quote", { p_quote_id: q.id });
@@ -268,6 +275,11 @@ function LeadPage() {
           </TabsContent>
 
           <TabsContent value="booking" className="space-y-3">
+            {isCancelled && !booking ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                {L("This request was cancelled.", "ဤတောင်းဆိုမှု ပယ်ဖျက်ပြီးပါပြီ။")}
+              </div>
+            ) : (
             <BookingPanel
               lead={lead}
               booking={booking}
@@ -280,6 +292,7 @@ function LeadPage() {
                 setBooking((data as Booking) ?? null);
               }}
             />
+            )}
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-3">
@@ -292,9 +305,14 @@ function LeadPage() {
                   ? (booking?.provider_id ?? quotes[0]?.provider_id ?? null)
                   : (lead.customer_id ?? null)
               }
-              canSend={isCustomer || providerHasUnlock}
+              canSend={(isCustomer || providerHasUnlock) && (!isCancelled || !!booking)}
               L={L}
             />
+            {isCancelled && !booking && (
+              <p className="text-center text-xs text-muted-foreground">
+                {L("Chat is closed because the request was cancelled.", "တောင်းဆိုမှု ပယ်ဖျက်ထားသဖြင့် စကားပြောခန်း ပိတ်ထားသည်။")}
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </main>
