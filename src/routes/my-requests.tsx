@@ -73,7 +73,7 @@ function MyRequestsPage() {
         {rows && rows.length === 0 && (
           <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
             <Inbox className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-3 text-lg font-bold">{L("No requests yet", "မရှိ")}</h3>
+            <h3 className="mt-3 text-lg font-bold">{L("No requests yet", "တောင်းဆိုမှု မရှိသေးပါ")}</h3>
             <Link to="/request/new" search={{}}><Button className="mt-4 rounded-xl">{L("Request a service", "တောင်းရန်")}</Button></Link>
           </div>
         )}
