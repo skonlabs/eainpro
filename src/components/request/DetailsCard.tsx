@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Phone } from "lucide-react";
 import type { Lead, T } from "./types";
-import { Field } from "./Field";
+import { Field, FieldLabel, FieldValue } from "./Field";
 
 export function DetailsCard({
   lead,
@@ -62,8 +62,8 @@ export function DetailsCard({
     toast.success(L("Updated", "ပြင်ပြီး"));
   };
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-muted/30 p-3.5">
+    <div className="space-y-5 rounded-2xl border border-border bg-card p-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5">
         <Field label={L("Service", "ဝန်ဆောင်မှု")}>
           {serviceName ? L(serviceName.en, serviceName.my) : "—"}
         </Field>
@@ -80,13 +80,15 @@ export function DetailsCard({
         </Field>
       </div>
       {lead.short_description && lead.full_description && lead.short_description !== lead.full_description && (
-        <Field label={L("Summary", "အကျဉ်း")}>
-          <p className="font-normal">{lead.short_description}</p>
-        </Field>
+        <div className="border-t border-border/60 pt-4">
+          <Field label={L("Summary", "အကျဉ်း")}>
+            <p className="font-normal text-muted-foreground">{lead.short_description}</p>
+          </Field>
+        </div>
       )}
-      <div>
+      <div className="border-t border-border/60 pt-4">
         <div className="flex items-center justify-between">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Description", "ဖော်ပြ")}</div>
+          <FieldLabel>{L("Description", "ဖော်ပြ")}</FieldLabel>
           {canEdit && !editing && (
             <button type="button" onClick={() => setEditing(true)} className="text-xs font-medium text-primary hover:underline">
               {L("Edit", "ပြင်")}
@@ -94,7 +96,7 @@ export function DetailsCard({
           )}
         </div>
         {editing ? (
-          <div className="mt-1.5 space-y-2">
+          <div className="mt-2 space-y-3">
             <textarea
               className="w-full rounded-md border border-border bg-background p-2 text-sm"
               rows={4}
@@ -102,11 +104,11 @@ export function DetailsCard({
               onChange={(e) => setDraft(e.target.value)}
               disabled={saving}
             />
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Urgency", "အရေးပေါ်")}</div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <div className="min-w-0">
+                <FieldLabel>{L("Urgency", "အရေးပေါ်")}</FieldLabel>
                 <select
-                  className="mt-1 w-full rounded-md border border-border bg-background p-2 text-sm"
+                  className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm"
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value)}
                   disabled={saving}
@@ -117,17 +119,17 @@ export function DetailsCard({
                   <option value="flexible">flexible</option>
                 </select>
               </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Preferred date", "ရက်")}</div>
-                <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} disabled={saving} />
+              <div className="min-w-0">
+                <FieldLabel>{L("Preferred date", "ရက်")}</FieldLabel>
+                <Input className="mt-2" type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} disabled={saving} />
               </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Preferred time", "အချိန်")}</div>
-                <Input type="time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} disabled={saving} />
+              <div className="min-w-0">
+                <FieldLabel>{L("Preferred time", "အချိန်")}</FieldLabel>
+                <Input className="mt-2" type="time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} disabled={saving} />
               </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Address", "လိပ်စာ")}</div>
-                <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={L("Street, ward…", "လမ်း, ရပ်ကွက်…")} disabled={saving} />
+              <div className="min-w-0">
+                <FieldLabel>{L("Address", "လိပ်စာ")}</FieldLabel>
+                <Input className="mt-2" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={L("Street, ward…", "လမ်း, ရပ်ကွက်…")} disabled={saving} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -147,10 +149,10 @@ export function DetailsCard({
             </div>
           </div>
         ) : (
-          <p className="mt-1.5 text-sm font-medium text-foreground whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</p>
+          <FieldValue className="whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</FieldValue>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-border/60 pt-3">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border/60 pt-4">
         <Field label={L("Urgency", "အရေးပေါ်")}>
           <span className="capitalize">{lead.urgency.replace(/_/g, " ")}</span>
         </Field>
