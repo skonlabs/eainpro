@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { saveProviderProfile } from "@/lib/provider";
 import { CITIES, CATEGORIES, TOWNSHIPS } from "@/lib/catalog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -156,38 +157,22 @@ function AccountPage() {
     if (!user) return;
     setSavingBiz(true);
     setBizMsg(null);
-    const { error: upErr } = await supabase.from("providers").upsert({
-      id: user.id,
-      business_name: biz.business_name.trim(),
-      business_type: biz.business_type,
-      bio: biz.bio.trim() || null,
-      years_experience: biz.years_experience || 0,
-      supports_urgent: biz.supports_urgent,
-    });
-    if (upErr) {
+    try {
+      await saveProviderProfile(user.id, {
+        business_name: biz.business_name,
+        business_type: biz.business_type,
+        bio: biz.bio,
+        years_experience: biz.years_experience,
+        supports_urgent: biz.supports_urgent,
+        services: bizCats,
+        cities: bizCities,
+      });
+      setBizMsg(L("Saved!", "သိမ်းပြီး!"));
+    } catch (e: any) {
+      setBizMsg(e?.message ?? "Failed to save");
+    } finally {
       setSavingBiz(false);
-      setBizMsg(upErr.message);
-      return;
     }
-    await supabase.from("provider_services").delete().eq("provider_id", user.id);
-    if (Object.keys(bizCats).length) {
-      await supabase.from("provider_services").insert(
-        Object.entries(bizCats).map(([slug, p]) => ({
-          provider_id: user.id,
-          category_slug: slug,
-          base_price: p ? Number(p) : null,
-        })),
-      );
-    }
-    const cityList = Object.keys(bizCities).filter((k) => bizCities[k]);
-    await supabase.from("provider_service_areas").delete().eq("provider_id", user.id);
-    if (cityList.length) {
-      await supabase.from("provider_service_areas").insert(
-        cityList.map((c) => ({ provider_id: user.id, city_slug: c })),
-      );
-    }
-    setSavingBiz(false);
-    setBizMsg(L("Saved!", "သိမ်းပြီး!"));
   };
 
   const saveProfile = async () => {

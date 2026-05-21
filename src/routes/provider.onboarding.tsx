@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { saveProviderProfile } from "@/lib/provider";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
 import { Loader2, Upload, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
