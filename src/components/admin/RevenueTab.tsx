@@ -137,41 +137,45 @@ export function RevenueTab() {
       </section>
       <section>
         <h3 className="mb-2 text-sm font-semibold">Recent unlocks (latest 100)</h3>
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs uppercase">
-              <tr>
-                <th className="p-3">When</th>
-                <th className="p-3">Service</th>
-                <th className="p-3">Provider</th>
-                <th className="p-3">Customer</th>
-                <th className="p-3">Gross</th>
-                <th className="p-3">Refunded</th>
-                <th className="p-3">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.length === 0 ? (
-                <tr><td colSpan={7} className="p-6 text-center text-sm text-muted-foreground">No unlocks yet.</td></tr>
-              ) : recent.map((u) => (
-                <tr key={u.unlock_id} className="border-t border-border">
-                  <td className="p-3 whitespace-nowrap text-xs text-muted-foreground">
-                    {new Date(u.unlocked_at).toLocaleString()}
-                  </td>
-                  <td className="p-3">
+        {recent.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            No unlocks yet.
+          </div>
+        ) : (
+          <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+            {recent.map((u) => (
+              <li key={u.unlock_id} className="space-y-2 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <div className="font-medium">{u.service_name_en ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{u.category_slug ?? "—"}/{u.slug ?? "—"}</div>
-                  </td>
-                  <td className="p-3">{u.provider_name ?? "—"}</td>
-                  <td className="p-3">{u.customer_name ?? "—"}</td>
-                  <td className="p-3">{fmt(u.gross_credits)}</td>
-                  <td className="p-3 text-amber-600">{fmt(u.refunded_credits)}</td>
-                  <td className="p-3 font-semibold">{fmt(u.net_credits)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <div className="text-xs text-muted-foreground">
+                      {u.category_slug ?? "—"}/{u.slug ?? "—"} · {new Date(u.unlocked_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">{fmt(u.net_credits)} net</div>
+                    <div className="text-xs text-muted-foreground">
+                      {fmt(u.gross_credits)} gross
+                      {Number(u.refunded_credits) > 0 && (
+                        <span className="text-amber-600"> · {fmt(u.refunded_credits)} refunded</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">Provider</span>
+                    <div className="truncate">{u.provider_name ?? "—"}</div>
+                  </div>
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">Customer</span>
+                    <div className="truncate">{u.customer_name ?? "—"}</div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
