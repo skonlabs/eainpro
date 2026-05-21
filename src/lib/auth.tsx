@@ -3,9 +3,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
@@ -24,10 +27,13 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [sessionReady, setSessionReady] = useState(false);
   const [rolesReady, setRolesReady] = useState(false);
+  const lastResolvedAuthState = useRef<string | undefined>(undefined);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
     setRolesReady(false);
@@ -110,6 +116,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = useMemo(() => session?.user ?? null, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const loading = !sessionReady || !rolesReady;
 
+  useEffect(() => {
+    if (!sessionReady || !rolesReady) return;
+
+    const nextAuthState = `${session?.user?.id ?? "guest"}|${[...roles].sort().join(",")}`;
+    if (lastResolvedAuthState.current === undefined) {
+      lastResolvedAuthState.current = nextAuthState;
+      return;
+    }
+    if (lastResolvedAuthState.current === nextAuthState) return;
+    lastResolvedAuthState.current = nextAuthState;
+
+    void (async () => {
+      await queryClient.cancelQueries();
+      if (session?.user) {
+        await queryClient.invalidateQueries();
+      } else {
+        queryClient.clear();
+      }
+      await router.invalidate();
+    })();
+  }, [queryClient, roles, rolesReady, router, session?.user, sessionReady]);
+
   const value: AuthCtx = useMemo(
     () => ({
       user,
@@ -122,6 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setRoles([]);
         setRolesReady(true);
+        await queryClient.cancelQueries();
+        queryClient.clear();
         // scope: "local" — "global" silently fails (without clearing local
         // storage) when the access token is already expired.
         try {
@@ -150,15 +180,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           /* ignore */
         }
-        // Hard reload to home — guarantees no in-memory cache / route loader
-        // keeps the old user's data on screen.
-        if (typeof window !== "undefined") {
-          window.location.replace("/");
-        }
+        await router.invalidate();
+        await router.navigate({ to: "/", replace: true });
       },
       refreshRoles: () => loadRoles(session?.user?.id),
     }),
-    [user, session, roles, loading, rolesReady],
+    [user, session, roles, loading, rolesReady, queryClient, router],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
