@@ -186,7 +186,7 @@ function AdminPage() {
 
   return (
     <SidebarProvider className="[--sidebar-offset-left:12px] sm:[--sidebar-offset-left:16px]">
-      <div className="flex min-h-[calc(100vh-3.5rem)] w-full pb-20 md:pb-0">
+      <div className="flex min-h-[calc(100vh-3.5rem)] w-full pb-24">
         <AdminSidebar current={tab} onSelect={setTab} />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="sticky top-14 z-30 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6">
