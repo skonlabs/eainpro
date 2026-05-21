@@ -221,7 +221,16 @@ function LeadPage() {
           </TabsList>
 
           <TabsContent value="details" className="space-y-3">
-            <DetailsCard lead={lead} photos={photos} isProvider={isProvider} hasUnlock={providerHasUnlock} L={L} />
+            <DetailsCard
+              lead={lead}
+              photos={photos}
+              isProvider={isProvider}
+              isCustomer={isCustomer}
+              hasUnlock={providerHasUnlock}
+              canEdit={isCustomer && !booking && lead.status !== "cancelled" && lead.status !== "completed"}
+              onUpdated={(patch) => setLead((prev) => (prev ? { ...prev, ...patch } : prev))}
+              L={L}
+            />
             {isCustomer && !booking && lead.status !== "cancelled" && lead.status !== "completed" && (
               <CustomerCancelCard
                 leadId={lead.id}
@@ -342,20 +351,70 @@ function DetailsCard({
   photos,
   isProvider,
   hasUnlock,
+  isCustomer,
+  canEdit,
+  onUpdated,
   L,
 }: {
   lead: Lead;
   photos: string[];
   isProvider: boolean;
   hasUnlock: boolean;
+  isCustomer: boolean;
+  canEdit: boolean;
+  onUpdated: (patch: Partial<Lead>) => void;
   L: (en: string, my: string) => string;
 }) {
   const showContact = !isProvider || hasUnlock;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(lead.full_description ?? lead.short_description);
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    const text = draft.trim();
+    if (!text) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("customer_leads")
+      .update({ full_description: text })
+      .eq("id", lead.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    onUpdated({ full_description: text });
+    setEditing(false);
+    toast.success(L("Updated", "ပြင်ပြီး"));
+  };
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <div>
-        <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Description", "ဖော်ပြ")}</div>
-        <p className="mt-1 text-sm">{lead.full_description ?? lead.short_description}</p>
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Description", "ဖော်ပြ")}</div>
+          {canEdit && !editing && (
+            <button type="button" onClick={() => setEditing(true)} className="text-xs font-medium text-primary hover:underline">
+              {L("Edit", "ပြင်")}
+            </button>
+          )}
+        </div>
+        {editing ? (
+          <div className="mt-1 space-y-2">
+            <textarea
+              className="w-full rounded-md border border-border bg-background p-2 text-sm"
+              rows={4}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              disabled={saving}
+            />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { setDraft(lead.full_description ?? lead.short_description); setEditing(false); }} disabled={saving}>
+                {L("Cancel", "ပယ်ဖျက်")}
+              </Button>
+              <Button size="sm" onClick={save} disabled={saving || !draft.trim()}>
+                {saving ? L("Saving…", "သိမ်းနေသည်…") : L("Save", "သိမ်း")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</p>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
