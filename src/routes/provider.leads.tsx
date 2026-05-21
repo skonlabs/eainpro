@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle } from "lucide-react";
+import { X as XIcon } from "lucide-react";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -19,6 +20,17 @@ export const Route = createFileRoute("/provider/leads")({
 });
 
 const STATUS_OPTIONS = ["unlocked","contacted","quoted","won","lost","customer_no_response","invalid","completed"] as const;
+
+const DISMISS_KEY = "fixido.dismissedLeads.v1";
+const readDismissed = (): Set<string> => {
+  if (typeof window === "undefined") return new Set();
+  try { return new Set(JSON.parse(window.localStorage.getItem(DISMISS_KEY) ?? "[]")); }
+  catch { return new Set(); }
+};
+const writeDismissed = (s: Set<string>) => {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(s))); } catch {}
+};
 
 function LeadsPage() {
   const { user, roles, loading, rolesReady } = useAuth();
@@ -34,6 +46,13 @@ function LeadsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pickedLead, setPickedLead] = useState<LeadPreview | null>(null);
   const [unlocking, setUnlocking] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(() => readDismissed());
+
+  const dismiss = (id: string) => {
+    setDismissed((prev) => {
+      const next = new Set(prev); next.add(id); writeDismissed(next); return next;
+    });
+  };
 
   const refresh = async () => {
     if (!user) return;
@@ -144,8 +163,13 @@ function LeadsPage() {
                   <Link to="/provider/onboarding" className="inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">Update profile</Link>
                 </div>
               ) :
-              available.length === 0 ? <Empty msg="No matching leads in your service areas right now. Check back soon." /> :
-              available.map((l) => <LockedCard key={l.id} lead={l} onUnlock={() => setPickedLead(l)} />)}
+              (() => {
+                const visible = available.filter((l) => !dismissed.has(l.id));
+                if (visible.length === 0) return <Empty msg="No matching leads in your service areas right now. Check back soon." />;
+                return visible.map((l) => (
+                  <LockedCard key={l.id} lead={l} onUnlock={() => setPickedLead(l)} onDismiss={() => dismiss(l.id)} />
+                ));
+              })()}
           </TabsContent>
 
           <TabsContent value="unlocked" className="space-y-3">
@@ -215,7 +239,7 @@ function Empty({ msg }: { msg: string }) {
   return <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">{msg}</p>;
 }
 
-function LockedCard({ lead, onUnlock }: { lead: LeadPreview; onUnlock: () => void }) {
+function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock: () => void; onDismiss: () => void }) {
   const slotsLeft = lead.max_provider_unlocks - lead.current_unlock_count;
   return (
     <div className={`rounded-2xl border bg-card p-4 ${lead.is_direct ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
@@ -246,7 +270,17 @@ function LockedCard({ lead, onUnlock }: { lead: LeadPreview; onUnlock: () => voi
           {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
           {slotsLeft <= 2 && <span className="ml-1 font-semibold text-amber-600">· {slotsLeft} slot{slotsLeft===1?"":"s"} left</span>}
         </span>
-        <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />View Lead ({fmt(lead.lead_price_credits)} credits)</Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            title="Hide this lead"
+          >
+            <XIcon className="h-3 w-3" /> Not interested
+          </button>
+          <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />View Lead ({fmt(lead.lead_price_credits)} credits)</Button>
+        </div>
       </div>
     </div>
   );
