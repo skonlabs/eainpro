@@ -15,8 +15,8 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/providers")({
   validateSearch: searchSchema,
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(providersListQuery());
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(providersListQuery());
   },
   component: ProvidersPage,
 });
