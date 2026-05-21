@@ -58,6 +58,7 @@ function DashboardPage() {
           .from("reviews")
           .select("id, rating, comment, created_at")
           .eq("provider_id", uid)
+          .eq("rated_by", "customer")
           .order("created_at", { ascending: false })
           .limit(20),
       ]);
