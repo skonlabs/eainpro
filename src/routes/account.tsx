@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut, Briefcase } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
@@ -243,7 +244,7 @@ function AccountPage() {
       <div className="min-h-screen bg-background pb-20 md:pb-0">
 
         <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-          <p className="text-sm text-muted-foreground">{L("Loading…", "တင်နေ…")}</p>
+          <LoadingState label={L("Loading…", "တင်နေ…")} />
         </main>
       </div>
     );

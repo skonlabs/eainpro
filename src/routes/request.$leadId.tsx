@@ -14,6 +14,7 @@ import { BookingPanel } from "@/components/request/BookingPanel";
 import { ChatPanel } from "@/components/request/ChatPanel";
 import { CustomerCancelCard } from "@/components/request/CustomerCancelCard";
 import type { Lead, Quote, Booking, Msg } from "@/components/request/types";
+import { LoadingState } from "@/components/site/LoadingState";
 
 const search = z.object({ tab: z.string().optional() });
 
@@ -152,7 +153,11 @@ function LeadPage() {
     );
   }
   if (!lead) {
-    return <div className="mx-auto max-w-2xl px-4 py-10 text-sm text-muted-foreground">{L("Loading…", "ခဏစောင့်…")}</div>;
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <LoadingState label={L("Loading…", "ခဏစောင့်ပါ…")} />
+      </div>
+    );
   }
 
   return (

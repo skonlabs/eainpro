@@ -5,6 +5,7 @@ import { GuestHome } from "@/components/home/GuestHome";
 import { CustomerHome } from "@/components/home/CustomerHome";
 import { ProviderHome } from "@/components/home/ProviderHome";
 import { AdminHome } from "@/components/home/AdminHome";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -25,11 +26,7 @@ function Index() {
   const isAdmin = roles.includes("admin");
 
   if (authLoading) {
-    return (
-      <div className="grid min-h-[40vh] place-items-center text-sm text-muted-foreground">
-        {L("Loading…", "ခဏစောင့်ပါ…")}
-      </div>
-    );
+    return <LoadingState label={L("Loading…", "ခဏစောင့်ပါ…")} />;
   }
 
   if (!user) return <GuestHome lang={lang} L={L} />;

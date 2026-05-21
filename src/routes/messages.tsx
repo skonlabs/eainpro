@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { MessageSquare } from "lucide-react";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/messages")({ component: MessagesPage });
 
@@ -48,7 +49,12 @@ function MessagesPage() {
   }, [user, loading, nav]);
 
   if (loading || threads === null) {
-    return <div className="px-1 py-6"><h1 className="text-2xl font-bold">{L("Messages", "မက်ဆေ့")}</h1><p className="mt-3 text-sm text-muted-foreground">{L("Loading…", "…")}</p></div>;
+    return (
+      <div className="px-1 py-6">
+        <h1 className="text-2xl font-bold">{L("Messages", "မက်ဆေ့")}</h1>
+        <LoadingState label={L("Loading messages…", "ခဏစောင့်ပါ…")} />
+      </div>
+    );
   }
   return (
     <div className="px-1 py-4">

@@ -9,6 +9,7 @@ import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -60,9 +61,11 @@ function SignInPage() {
           </div>
         )}
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground text-xl font-extrabold shadow-lg shadow-primary/25">
-            E
-          </div>
+          <img
+            src={logoUrl}
+            alt="Fixido"
+            className="mx-auto h-14 w-14 rounded-2xl shadow-lg shadow-primary/15"
+          />
           <h1 className="mt-4 text-2xl font-bold tracking-tight">
             {lang === "en" ? "Welcome back" : "ပြန်လာကြိုဆိုပါသည်"}
           </h1>

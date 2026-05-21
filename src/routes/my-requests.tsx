@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
 import { deriveBookingState, statusMeta } from "@/lib/booking-status";
+import { LoadingState } from "@/components/site/LoadingState";
 
 const TONE_CLASS: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
@@ -68,7 +69,7 @@ function MyRequestsPage() {
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{L("My Requests", "တောင်းဆို")}</h1>
           <Link to="/request/new" search={{}}><Button className="rounded-xl"><Plus className="mr-1 h-4 w-4" />{L("New", "အသစ်")}</Button></Link>
         </div>
-        {!rows && <p className="mt-6 text-sm text-muted-foreground">{L("Loading…", "ခဏစောင့်…")}</p>}
+        {!rows && <LoadingState label={L("Loading requests…", "ခဏစောင့်ပါ…")} />}
         {rows && rows.length === 0 && (
           <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
             <Inbox className="mx-auto h-10 w-10 text-muted-foreground" />

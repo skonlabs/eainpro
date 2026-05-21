@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star } from "lucide-react";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
@@ -112,7 +113,7 @@ function DashboardPage() {
           <Link to="/provider/calendar"><Button variant="outline" size="sm"><CalendarCheck className="mr-1.5 h-4 w-4" />{L("Calendar", "ပြက္ခဒိန်")}</Button></Link>
         </div>
         {bookings === null ? (
-          <p className="mt-6 text-sm text-muted-foreground">{L("Loading…", "…")}</p>
+          <LoadingState label={L("Loading…", "ခဏစောင့်ပါ…")} className="mt-6 min-h-[20vh]" />
         ) : bookings.length === 0 ? (
           <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{L("No active jobs. Unlock leads to start.", "မရှိ။ Lead ဖွင့်ပါ")}</p>
         ) : (

@@ -110,10 +110,10 @@ export function AppBar() {
 
         <button
           onClick={() => setLang(lang === "en" ? "my" : "en")}
-          className="min-w-12 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
+          className="inline-flex h-10 min-w-14 items-center justify-center rounded-full border border-border bg-card px-3 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
           aria-label="Toggle language"
         >
-          {lang === "en" ? "မြန်" : "EN"}
+          {lang === "en" ? "MY" : "EN"}
         </button>
         {user && <NotificationBell />}
       </div>

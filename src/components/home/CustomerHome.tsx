@@ -22,6 +22,7 @@ import {
   type Lang,
   type Lfn,
 } from "./atoms";
+import { InlineLoading } from "@/components/site/LoadingState";
 
 type CustomerReq = {
   id: string;
@@ -372,9 +373,7 @@ export function CustomerHome({
         </div>
 
         {requests === null ? (
-          <div className="rounded-2xl border border-border bg-card p-4 text-xs text-muted-foreground">
-            {L("Loading…", "ခဏစောင့်ပါ…")}
-          </div>
+          <InlineLoading label={L("Loading…", "ခဏစောင့်ပါ…")} />
         ) : requests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
             <div className="text-sm font-semibold">{L("No requests yet", "တောင်းဆိုမှု မရှိသေးပါ")}</div>

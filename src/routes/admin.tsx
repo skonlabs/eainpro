@@ -18,6 +18,7 @@ import { CustomersTab } from "@/components/admin/CustomersTab";
 import { PaymentMethodsTab } from "@/components/admin/PaymentMethodsTab";
 import { PackagesTab } from "@/components/admin/PackagesTab";
 import { AdjustWalletTab } from "@/components/admin/AdjustWalletTab";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -36,7 +37,7 @@ function AdminPage() {
     if (!user) nav({ to: "/signin", search: { redirect: "/admin" } });
   }, [loading, user, nav]);
 
-  if (loading || !user) return null;
+  if (loading || !user) return <LoadingState label={lang === "en" ? "Loading…" : "ခဏစောင့်ပါ…"} />;
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background p-8 text-center">
