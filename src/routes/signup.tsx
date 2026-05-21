@@ -100,9 +100,11 @@ function SignUpPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-20">
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground text-xl font-extrabold shadow-lg shadow-primary/25">
-            E
-          </div>
+          <img
+            src={logoUrl}
+            alt="Fixido"
+            className="mx-auto h-14 w-14 rounded-2xl shadow-lg shadow-primary/15"
+          />
           <h1 className="mt-4 text-2xl font-bold tracking-tight">
             {L("Create your account", "အကောင့်ဖွင့်ပါ")}
           </h1>
