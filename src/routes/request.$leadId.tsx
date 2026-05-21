@@ -221,7 +221,16 @@ function LeadPage() {
           </TabsList>
 
           <TabsContent value="details" className="space-y-3">
-            <DetailsCard lead={lead} photos={photos} isProvider={isProvider} hasUnlock={providerHasUnlock} L={L} />
+            <DetailsCard
+              lead={lead}
+              photos={photos}
+              isProvider={isProvider}
+              isCustomer={isCustomer}
+              hasUnlock={providerHasUnlock}
+              canEdit={isCustomer && !booking && lead.status !== "cancelled" && lead.status !== "completed"}
+              onUpdated={(patch) => setLead((prev) => (prev ? { ...prev, ...patch } : prev))}
+              L={L}
+            />
             {isCustomer && !booking && lead.status !== "cancelled" && lead.status !== "completed" && (
               <CustomerCancelCard
                 leadId={lead.id}
