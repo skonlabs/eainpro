@@ -89,8 +89,8 @@ const SECTIONS: NavSection[] = [
     label: "Money",
     items: [
       { key: "topups", label: "Top-ups", icon: Wallet, subtitle: "Approve provider top-up requests" },
-      { key: "refunds", label: "Refunds", icon: Undo2, subtitle: "Issue lead refunds" },
-      { key: "refund-requests", label: "Refund requests", icon: HandCoins, subtitle: "Customer & provider refund queue" },
+      { key: "refunds", label: "Refunds", icon: Undo2, subtitle: "Approved refunds history" },
+      { key: "refund-requests", label: "Refund requests", icon: HandCoins, subtitle: "Approve or reject refund requests" },
       { key: "adjust", label: "Adjust wallet", icon: Coins, subtitle: "Manual credit / debit" },
     ],
   },
