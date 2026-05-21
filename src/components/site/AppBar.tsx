@@ -27,8 +27,6 @@ function parentFor(pathname: string): string {
   if (pathname.startsWith("/p/")) return "/providers";
   if (pathname.startsWith("/request/new")) return "/";
   if (pathname.startsWith("/request/")) return "/my-requests";
-  if (pathname.startsWith("/jobs/")) return "/provider/dashboard";
-  // (jobs/* now redirects to request/*; keep fallback above for safety.)
   if (pathname === "/provider/onboarding") return "/account";
   if (pathname === "/guided") return "/";
   if (pathname === "/signup" || pathname === "/reset-password") return "/signin";
@@ -58,7 +56,6 @@ function titleFor(pathname: string, lang: "en" | "my") {
   if (pathname.startsWith("/services/")) return lang === "en" ? "Service" : "ဝန်ဆောင်မှု";
   if (pathname.startsWith("/p/")) return lang === "en" ? "Provider" : "ပညာရှင်";
   if (pathname.startsWith("/request/")) return lang === "en" ? "Job" : "အလုပ်";
-  if (pathname.startsWith("/jobs/")) return lang === "en" ? "Job" : "အလုပ်";
   return "Fixido";
 }
 
