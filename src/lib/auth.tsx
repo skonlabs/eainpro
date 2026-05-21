@@ -34,6 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionReady, setSessionReady] = useState(false);
   const [rolesReady, setRolesReady] = useState(false);
   const lastResolvedAuthState = useRef<string | undefined>(undefined);
+  const lastSessionKey = useRef<string | undefined>(undefined);
+  const signedOutRef = useRef(false);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
     setRolesReady(false);
@@ -54,45 +56,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    let lastUserId: string | null | undefined = undefined;
-    let lastToken: string | null | undefined = undefined;
-    let signedOut = false;
+    let active = true;
 
-    const apply = (s: Session | null) => {
-      // Once the tab has explicitly signed out, ignore any late-arriving
-      // SIGNED_IN / TOKEN_REFRESHED events so an old user can't rehydrate.
-      if (signedOut && s) return;
-      const nextUserId = s?.user?.id ?? null;
-      const nextToken = s?.access_token ?? null;
-      if (nextUserId === lastUserId && nextToken === lastToken) return;
-      const userChanged = nextUserId !== lastUserId;
-      lastUserId = nextUserId;
-      lastToken = nextToken;
-      setSession(s);
-      if (userChanged) {
-        setTimeout(() => {
-          loadRoles(nextUserId ?? undefined);
-        }, 0);
+    const apply = async (s: Session | null) => {
+      if (!active) return;
+      if (signedOutRef.current && s) return;
+
+      const nextKey = `${s?.user?.id ?? "guest"}|${s?.access_token ?? ""}`;
+      if (lastSessionKey.current === nextKey) {
+        setSessionReady(true);
+        if (!s?.user) setRolesReady(true);
+        return;
       }
+
+      lastSessionKey.current = nextKey;
+      setSession(s);
+      setSessionReady(true);
+      await loadRoles(s?.user?.id);
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
-      if (e === "SIGNED_IN") signedOut = false;
+      if (e === "SIGNED_IN") signedOutRef.current = false;
       if (e === "SIGNED_OUT") {
-        signedOut = true;
-        lastUserId = null;
-        lastToken = null;
+        signedOutRef.current = true;
+        lastSessionKey.current = "guest|";
       }
-      apply(s);
+      void apply(s);
     });
 
     // Cross-tab safety: if another tab clears the auth token, drop session here.
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === SUPABASE_AUTH_STORAGE_KEY && !ev.newValue) {
-        signedOut = true;
-        lastUserId = null;
-        lastToken = null;
+        signedOutRef.current = true;
+        lastSessionKey.current = "guest|";
         setSession(null);
+        setSessionReady(true);
         setRoles([]);
         setRolesReady(true);
       }
@@ -101,11 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.addEventListener("storage", onStorage);
 
     supabase.auth.getSession().then(({ data }) => {
-      apply(data.session);
-      setSessionReady(true);
+      void apply(data.session);
     });
 
     return () => {
+      active = false;
       sub.subscription.unsubscribe();
       if (typeof window !== "undefined")
         window.removeEventListener("storage", onStorage);
@@ -147,7 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rolesReady,
       signOut: async () => {
         // Optimistically clear local state.
+        signedOutRef.current = true;
+        lastSessionKey.current = "guest|";
         setSession(null);
+        setSessionReady(true);
         setRoles([]);
         setRolesReady(true);
         await queryClient.cancelQueries();
