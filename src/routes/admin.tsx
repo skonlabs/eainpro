@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import {
   LayoutDashboard,
@@ -185,9 +185,7 @@ function AdminPage() {
   }
 
   return (
-    <SidebarProvider
-      style={{ "--sidebar-offset-left": "12px" } as CSSProperties}
-    >
+    <SidebarProvider className="[--sidebar-offset-left:12px] sm:[--sidebar-offset-left:16px]">
       <div className="flex min-h-[calc(100vh-3.5rem)] w-full pb-20 md:pb-0">
         <AdminSidebar current={tab} onSelect={setTab} />
         <div className="flex min-w-0 flex-1 flex-col">
