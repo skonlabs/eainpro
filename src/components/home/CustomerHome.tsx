@@ -41,6 +41,8 @@ type CustomerBooking = {
   amount: number | null;
   customer_confirmed_at: string | null;
   provider_confirmed_at: string | null;
+  time_confirmed_by_customer: boolean | null;
+  time_confirmed_by_provider: boolean | null;
   lead: { category_slug: string; address: string | null } | null;
 };
 
@@ -72,7 +74,7 @@ export function CustomerHome({
         supabase
           .from("bookings")
           .select(
-            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, lead:customer_leads(address, service_type:service_types(category_slug))",
+            "id, lead_id, status, scheduled_at, amount, customer_confirmed_at, provider_confirmed_at, time_confirmed_by_customer, time_confirmed_by_provider, lead:customer_leads(address, service_type:service_types(category_slug))",
           )
           .eq("customer_id", userId)
           .order("scheduled_at", { ascending: true, nullsFirst: false }),
@@ -119,7 +121,7 @@ export function CustomerHome({
     (b) =>
       ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
       b.scheduled_at &&
-      !b.customer_confirmed_at,
+      !b.time_confirmed_by_customer,
   );
   const newQuotes = (requests ?? []).filter((r) => r.status === "quoted" && r.quotes_count > 0);
   const upcoming = (bookings ?? [])
@@ -127,8 +129,8 @@ export function CustomerHome({
       (b) =>
         ["accepted", "on_the_way", "started", "in_progress"].includes(b.status) &&
         b.scheduled_at &&
-        b.customer_confirmed_at &&
-        b.provider_confirmed_at &&
+        b.time_confirmed_by_customer &&
+        b.time_confirmed_by_provider &&
         new Date(b.scheduled_at).getTime() >= Date.now() - 6 * 3600_000,
     )
     .slice(0, 3);
