@@ -122,10 +122,16 @@ export function AppBar() {
 
         <button
           onClick={() => setLang(lang === "en" ? "my" : "en")}
-          className="inline-flex h-10 min-w-14 items-center justify-center rounded-full border border-border bg-card px-3 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
-          aria-label="Toggle language"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground hover:bg-secondary"
+          aria-label={lang === "en" ? "Switch to Burmese" : "Switch to English"}
+          title={lang === "en" ? "Switch to Burmese" : "Switch to English"}
         >
-          {lang === "en" ? "MY" : "EN"}
+          <span aria-hidden className="text-base leading-none">
+            {lang === "en" ? "🇲🇲" : "🇬🇧"}
+          </span>
+          <span className="text-xs">
+            {lang === "en" ? "မြန်မာ" : "English"}
+          </span>
         </button>
         {user && <NotificationBell />}
       </div>
