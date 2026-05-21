@@ -50,10 +50,11 @@ export function BlockedBanner() {
   if (!blocked) return null;
   return (
     <div className="mx-auto w-full max-w-screen-md px-3 pt-2 sm:px-4">
-      <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-        <p className="font-semibold">Your account is restricted.</p>
-        <p className="mt-1 text-xs">
-          You cannot create requests, send messages, book, leave reviews, or unlock leads.
+      <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+        <p className="font-semibold">Your account is suspended.</p>
+        <p className="mt-1 text-xs leading-relaxed">
+          You can still browse, but you cannot submit a request, send messages, book a job,
+          leave reviews, or view/unlock leads.
           {blocked.reason ? ` Reason: ${blocked.reason}.` : ""} Contact support to resolve this.
         </p>
       </div>
