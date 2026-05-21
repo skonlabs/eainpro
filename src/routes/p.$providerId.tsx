@@ -35,7 +35,7 @@ type Provider = {
 
 function ProviderProfilePage() {
   const { providerId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { lang } = useI18n();
   const nav = useNavigate();
   const [p, setP] = useState<Provider | null>(null);
@@ -370,45 +370,47 @@ function ProviderProfilePage() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
-          {user ? (
-            <>
-            <Button
-              onClick={openPicker}
-              className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25"
-            >
-              {lang === "en"
-                ? "Send one of my requests to this provider"
-                : "ကျွန်ုပ်၏ တောင်းဆိုမှုကို ဤပညာရှင်ထံ ပေးပို့ရန်"}
-            </Button>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              {lang === "en"
-                ? `Pick one of your existing requests to send directly to ${p.business_name ?? "this provider"}.`
-                : `ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ${p.business_name ?? "ဤပညာရှင်"} ထံသာ တိုက်ရိုက်ပေးပို့ပါ။`}
-            </p>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/signin"
-                search={{
-                  redirect: `/p/${p.id}`,
-                }}
+        {(!user || roles.includes("customer")) && (
+          <div className="rounded-2xl border border-border bg-card p-5">
+            {user ? (
+              <>
+              <Button
+                onClick={openPicker}
+                className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25"
               >
-                <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
-                  {lang === "en"
-                    ? "Sign in to send a request to this provider"
-                    : "ဤပညာရှင်ထံ တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
-                </Button>
-              </Link>
+                {lang === "en"
+                  ? "Send one of my requests to this provider"
+                  : "ကျွန်ုပ်၏ တောင်းဆိုမှုကို ဤပညာရှင်ထံ ပေးပို့ရန်"}
+              </Button>
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 {lang === "en"
-                  ? "Browsing is free. You only need an account when you're ready to send a request."
-                  : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
+                  ? `Pick one of your existing requests to send directly to ${p.business_name ?? "this provider"}.`
+                  : `ရှိပြီးသား တောင်းဆိုမှု တစ်ခုကို ${p.business_name ?? "ဤပညာရှင်"} ထံသာ တိုက်ရိုက်ပေးပို့ပါ။`}
               </p>
-            </>
-          )}
-        </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/signin"
+                  search={{
+                    redirect: `/p/${p.id}`,
+                  }}
+                >
+                  <Button className="w-full rounded-2xl py-6 text-base font-bold shadow-lg shadow-primary/25">
+                    {lang === "en"
+                      ? "Sign in to send a request to this provider"
+                      : "ဤပညာရှင်ထံ တောင်းဆိုရန် အကောင့်ဝင်ပါ"}
+                  </Button>
+                </Link>
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  {lang === "en"
+                    ? "Browsing is free. You only need an account when you're ready to send a request."
+                    : "ကြည့်ရှုခြင်းသည် အခမဲ့ဖြစ်သည်။ တောင်းဆိုမှု ပေးပို့မှသာ အကောင့်လိုအပ်ပါသည်။"}
+                </p>
+              </>
+            )}
+          </div>
+        )}
       </main>
 
       <Dialog
