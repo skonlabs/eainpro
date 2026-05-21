@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { fetchProviderNames } from "@/lib/admin-joins";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -20,12 +21,7 @@ export function TopupsTab() {
         .limit(100);
       if (error) { toast.error(`Load top-ups failed: ${error.message}`); return []; }
       const list = data ?? [];
-      const ids = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
-      let nameMap = new Map<string, string>();
-      if (ids.length) {
-        const { data: provs } = await supabase.from("providers").select("id, business_name").in("id", ids);
-        nameMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? ""]));
-      }
+      const nameMap = await fetchProviderNames(list.map((r) => r.provider_id));
       return list.map((r) => ({ ...r, providers: { business_name: nameMap.get(r.provider_id) ?? null } }));
     },
   });

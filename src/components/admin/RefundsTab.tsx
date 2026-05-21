@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { fetchProviderNames, fetchLeadsByIds } from "@/lib/admin-joins";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,46 +10,33 @@ import { toast } from "sonner";
 import { fmt } from "@/lib/wallet";
 
 export function RefundsTab() {
-  const [unlocks, setUnlocks] = useState<any[] | null>(null);
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<any>(null);
   const [amount, setAmount] = useState<number>(0);
   const [reason, setReason] = useState("");
-  const load = async () => {
-    setUnlocks(null);
-    const { data, error } = await supabase
-      .from("provider_lead_unlocks")
-      .select("*")
-      .order("unlocked_at", { ascending: false })
-      .limit(50);
-    if (error) {
-      toast.error(`Load unlocks failed: ${error.message}`);
-      setUnlocks([]);
-      return;
-    }
-    const list = data ?? [];
-    const provIds = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
-    const leadIds = [...new Set(list.map((r) => r.lead_id).filter(Boolean))];
-    const [{ data: provs }, leadRes] = await Promise.all([
-      provIds.length
-        ? supabase.from("providers").select("id, business_name").in("id", provIds)
-        : Promise.resolve({ data: [] as any[] }),
-      leadIds.length
-        ? supabase.rpc("get_customer_leads", { _lead_ids: leadIds })
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-    const provMap = new Map((provs ?? []).map((p: any) => [p.id, p.business_name ?? null]));
-    const leads = Array.isArray(leadRes?.data) ? leadRes.data : [];
-    const leadMap = new Map(leads.map((l: any) => [l.id, l]));
-    setUnlocks(
-      list.map((u) => ({
+  const qc = useQueryClient();
+  const { data: unlocks } = useQuery({
+    queryKey: ["admin", "refunds-unlocks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("provider_lead_unlocks")
+        .select("*")
+        .order("unlocked_at", { ascending: false })
+        .limit(50);
+      if (error) { toast.error(`Load unlocks failed: ${error.message}`); return []; }
+      const list = data ?? [];
+      const [provMap, leadMap] = await Promise.all([
+        fetchProviderNames(list.map((r) => r.provider_id)),
+        fetchLeadsByIds(list.map((r) => r.lead_id)),
+      ]);
+      return list.map((u) => ({
         ...u,
         providers: { business_name: provMap.get(u.provider_id) ?? null },
         customer_leads: leadMap.get(u.lead_id) ?? null,
-      })),
-    );
-  };
-  useEffect(() => { load(); }, []);
+      }));
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "refunds-unlocks"] });
   const filtered = (unlocks ?? []).filter((u) => {
     if (!q.trim()) return true;
     const s = q.toLowerCase();
@@ -60,7 +49,7 @@ export function RefundsTab() {
     const { data, error } = await supabase.rpc("refund_unlock", { p_unlock_id: picked.id, p_amount: amount, p_reason: reason });
     if (error) toast.error(error.message);
     else if (!data?.ok) toast.error(data?.error ?? "Failed");
-    else { toast.success("Refunded"); setPicked(null); setAmount(0); setReason(""); load(); }
+    else { toast.success("Refunded"); setPicked(null); setAmount(0); setReason(""); refresh(); }
   };
   return (
     <div className="mt-4 space-y-3">
