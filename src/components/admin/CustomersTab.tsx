@@ -1,42 +1,36 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export function CustomersTab() {
-  const [rows, setRows] = useState<any[] | null>(null);
   const [q, setQ] = useState("");
-  const load = async () => {
-    setRows(null);
-    // Aggregate from customer_leads (admin RLS allows full read).
-    const { data, error } = await supabase
-      .from("customer_leads")
-      .select("customer_id, customer_name, customer_phone, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    if (error) { toast.error(error.message); setRows([]); return; }
-    const map = new Map<string, any>();
-    for (const r of data ?? []) {
-      if (!r.customer_id) continue;
-      const cur = map.get(r.customer_id);
-      if (!cur) {
-        map.set(r.customer_id, {
-          id: r.customer_id,
-          name: r.customer_name,
-          phone: r.customer_phone,
-          leads: 1,
-          last: r.created_at,
-        });
-      } else {
-        cur.leads += 1;
-        if (!cur.name && r.customer_name) cur.name = r.customer_name;
-        if (!cur.phone && r.customer_phone) cur.phone = r.customer_phone;
+  const { data: rows } = useQuery({
+    queryKey: ["admin", "customers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customer_leads")
+        .select("customer_id, customer_name, customer_phone, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) { toast.error(error.message); return []; }
+      const map = new Map<string, any>();
+      for (const r of data ?? []) {
+        if (!r.customer_id) continue;
+        const cur = map.get(r.customer_id);
+        if (!cur) {
+          map.set(r.customer_id, { id: r.customer_id, name: r.customer_name, phone: r.customer_phone, leads: 1, last: r.created_at });
+        } else {
+          cur.leads += 1;
+          if (!cur.name && r.customer_name) cur.name = r.customer_name;
+          if (!cur.phone && r.customer_phone) cur.phone = r.customer_phone;
+        }
       }
-    }
-    setRows(Array.from(map.values()).sort((a, b) => b.leads - a.leads));
-  };
-  useEffect(() => { load(); }, []);
+      return Array.from(map.values()).sort((a, b) => b.leads - a.leads);
+    },
+  });
   const filtered = (rows ?? []).filter((r) => {
     if (!q.trim()) return true;
     const s = q.toLowerCase();

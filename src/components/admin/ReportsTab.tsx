@@ -1,24 +1,27 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export function ReportsTab() {
-  const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"open" | "reviewing" | "resolved" | "dismissed" | "all">("open");
-  const load = async () => {
-    setRows(null);
-    let q = supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(200);
-    if (filter !== "all") q = q.eq("status", filter);
-    const { data, error } = await q;
-    if (error) { toast.error(error.message); setRows([]); return; }
-    setRows(data ?? []);
-  };
-  useEffect(() => { load(); }, [filter]);
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["admin", "reports", filter],
+    queryFn: async () => {
+      let q = supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(200);
+      if (filter !== "all") q = q.eq("status", filter);
+      const { data, error } = await q;
+      if (error) { toast.error(error.message); return []; }
+      return data ?? [];
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "reports"] });
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("reports").update({ status }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success(status); load(); }
+    if (error) toast.error(error.message); else { toast.success(status); refresh(); }
   };
   return (
     <div className="mt-4 space-y-3">

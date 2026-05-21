@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,40 +7,35 @@ import { toast } from "sonner";
 import { fmt } from "@/lib/wallet";
 
 export function TopupsTab() {
-  const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"pending"|"approved"|"rejected">("pending");
-  const load = async () => {
-    setRows(null);
-    const { data, error } = await supabase
-      .from("provider_credit_topups")
-      .select("*")
-      .eq("status", filter)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (error) {
-      toast.error(`Load top-ups failed: ${error.message}`);
-      setRows([]);
-      return;
-    }
-    const list = data ?? [];
-    const ids = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
-    let nameMap = new Map<string, string>();
-    if (ids.length) {
-      const { data: provs } = await supabase
-        .from("providers")
-        .select("id, business_name")
-        .in("id", ids);
-      nameMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? ""]));
-    }
-    setRows(list.map((r) => ({ ...r, providers: { business_name: nameMap.get(r.provider_id) ?? null } })));
-  };
-  useEffect(() => { load(); }, [filter]);
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["admin", "topups", filter],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("provider_credit_topups")
+        .select("*")
+        .eq("status", filter)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) { toast.error(`Load top-ups failed: ${error.message}`); return []; }
+      const list = data ?? [];
+      const ids = [...new Set(list.map((r) => r.provider_id).filter(Boolean))];
+      let nameMap = new Map<string, string>();
+      if (ids.length) {
+        const { data: provs } = await supabase.from("providers").select("id, business_name").in("id", ids);
+        nameMap = new Map((provs ?? []).map((p) => [p.id, p.business_name ?? ""]));
+      }
+      return list.map((r) => ({ ...r, providers: { business_name: nameMap.get(r.provider_id) ?? null } }));
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "topups"] });
   const approve = async (id: string) => {
     const { data, error } = await supabase.rpc("approve_topup", { p_topup_id: id, p_notes: null });
     if (error) toast.error(error.message);
     else if (!data?.ok) toast.error(data?.error ?? "Failed");
     else toast.success("Approved");
-    load();
+    refresh();
   };
   const reject = async (id: string) => {
     const reason = window.prompt("Rejection note (optional):") ?? "";
@@ -47,7 +43,7 @@ export function TopupsTab() {
     if (error) toast.error(error.message);
     else if (!data?.ok) toast.error(data?.error ?? "Failed");
     else toast.success("Rejected");
-    load();
+    refresh();
   };
   return (
     <div className="mt-4 space-y-3">
