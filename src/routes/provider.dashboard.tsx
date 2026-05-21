@@ -4,13 +4,15 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star } from "lucide-react";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
 type Booking = { id: string; lead_id: string; status: string; scheduled_at: string | null; amount: number | null; lead: { short_description: string; city_slug: string; address: string | null } | null };
 
 type EarningsRow = { id: string; amount: number | null; provider_confirmed_at: string | null; scheduled_at: string | null; status: string };
+
+type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string };
 
 function DashboardPage() {
   const { lang } = useI18n();
@@ -19,6 +21,8 @@ function DashboardPage() {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [earnings, setEarnings] = useState<EarningsRow[]>([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [ratingAvg, setRatingAvg] = useState<number | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -41,6 +45,17 @@ function DashboardPage() {
         .order("provider_confirmed_at", { ascending: false })
         .limit(500);
       setEarnings((done ?? []) as EarningsRow[]);
+      const [{ data: rvs }, { data: provRow }] = await Promise.all([
+        supabase
+          .from("reviews")
+          .select("id, rating, comment, created_at")
+          .eq("provider_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase.from("providers").select("rating_avg").eq("id", user.id).maybeSingle(),
+      ]);
+      setReviews((rvs ?? []) as ReviewRow[]);
+      setRatingAvg(provRow?.rating_avg ?? null);
     })();
   }, [loading, user, nav]);
 
@@ -101,6 +116,38 @@ function DashboardPage() {
             ))}
           </ul>
         )}
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">{L("Customer reviews", "သုံးသပ်ချက်များ")}</h2>
+            {ratingAvg != null && (
+              <span className="inline-flex items-center gap-1 text-sm font-semibold">
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                {ratingAvg.toFixed(1)}
+              </span>
+            )}
+          </div>
+          {reviews.length === 0 ? (
+            <p className="mt-3 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              {L("No reviews yet.", "သုံးသပ်ချက် မရှိသေး။")}
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {reviews.map((r) => (
+                <li key={r.id} className="rounded-xl border border-border bg-card p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {r.comment && <p className="mt-1 text-muted-foreground">{r.comment}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
