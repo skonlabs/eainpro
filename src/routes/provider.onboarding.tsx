@@ -8,7 +8,24 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { toast } from "sonner";
+
+const DOC_KINDS: { key: "nrc_front" | "nrc_back" | "selfie" | "business_license"; en: string; my: string }[] = [
+  { key: "nrc_front", en: "NRC / ID — front", my: "မှတ်ပုံတင် ရှေ့" },
+  { key: "nrc_back", en: "NRC / ID — back", my: "မှတ်ပုံတင် နောက်" },
+  { key: "selfie", en: "Selfie holding ID", my: "ID ကိုင်ထားသော ဆဲ(လ်)ဖီ" },
+  { key: "business_license", en: "Business license (optional)", my: "လုပ်ငန်းလိုင်စင် (ရွေး)" },
+];
+
+type DocRow = {
+  id: string;
+  kind: string;
+  storage_path: string;
+  status: "pending" | "approved" | "rejected";
+  review_note: string | null;
+  created_at: string;
+};
 
 export const Route = createFileRoute("/provider/onboarding")({
   component: OnboardingPage,
@@ -29,6 +46,8 @@ function OnboardingPage() {
   const [cities, setCities] = useState<Record<string, boolean>>({ yangon: true });
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [docs, setDocs] = useState<DocRow[]>([]);
+  const [uploadingKind, setUploadingKind] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -63,6 +82,12 @@ function OnboardingPage() {
         areas.forEach((a) => (m[a.city_slug] = true));
         setCities(m);
       }
+      const { data: dRows } = await supabase
+        .from("provider_documents")
+        .select("id, kind, storage_path, status, review_note, created_at")
+        .eq("provider_id", user.id)
+        .order("created_at", { ascending: false });
+      setDocs((dRows ?? []) as DocRow[]);
     })();
   }, [authLoading, user, nav]);
 
@@ -129,6 +154,34 @@ function OnboardingPage() {
     await refreshRoles();
     setSaving(false);
     nav({ to: "/provider/dashboard" });
+  };
+
+  const uploadDoc = async (kind: string, file: File) => {
+    if (!user) return;
+    setUploadingKind(kind);
+    const ext = file.name.split(".").pop() ?? "bin";
+    const path = `${user.id}/${kind}-${Date.now()}.${ext}`;
+    const up = await supabase.storage.from("provider-documents").upload(path, file, {
+      upsert: false, contentType: file.type || undefined,
+    });
+    if (up.error) { setUploadingKind(null); toast.error(up.error.message); return; }
+    const { data, error } = await supabase
+      .from("provider_documents")
+      .insert({ provider_id: user.id, kind, storage_path: path, status: "pending" })
+      .select("id, kind, storage_path, status, review_note, created_at")
+      .maybeSingle();
+    setUploadingKind(null);
+    if (error) { toast.error(error.message); return; }
+    if (data) setDocs((p) => [data as DocRow, ...p]);
+    toast.success("Uploaded — pending review");
+  };
+
+  const removeDoc = async (id: string) => {
+    const doc = docs.find((d) => d.id === id);
+    if (!doc) return;
+    setDocs((p) => p.filter((d) => d.id !== id));
+    await supabase.storage.from("provider-documents").remove([doc.storage_path]);
+    await supabase.from("provider_documents").delete().eq("id", id);
   };
 
   return (
@@ -263,6 +316,75 @@ function OnboardingPage() {
                   {lang === "en" ? c.en : c.my}
                 </label>
               ))}
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <div>
+              <div className="text-sm font-semibold">
+                {lang === "en" ? "Verification documents" : "အတည်ပြုစာရွက်စာတမ်း"}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {lang === "en"
+                  ? "Upload your ID and a selfie so admin can verify you. Required for the verified badge."
+                  : "သင်၏ မှတ်ပုံတင်နှင့် ဆဲ(လ်)ဖီ တင်ပါ။ verified ဖြစ်ရန် လိုအပ်သည်။"}
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {DOC_KINDS.map((k) => {
+                const mine = docs.filter((d) => d.kind === k.key);
+                const latest = mine[0];
+                return (
+                  <div key={k.key} className="rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-medium">{lang === "en" ? k.en : k.my}</div>
+                      {latest && (
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          latest.status === "approved" ? "bg-emerald-100 text-emerald-700"
+                            : latest.status === "rejected" ? "bg-destructive/10 text-destructive"
+                            : "bg-amber-100 text-amber-700"
+                        }`}>
+                          {latest.status === "approved" && <CheckCircle2 className="h-3 w-3" />}
+                          {latest.status === "rejected" && <XCircle className="h-3 w-3" />}
+                          {latest.status === "pending" && <Clock className="h-3 w-3" />}
+                          {latest.status}
+                        </span>
+                      )}
+                    </div>
+                    {latest?.status === "rejected" && latest.review_note && (
+                      <p className="mt-1 text-xs text-destructive">{latest.review_note}</p>
+                    )}
+                    <label className="mt-2 flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingKind === k.key
+                        ? (lang === "en" ? "Uploading…" : "တင်နေ…")
+                        : latest
+                        ? (lang === "en" ? "Replace file" : "အသစ်တင်")
+                        : (lang === "en" ? "Upload file" : "ဖိုင်တင်")}
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        disabled={!!uploadingKind}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadDoc(k.key, f);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                    {latest && (
+                      <button
+                        type="button"
+                        onClick={() => removeDoc(latest.id)}
+                        className="mt-1 text-[11px] text-muted-foreground hover:text-destructive"
+                      >
+                        {lang === "en" ? "Remove" : "ဖျက်"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
 
