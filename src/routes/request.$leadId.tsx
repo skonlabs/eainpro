@@ -57,6 +57,8 @@ type Booking = {
   amount: number | null;
   scheduled_at: string | null;
   status: string;
+  time_confirmed_by_customer?: boolean | null;
+  time_confirmed_by_provider?: boolean | null;
 };
 
 type Msg = {
@@ -591,6 +593,10 @@ function BookingPanel({
           <div>{booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleString() : "—"}</div>
         </div>
       </div>
+
+      {booking.status !== "completed" && booking.status !== "cancelled" && (
+        <RescheduleControl booking={booking} isCustomer={isCustomer} isProvider={isProvider && booking.provider_id === userId} L={L} onChanged={onChange} />
+      )}
 
       {canAdvance && (
         <Button onClick={advance} disabled={busy} className="w-full">{L(next.en, next.my)}</Button>
