@@ -94,6 +94,7 @@ function NewRequestPage() {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [err, setErr] = useState<string | null>(null);
   const [directProvider, setDirectProvider] = useState<{ id: string; name: string } | null>(null);
 
@@ -292,6 +293,7 @@ function NewRequestPage() {
 
   const submit = async () => {
     setErr(null);
+    if (submittingRef.current) return;
     if (!user) {
       nav({ to: "/signin", search: { redirect: "/request/new" } });
       return;
@@ -301,6 +303,7 @@ function NewRequestPage() {
       setErr(L("Please pick a service type.", "ဝန်ဆောင်မှု ရွေးပါ။"));
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     const { data: sts, error: stErr } = await supabase
       .from("service_types")
@@ -309,6 +312,7 @@ function NewRequestPage() {
       .in("slug", subSlugs);
     if (stErr || !sts || sts.length === 0) {
       setSubmitting(false);
+      submittingRef.current = false;
       setErr(L("Service type not configured. Please contact support.", "ဝန်ဆောင်မှု အသေးစိတ် မရှိသေးပါ။"));
       return;
     }
@@ -361,6 +365,7 @@ function NewRequestPage() {
       .single();
     if (leadErr || !lead) {
       setSubmitting(false);
+      submittingRef.current = false;
       setErr(leadErr?.message ?? L("Failed to create request.", "မအောင်မြင်ပါ။"));
       return;
     }
