@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, Phone, Send, CheckCircle2, Star, Lock } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Send, CheckCircle2, Star, Lock, XCircle } from "lucide-react";
 
 const search = z.object({ tab: z.string().optional() });
 
@@ -220,6 +220,21 @@ function LeadPage() {
 
           <TabsContent value="details" className="space-y-3">
             <DetailsCard lead={lead} photos={photos} isProvider={isProvider} hasUnlock={providerHasUnlock} L={L} />
+            {isCustomer && !booking && lead.status !== "cancelled" && lead.status !== "completed" && (
+              <CustomerCancelCard
+                leadId={lead.id}
+                L={L}
+                onCancelled={() => {
+                  setLead((prev) => (prev ? { ...prev, status: "cancelled" } : prev));
+                  toast.success(L("Request cancelled", "တောင်းဆို ပယ်ဖျက်ပြီး"));
+                }}
+              />
+            )}
+            {lead.status === "cancelled" && (
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                {L("This request has been cancelled.", "ဤတောင်းဆိုမှု ပယ်ဖျက်ပြီးပါပြီ။")}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="quotes" className="space-y-3">
