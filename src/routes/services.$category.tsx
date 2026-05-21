@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
 import { Star, BadgeCheck, PlusCircle } from "lucide-react";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/services/$category")({
   component: CategoryPage,

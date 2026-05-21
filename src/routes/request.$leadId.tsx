@@ -14,6 +14,7 @@ import { BookingPanel } from "@/components/request/BookingPanel";
 import { ChatPanel } from "@/components/request/ChatPanel";
 import { CustomerCancelCard } from "@/components/request/CustomerCancelCard";
 import type { Lead, Quote, Booking, Msg } from "@/components/request/types";
+import { LoadingState } from "@/components/site/LoadingState";
 
 const search = z.object({ tab: z.string().optional() });
 

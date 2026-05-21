@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star } from "lucide-react";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
