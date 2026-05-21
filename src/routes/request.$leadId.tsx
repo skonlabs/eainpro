@@ -34,6 +34,8 @@ type Lead = {
   full_description: string | null;
   status: string;
   created_at: string;
+  budget_min: number | null;
+  budget_max: number | null;
 };
 
 type Quote = {
@@ -79,6 +81,7 @@ function LeadPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [serviceName, setServiceName] = useState<{ en: string; my: string } | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -141,6 +144,15 @@ function LeadPage() {
       setBooking((bk as Booking) ?? null);
       setMessages((msgs ?? []) as Msg[]);
       setProviderHasUnlock(!!unlockRes.data);
+      const stId = (rpcLead as Lead).service_type_id;
+      if (stId) {
+        const { data: st } = await supabase
+          .from("service_types")
+          .select("name_en, name_my")
+          .eq("id", stId)
+          .maybeSingle();
+        if (st) setServiceName({ en: st.name_en, my: st.name_my });
+      }
     })();
   }, [authLoading, user, leadId, nav, isProvider]);
 
@@ -224,6 +236,7 @@ function LeadPage() {
             <DetailsCard
               lead={lead}
               photos={photos}
+              serviceName={serviceName}
               isProvider={isProvider}
               isCustomer={isCustomer}
               hasUnlock={providerHasUnlock}
@@ -349,6 +362,7 @@ function LeadPage() {
 function DetailsCard({
   lead,
   photos,
+  serviceName,
   isProvider,
   hasUnlock,
   isCustomer,
@@ -358,6 +372,7 @@ function DetailsCard({
 }: {
   lead: Lead;
   photos: string[];
+  serviceName: { en: string; my: string } | null;
   isProvider: boolean;
   hasUnlock: boolean;
   isCustomer: boolean;
@@ -401,6 +416,34 @@ function DetailsCard({
   };
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Service", "ဝန်ဆောင်မှု")}</div>
+          <div>{serviceName ? L(serviceName.en, serviceName.my) : "—"}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Status", "အခြေအနေ")}</div>
+          <div className="capitalize">{lead.status.replace(/_/g, " ")}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Posted", "တင်ခဲ့")}</div>
+          <div>{new Date(lead.created_at).toLocaleString()}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Budget", "ဘတ်ဂျက်")}</div>
+          <div>
+            {lead.budget_min || lead.budget_max
+              ? `${lead.budget_min ? lead.budget_min.toLocaleString() : "—"} – ${lead.budget_max ? lead.budget_max.toLocaleString() : "—"} MMK`
+              : "—"}
+          </div>
+        </div>
+      </div>
+      {lead.short_description && lead.full_description && lead.short_description !== lead.full_description && (
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Summary", "အကျဉ်း")}</div>
+          <p className="mt-1 text-sm">{lead.short_description}</p>
+        </div>
+      )}
       <div>
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Description", "ဖော်ပြ")}</div>
