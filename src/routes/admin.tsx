@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -23,6 +24,7 @@ import { LoadingState } from "@/components/site/LoadingState";
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — Fixido" }] }),
+  validateSearch: z.object({ tab: z.string().optional() }),
 });
 
 function AdminPage() {
@@ -30,7 +32,16 @@ function AdminPage() {
   const { user, roles, loading } = useAuth();
   const nav = useNavigate();
   const isAdmin = roles.includes("admin");
-  const [tab, setTab] = useState<string>("overview");
+  const { tab: tabParam } = Route.useSearch();
+  const [tab, setTabState] = useState<string>(tabParam ?? "overview");
+  useEffect(() => {
+    if (tabParam && tabParam !== tab) setTabState(tabParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+  const setTab = (next: string) => {
+    setTabState(next);
+    nav({ to: "/admin", search: { tab: next }, replace: true });
+  };
 
   useEffect(() => {
     if (loading) return;
