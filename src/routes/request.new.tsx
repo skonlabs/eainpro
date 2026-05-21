@@ -94,6 +94,7 @@ function NewRequestPage() {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [err, setErr] = useState<string | null>(null);
   const [directProvider, setDirectProvider] = useState<{ id: string; name: string } | null>(null);
 
