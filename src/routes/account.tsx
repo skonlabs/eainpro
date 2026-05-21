@@ -11,6 +11,7 @@ import { CITIES, CATEGORIES, TOWNSHIPS } from "@/lib/catalog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, MapPin, Plus, Star, Trash2, BadgeCheck, LogOut, Briefcase } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
