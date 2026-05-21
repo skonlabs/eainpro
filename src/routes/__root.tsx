@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -137,7 +138,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isFullBleed = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -145,7 +147,13 @@ function RootComponent() {
           <div className="flex min-h-screen flex-col bg-background">
             <AppBar />
             <BlockedBanner />
-            <main className="mx-auto w-full max-w-screen-md flex-1 px-3 pb-24 pt-3 sm:px-4">
+            <main
+              className={
+                isFullBleed
+                  ? "flex-1 w-full"
+                  : "mx-auto w-full max-w-screen-md flex-1 px-3 pb-24 pt-3 sm:px-4"
+              }
+            >
               <Outlet />
             </main>
           </div>
