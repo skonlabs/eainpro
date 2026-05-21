@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/p/$providerId")({
   component: ProviderProfilePage,

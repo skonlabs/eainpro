@@ -22,6 +22,7 @@ import {
   type Lang,
   type Lfn,
 } from "./atoms";
+import { InlineLoading } from "@/components/site/LoadingState";
 
 type CustomerReq = {
   id: string;
