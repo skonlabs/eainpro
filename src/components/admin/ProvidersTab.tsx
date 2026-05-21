@@ -10,7 +10,6 @@ type ProviderRow = {
   id: string;
   business_name: string | null;
   is_verified: boolean;
-  is_suspended: boolean;
   rating_avg: number;
   jobs_completed: number;
   created_at: string;
@@ -24,7 +23,7 @@ export function ProvidersTab() {
   const refresh = async () => {
     const { data } = await supabase
       .from("providers")
-      .select("id, business_name, is_verified, is_suspended, rating_avg, jobs_completed, created_at")
+      .select("id, business_name, is_verified, rating_avg, jobs_completed, created_at")
       .order("created_at", { ascending: false });
     const list = (data ?? []) as ProviderRow[];
     if (list.length > 0) {
@@ -48,11 +47,6 @@ export function ProvidersTab() {
     if (error) toast.error(error.message); else toast.success(v ? "Verified" : "Unverified");
     refresh();
   };
-  const setSuspended = async (id: string, s: boolean) => {
-    const { error } = await supabase.from("providers").update({ is_suspended: s }).eq("id", id);
-    if (error) toast.error(error.message); else toast.success(s ? "Suspended" : "Unsuspended");
-    refresh();
-  };
   if (!providers) return <Skeleton className="mt-4 h-48 w-full" />;
   return (
     <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
@@ -62,7 +56,6 @@ export function ProvidersTab() {
             <div className="flex items-center gap-2">
               <span className="font-medium">{p.business_name ?? "—"}</span>
               {p.is_verified && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Verified</span>}
-              {p.is_suspended && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Suspended</span>}
               {p.is_blocked && (
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.block_type === "hard" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
                   {p.block_type === "hard" ? "Blocked" : "Suspended"}
@@ -74,9 +67,6 @@ export function ProvidersTab() {
           <div className="flex gap-2">
             <Button size="sm" variant={p.is_verified ? "outline" : "default"} onClick={() => setVerified(p.id, !p.is_verified)}>
               {p.is_verified ? (lang==="en"?"Unverify":"ပယ်ဖျက်") : (lang==="en"?"Verify":"အတည်ပြု")}
-            </Button>
-            <Button size="sm" variant="ghost" className={p.is_suspended ? "" : "text-destructive hover:bg-destructive/10"} onClick={() => setSuspended(p.id, !p.is_suspended)}>
-              {p.is_suspended ? "Unsuspend" : "Suspend"}
             </Button>
             <BlockUserDialog
               userId={p.id}
