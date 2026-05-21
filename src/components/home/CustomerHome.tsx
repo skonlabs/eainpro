@@ -31,6 +31,9 @@ type CustomerReq = {
   status: string;
   created_at: string;
   quotes_count: number;
+  short_description: string | null;
+  preferred_date: string | null;
+  preferred_time: string | null;
 };
 
 type CustomerBooking = {
@@ -67,7 +70,7 @@ export function CustomerHome({
       const [reqRes, bookRes] = await Promise.all([
         supabase
           .from("customer_leads")
-          .select("id, address, status, created_at, service_type:service_types(category_slug), quotes(id)")
+          .select("id, address, status, created_at, short_description, preferred_date, preferred_time, service_type:service_types(category_slug), quotes(id)")
           .eq("customer_id", userId)
           .order("created_at", { ascending: false })
           .limit(5),
@@ -81,7 +84,7 @@ export function CustomerHome({
       ]);
 
       const reqs = (reqRes.data ?? []).map(
-        (r: { id: string; address: string | null; status: string; created_at: string; service_type: { category_slug: string } | { category_slug: string }[] | null; quotes: unknown[] }) => ({
+        (r: { id: string; address: string | null; status: string; created_at: string; short_description: string | null; preferred_date: string | null; preferred_time: string | null; service_type: { category_slug: string } | { category_slug: string }[] | null; quotes: unknown[] }) => ({
           id: r.id,
           category_slug: Array.isArray(r.service_type)
             ? r.service_type[0]?.category_slug ?? ""
@@ -90,6 +93,9 @@ export function CustomerHome({
           status: r.status,
           created_at: r.created_at,
           quotes_count: (r.quotes ?? []).length,
+          short_description: r.short_description,
+          preferred_date: r.preferred_date,
+          preferred_time: r.preferred_time,
         }),
       );
       setRequests(reqs);
