@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,26 +7,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export function LeadsTab() {
-  const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"all"|"open"|"booked"|"cancelled"|"completed"|"expired">("all");
   const [q, setQ] = useState("");
-  const load = async () => {
-    setRows(null);
-    let query = supabase
-      .from("customer_leads")
-      .select("id, short_description, customer_name, customer_phone, city_slug, status, created_at, customer_id, category_slug, service_type_slug")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (filter !== "all") query = query.eq("status", filter);
-    const { data, error } = await query;
-    if (error) { toast.error(error.message); setRows([]); return; }
-    setRows(data ?? []);
-  };
-  useEffect(() => { load(); }, [filter]);
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["admin", "leads", filter],
+    queryFn: async () => {
+      let query = supabase
+        .from("customer_leads")
+        .select("id, short_description, customer_name, customer_phone, city_slug, status, created_at, customer_id, category_slug, service_type_slug")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (filter !== "all") query = query.eq("status", filter);
+      const { data, error } = await query;
+      if (error) { toast.error(error.message); return []; }
+      return data ?? [];
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "leads"] });
   const setStatus = async (id: string, status: string) => {
     if (!confirm(`Set lead status to "${status}"?`)) return;
     const { error } = await supabase.from("customer_leads").update({ status }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Updated"); load(); }
+    if (error) toast.error(error.message); else { toast.success("Updated"); refresh(); }
   };
   const filtered = (rows ?? []).filter((r) => {
     if (!q.trim()) return true;

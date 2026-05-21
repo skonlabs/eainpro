@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,28 +7,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 
 export function VerificationTab() {
-  const [rows, setRows] = useState<any[] | null>(null);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [previewing, setPreviewing] = useState<{ url: string; row: any } | null>(null);
-  const load = async () => {
-    setRows(null);
-    let q = supabase
-      .from("provider_documents")
-      .select("id, provider_id, kind, storage_path, status, review_note, created_at, reviewed_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (filter !== "all") q = q.eq("status", filter);
-    const { data, error } = await q;
-    if (error) { toast.error(error.message); setRows([]); return; }
-    const list = data ?? [];
-    const provIds = [...new Set(list.map((r: any) => r.provider_id))];
-    const { data: provs } = provIds.length
-      ? await supabase.from("providers").select("id, business_name, is_verified").in("id", provIds)
-      : { data: [] as any[] };
-    const map = new Map((provs ?? []).map((p: any) => [p.id, p]));
-    setRows(list.map((r: any) => ({ ...r, provider: map.get(r.provider_id) })));
-  };
-  useEffect(() => { load(); }, [filter]);
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["admin", "verification", filter],
+    queryFn: async () => {
+      let q = supabase
+        .from("provider_documents")
+        .select("id, provider_id, kind, storage_path, status, review_note, created_at, reviewed_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (filter !== "all") q = q.eq("status", filter);
+      const { data, error } = await q;
+      if (error) { toast.error(error.message); return []; }
+      const list = data ?? [];
+      const provIds = [...new Set(list.map((r: any) => r.provider_id))];
+      const { data: provs } = provIds.length
+        ? await supabase.from("providers").select("id, business_name, is_verified").in("id", provIds)
+        : { data: [] as any[] };
+      const map = new Map((provs ?? []).map((p: any) => [p.id, p]));
+      return list.map((r: any) => ({ ...r, provider: map.get(r.provider_id) }));
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "verification"] });
 
   const openPreview = async (row: any) => {
     const { data, error } = await supabase.storage.from("provider-documents").createSignedUrl(row.storage_path, 300);
@@ -44,7 +47,7 @@ export function VerificationTab() {
     if (error) return toast.error(error.message);
     toast.success(status);
     setPreviewing(null);
-    load();
+    refresh();
   };
 
   return (
