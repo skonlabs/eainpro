@@ -362,6 +362,7 @@ function LeadPage() {
 function DetailsCard({
   lead,
   photos,
+  serviceName,
   isProvider,
   hasUnlock,
   isCustomer,
@@ -371,6 +372,7 @@ function DetailsCard({
 }: {
   lead: Lead;
   photos: string[];
+  serviceName: { en: string; my: string } | null;
   isProvider: boolean;
   hasUnlock: boolean;
   isCustomer: boolean;
