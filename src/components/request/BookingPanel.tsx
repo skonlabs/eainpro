@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Star, AlertTriangle } from "lucide-react";
+import { Star, AlertTriangle, Phone, MessageCircle, MapPin, ShieldCheck, User } from "lucide-react";
 import { RescheduleControl } from "./RescheduleControl";
 import type { Lead, Booking, T } from "./types";
 
@@ -39,6 +40,26 @@ export function BookingPanel({
   const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
   const [reportText, setReportText] = useState("");
   const [reported, setReported] = useState(false);
+  const [providerInfo, setProviderInfo] = useState<{
+    id: string;
+    business_name: string | null;
+    is_verified: boolean;
+    rating_avg: number | null;
+    rating_count: number | null;
+    logo_url: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!booking?.provider_id) { setProviderInfo(null); return; }
+    let active = true;
+    supabase
+      .from("providers")
+      .select("id, business_name, is_verified, rating_avg, rating_count, logo_url")
+      .eq("id", booking.provider_id)
+      .maybeSingle()
+      .then(({ data }) => { if (active) setProviderInfo(data as any); });
+    return () => { active = false; };
+  }, [booking?.provider_id]);
 
   const myRole: "customer" | "provider" | null = isCustomer ? "customer" : (isProvider && booking?.provider_id === userId ? "provider" : null);
 
@@ -145,6 +166,73 @@ export function BookingPanel({
 
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      {/* Counterparty card */}
+      {isCustomer && providerInfo && (
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-base font-bold text-primary">
+            {providerInfo.logo_url
+              ? <img src={providerInfo.logo_url} alt="" className="h-full w-full object-cover" />
+              : (providerInfo.business_name ?? "?").slice(0, 1)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-sm font-semibold">{providerInfo.business_name ?? L("Provider", "ပညာရှင်")}</span>
+              {providerInfo.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+              {providerInfo.rating_avg != null && (
+                <span className="inline-flex items-center gap-0.5">
+                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                  {providerInfo.rating_avg.toFixed(1)}{providerInfo.rating_count ? ` (${providerInfo.rating_count})` : ""}
+                </span>
+              )}
+              <Link to="/p/$providerId" params={{ providerId: providerInfo.id }} className="font-semibold text-primary hover:underline">
+                {L("View profile", "ပရိုဖိုင်")}
+              </Link>
+            </div>
+          </div>
+          <Link
+            to="/request/$leadId"
+            params={{ leadId: lead.id }}
+            search={{ tab: "messages" }}
+            className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            <MessageCircle className="h-3 w-3" /> {L("Chat", "စကား")}
+          </Link>
+        </div>
+      )}
+      {isProvider && booking.provider_id === userId && (
+        <div className="rounded-xl border border-border bg-background p-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold">{lead.customer_name || L("Customer", "ဖောက်သည်")}</div>
+              {lead.customer_phone && (
+                <a href={`tel:${lead.customer_phone}`} className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                  <Phone className="h-3 w-3" /> {lead.customer_phone}
+                </a>
+              )}
+            </div>
+            <Link
+              to="/request/$leadId"
+              params={{ leadId: lead.id }}
+              search={{ tab: "messages" }}
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+            >
+              <MessageCircle className="h-3 w-3" /> {L("Chat", "စကား")}
+            </Link>
+          </div>
+          {lead.address && (
+            <div className="mt-2 flex items-start gap-1.5 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{lead.address}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Status", "အခြေအနေ")}</div>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{booking.status.replace(/_/g, " ")}</span>
