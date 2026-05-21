@@ -66,6 +66,9 @@ function AdminPage() {
               <TabsTrigger value="pricing">Lead pricing</TabsTrigger>
               <TabsTrigger value="topups">Top-ups</TabsTrigger>
               <TabsTrigger value="refunds">Refunds</TabsTrigger>
+              <TabsTrigger value="refund-requests">Refund requests</TabsTrigger>
+              <TabsTrigger value="verification">Verification</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
               <TabsTrigger value="revenue">Revenue</TabsTrigger>
               <TabsTrigger value="audit">Audit log</TabsTrigger>
               <TabsTrigger value="providers">Providers</TabsTrigger>
@@ -80,6 +83,9 @@ function AdminPage() {
           <TabsContent value="pricing"><PricingTab /></TabsContent>
           <TabsContent value="topups"><TopupsTab /></TabsContent>
           <TabsContent value="refunds"><RefundsTab /></TabsContent>
+          <TabsContent value="refund-requests"><RefundRequestsTab /></TabsContent>
+          <TabsContent value="verification"><VerificationTab /></TabsContent>
+          <TabsContent value="reports"><ReportsTab /></TabsContent>
           <TabsContent value="revenue"><RevenueTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
           <TabsContent value="providers"><ProvidersTab /></TabsContent>
