@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,17 @@ export function QuoteCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">{quote.provider?.business_name ?? L("Provider", "ပညာရှင်")}</span>
+            {quote.provider_id ? (
+              <Link
+                to="/p/$providerId"
+                params={{ providerId: quote.provider_id }}
+                className="font-semibold underline-offset-2 hover:underline"
+              >
+                {quote.provider?.business_name ?? L("Provider", "ပညာရှင်")}
+              </Link>
+            ) : (
+              <span className="font-semibold">{quote.provider?.business_name ?? L("Provider", "ပညာရှင်")}</span>
+            )}
             {quote.provider?.rating_avg != null && (
               <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
                 <Star className="h-3 w-3 fill-current" />
