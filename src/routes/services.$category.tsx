@@ -98,9 +98,10 @@ function CategoryPage() {
         </h2>
 
         {!rows && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            {lang === "en" ? "Loading…" : "တင်နေသည်…"}
-          </p>
+          <LoadingState
+            label={lang === "en" ? "Loading providers…" : "တင်နေသည်…"}
+            className="mt-4 min-h-[20vh]"
+          />
         )}
 
         {rows && rows.length === 0 && (

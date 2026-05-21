@@ -152,7 +152,11 @@ function LeadPage() {
     );
   }
   if (!lead) {
-    return <div className="mx-auto max-w-2xl px-4 py-10 text-sm text-muted-foreground">{L("Loading…", "ခဏစောင့်…")}</div>;
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <LoadingState label={L("Loading…", "ခဏစောင့်ပါ…")} />
+      </div>
+    );
   }
 
   return (

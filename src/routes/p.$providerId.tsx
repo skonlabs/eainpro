@@ -276,7 +276,7 @@ function ProviderProfilePage() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-14">
-          <p className="text-sm text-muted-foreground">{lang === "en" ? "Loading…" : "တင်နေသည်…"}</p>
+          <LoadingState label={lang === "en" ? "Loading…" : "တင်နေသည်…"} />
         </main>
       </div>
     );
