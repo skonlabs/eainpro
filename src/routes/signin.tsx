@@ -22,17 +22,23 @@ function SignInPage() {
   const { lang } = useI18n();
   const { redirect } = Route.useSearch();
   const nav = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, roles, rolesReady } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const defaultDestination = roles.includes("provider")
+    ? "/provider/dashboard"
+    : roles.includes("admin")
+      ? "/admin"
+      : "/";
+
   useEffect(() => {
-    if (!authLoading && user) {
-      nav({ to: safeRedirect(redirect, "/"), replace: true });
+    if (!authLoading && rolesReady && user) {
+      nav({ to: safeRedirect(redirect, defaultDestination), replace: true });
     }
-  }, [authLoading, user, nav, redirect]);
+  }, [authLoading, rolesReady, user, nav, redirect, defaultDestination]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +47,6 @@ function SignInPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
-    nav({ to: safeRedirect(redirect, "/") });
   };
 
   return (
