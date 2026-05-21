@@ -22,7 +22,7 @@ export function VerificationTab() {
       const { data, error } = await q;
       if (error) { toast.error(error.message); return []; }
       const list = data ?? [];
-      const provIds = [...new Set(list.map((r: any) => r.provider_id))];
+      const provIds = [...new Set(list.map((r: any) => r.provider_id).filter(Boolean))];
       const { data: provs } = provIds.length
         ? await supabase.from("providers").select("id, business_name, is_verified").in("id", provIds)
         : { data: [] as any[] };
