@@ -18,6 +18,7 @@ import {
   Package,
   Coins,
   Shield,
+  Activity,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
@@ -46,6 +47,7 @@ import { AuditTab } from "@/components/admin/AuditTab";
 import { ProvidersTab } from "@/components/admin/ProvidersTab";
 import { LeadsTab } from "@/components/admin/LeadsTab";
 import { CustomersTab } from "@/components/admin/CustomersTab";
+import { UserStatsTab } from "@/components/admin/UserStatsTab";
 import { PaymentMethodsTab } from "@/components/admin/PaymentMethodsTab";
 import { PackagesTab } from "@/components/admin/PackagesTab";
 import { AdjustWalletTab } from "@/components/admin/AdjustWalletTab";
@@ -60,6 +62,7 @@ export const Route = createFileRoute("/admin")({
 type TabKey =
   | "overview"
   | "revenue"
+  | "user-stats"
   | "topups"
   | "refunds"
   | "refund-requests"
@@ -83,6 +86,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { key: "overview", label: "Overview", icon: LayoutDashboard, subtitle: "Key metrics at a glance" },
       { key: "revenue", label: "Revenue", icon: LineChart, subtitle: "Earnings, splits, trends" },
+      { key: "user-stats", label: "User stats", icon: Activity, subtitle: "DAU & sign-ups (WoW / MoM)" },
     ],
   },
   {
@@ -126,6 +130,7 @@ function tabComponent(key: TabKey, setTab: (k: TabKey) => void) {
   switch (key) {
     case "overview": return <OverviewTab onJump={(t) => setTab(t as TabKey)} />;
     case "revenue": return <RevenueTab />;
+    case "user-stats": return <UserStatsTab />;
     case "topups": return <TopupsTab />;
     case "refunds": return <RefundsTab />;
     case "refund-requests": return <RefundRequestsTab />;
