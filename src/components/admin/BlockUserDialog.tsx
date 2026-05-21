@@ -7,7 +7,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +22,11 @@ type Props = {
 };
 
 export function BlockUserDialog({ userId, userLabel, isBlocked, blockType, onChanged }: Props) {
-  const [open, setOpen] = useState(false);
-  const [type, setType] = useState<"soft" | "hard">("soft");
+  const [openType, setOpenType] = useState<"soft" | "hard" | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const apply = async (block: boolean) => {
+  const apply = async (block: boolean, type: "soft" | "hard" = "soft") => {
     setBusy(true);
     const { data, error } = await supabase.rpc("admin_set_user_blocked", {
       p_user_id: userId,
@@ -39,76 +37,79 @@ export function BlockUserDialog({ userId, userLabel, isBlocked, blockType, onCha
     setBusy(false);
     if (error) return toast.error(error.message);
     if (!data?.ok) return toast.error(data?.error ?? "Failed");
-    toast.success(block ? `Blocked (${type})` : "Unblocked");
-    setOpen(false);
+    toast.success(
+      block
+        ? type === "hard"
+          ? "Account blocked — sign-in disabled"
+          : "Account suspended — sign-in allowed, actions restricted"
+        : "Restriction lifted",
+    );
+    setOpenType(null);
     setReason("");
     onChanged?.();
   };
 
   if (isBlocked) {
+    const label = blockType === "hard" ? "Unblock" : "Unsuspend";
     return (
       <Button
         size="sm"
         variant="outline"
         disabled={busy}
         onClick={() => apply(false)}
-        title={blockType ? `Currently ${blockType}-blocked` : undefined}
+        title={blockType === "hard" ? "Currently blocked (sign-in disabled)" : "Currently suspended (restricted)"}
       >
-        Unblock{blockType ? ` (${blockType})` : ""}
+        {label}
       </Button>
     );
   }
 
+  const isHard = openType === "hard";
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">
+    <>
+      <div className="inline-flex gap-1.5">
+        <Button size="sm" variant="outline" onClick={() => setOpenType("soft")}>
+          Suspend
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:bg-destructive/10"
+          onClick={() => setOpenType("hard")}
+        >
           Block
         </Button>
-      </DialogTrigger>
-      <DialogContent>
+      </div>
+      <Dialog open={openType !== null} onOpenChange={(o) => !o && setOpenType(null)}>
+        <DialogContent>
         <DialogHeader>
-          <DialogTitle>Block {userLabel}</DialogTitle>
+          <DialogTitle>
+            {isHard ? "Block" : "Suspend"} {userLabel}
+          </DialogTitle>
           <DialogDescription>
-            Soft block: user can still sign in but cannot create requests, send messages,
-            book, leave reviews, or unlock leads. Hard block: same restrictions and active
-            sessions are revoked immediately.
+            {isHard
+              ? "Block prevents the user from signing in at all. Active sessions are revoked immediately and future sign-in attempts are rejected with an explanatory message."
+              : "Suspend lets the user keep signing in and browsing, but they cannot create requests, send messages, book, leave reviews, view or unlock leads. A persistent banner explains the restriction."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Block type</Label>
-            <div className="mt-1 flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={type === "soft" ? "default" : "outline"}
-                onClick={() => setType("soft")}
-              >
-                Soft
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={type === "hard" ? "default" : "outline"}
-                onClick={() => setType("hard")}
-              >
-                Hard
-              </Button>
-            </div>
-          </div>
           <div>
             <Label className="text-xs">Reason (optional, shown in audit log)</Label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. repeated abuse reports" />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
-          <Button variant="destructive" disabled={busy} onClick={() => apply(true)}>
-            {busy ? "Applying…" : `Block (${type})`}
+          <Button variant="outline" onClick={() => setOpenType(null)} disabled={busy}>Cancel</Button>
+          <Button
+            variant={isHard ? "destructive" : "default"}
+            disabled={busy}
+            onClick={() => apply(true, openType ?? "soft")}
+          >
+            {busy ? "Applying…" : isHard ? "Block account" : "Suspend account"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

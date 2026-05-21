@@ -45,9 +45,30 @@ function SignInPage() {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      return setErr(error.message);
+    }
+    // Reject hard-blocked accounts immediately.
+    const uid = data.user?.id;
+    if (uid) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("is_blocked, block_type, blocked_reason")
+        .eq("id", uid)
+        .maybeSingle();
+      if (prof?.is_blocked && prof.block_type === "hard") {
+        await supabase.auth.signOut({ scope: "local" });
+        setLoading(false);
+        return setErr(
+          lang === "en"
+            ? `Your account has been blocked and cannot sign in.${prof.blocked_reason ? ` Reason: ${prof.blocked_reason}.` : ""} Please contact support.`
+            : `သင်၏ အကောင့်ကို ပိတ်ထားသဖြင့် ဝင်ရောက်၍ မရပါ။${prof.blocked_reason ? ` အကြောင်းရင်း — ${prof.blocked_reason}။` : ""} ဆက်သွယ်ပါ။`,
+        );
+      }
+    }
     setLoading(false);
-    if (error) return setErr(error.message);
   };
 
   return (

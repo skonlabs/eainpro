@@ -72,8 +72,8 @@ export function CustomersTab() {
                   <td className="p-3 text-xs text-muted-foreground">{new Date(c.last).toLocaleString()}</td>
                   <td className="p-3">
                     {c.is_blocked ? (
-                      <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                        Blocked{c.block_type ? ` · ${c.block_type}` : ""}
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c.block_type === "hard" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
+                        {c.block_type === "hard" ? "Blocked" : "Suspended"}
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">Active</span>
