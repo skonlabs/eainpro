@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { fmt } from "@/lib/wallet";
 
 export function RefundRequestsTab() {
-  const [filter, setFilter] = useState<"open" | "approved" | "rejected" | "all">("open");
+  const [filter, setFilter] = useState<"open" | "approved" | "rejected" | "all">("all");
   const qc = useQueryClient();
   const { data: rows } = useQuery({
     queryKey: ["admin", "refund-requests", filter],
