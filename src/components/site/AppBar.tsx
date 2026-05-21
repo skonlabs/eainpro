@@ -104,7 +104,7 @@ export function AppBar() {
           </button>
         )}
 
-        <h1 className="flex-1 truncate font-display text-base font-extrabold tracking-tight sm:text-lg">
+        <h1 className="flex-1 truncate font-display text-base font-extrabold tracking-tight">
           {isRoot ? "" : title}
         </h1>
 
