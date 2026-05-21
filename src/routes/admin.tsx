@@ -224,7 +224,7 @@ function AdminSidebar({ current, onSelect }: { current: TabKey; onSelect: (k: Ta
   return (
     <Sidebar
       collapsible="icon"
-      className="top-14 !h-[calc(100svh-3.5rem)]"
+      className="top-14 !h-[calc(100svh-3.5rem-4rem)]"
     >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-1.5">
