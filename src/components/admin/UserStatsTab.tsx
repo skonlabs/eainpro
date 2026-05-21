@@ -43,7 +43,10 @@ function fmtNum(n: number) {
   return Number(n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-const COLOR_CUST = "hsl(var(--primary))";
+// Use raw token values. hsl(var(--primary)) is invalid because --primary
+// is defined as oklch(...), so recharts was falling back to its defaults
+// and the line color drifted away from the bar color.
+const COLOR_CUST = "var(--primary)";
 const COLOR_PROV = "hsl(35 92% 50%)";
 
 function shortDay(s: string) {
