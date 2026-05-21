@@ -55,9 +55,6 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
     const patch: Record<string, unknown> = { status: next.key };
     if (next.key === "completed") patch.provider_confirmed_at = new Date().toISOString();
     const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
-    if (!error && next.key === "completed") {
-      await supabase.from("customer_leads").update({ status: "completed" }).eq("id", leadId);
-    }
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Updated");
