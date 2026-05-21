@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { fetchProviderNames, fetchLeadsByIds, fetchUnlocksByIds } from "@/lib/admin-joins";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -17,18 +18,11 @@ export function RefundRequestsTab() {
       const { data, error } = await q;
       if (error) { toast.error(error.message); return []; }
       const list = data ?? [];
-      const provIds = [...new Set(list.map((r: any) => r.provider_id).filter(Boolean))];
-      const leadIds = [...new Set(list.map((r: any) => r.lead_id).filter(Boolean))];
-      const unlockIds = [...new Set(list.map((r: any) => r.unlock_id).filter(Boolean))];
-      const [{ data: provs }, leadRes, { data: unlocks }] = await Promise.all([
-        provIds.length ? supabase.from("providers").select("id, business_name").in("id", provIds) : Promise.resolve({ data: [] as any[] }),
-        leadIds.length ? supabase.rpc("get_customer_leads", { _lead_ids: leadIds }) : Promise.resolve({ data: [] as any[] }),
-        unlockIds.length ? supabase.from("provider_lead_unlocks").select("id, unlock_price_credits, refunded_amount_credits, status").in("id", unlockIds) : Promise.resolve({ data: [] as any[] }),
+      const [provMap, leadMap, unlockMap] = await Promise.all([
+        fetchProviderNames(list.map((r: any) => r.provider_id)),
+        fetchLeadsByIds(list.map((r: any) => r.lead_id)),
+        fetchUnlocksByIds(list.map((r: any) => r.unlock_id)),
       ]);
-      const provMap = new Map((provs ?? []).map((p: any) => [p.id, p.business_name ?? null]));
-      const leadArr = Array.isArray(leadRes?.data) ? leadRes.data : [];
-      const leadMap = new Map(leadArr.map((l: any) => [l.id, l]));
-      const unlockMap = new Map((unlocks ?? []).map((u: any) => [u.id, u]));
       return list.map((r: any) => ({
         ...r,
         provider_name: provMap.get(r.provider_id) ?? r.provider_id.slice(0, 8),
