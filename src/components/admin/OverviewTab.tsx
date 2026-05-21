@@ -4,31 +4,43 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fmt } from "@/lib/wallet";
 
 export function OverviewTab({ onJump }: { onJump: (tab: string) => void }) {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<{
+    leads: number;
+    unlocks: number;
+    revenue: number;
+    pending: number;
+  } | null>(null);
   useEffect(() => {
     (async () => {
       const [
         { count: leads },
-        { count: unlocks },
-        { data: unlockRows },
+        { data: byService },
         { count: pending },
       ] = await Promise.all([
         supabase.from("customer_leads").select("*", { head: true, count: "exact" }),
-        supabase.from("provider_lead_unlocks").select("*", { head: true, count: "exact" }),
+        // Aggregated view — matches the Revenue tab and avoids the 1000-row
+        // SELECT cap that was capping the old client-side sum.
         supabase
-          .from("provider_lead_unlocks")
-          .select("unlock_price_credits, refunded_amount_credits"),
+          .from("lead_revenue_by_service")
+          .select("unlocks_count, net_credits"),
         supabase
           .from("provider_credit_topups")
           .select("*", { head: true, count: "exact" })
           .eq("status", "pending"),
       ]);
-      const revenue = (unlockRows ?? []).reduce(
-        (s, r: any) =>
-          s + ((r.unlock_price_credits ?? 0) - (r.refunded_amount_credits ?? 0)),
-        0,
+      const totals = (byService ?? []).reduce(
+        (a, r: { unlocks_count: number | null; net_credits: number | string | null }) => ({
+          unlocks: a.unlocks + (r.unlocks_count ?? 0),
+          revenue: a.revenue + Number(r.net_credits ?? 0),
+        }),
+        { unlocks: 0, revenue: 0 },
       );
-      setStats({ leads: leads ?? 0, unlocks: unlocks ?? 0, revenue, pending: pending ?? 0 });
+      setStats({
+        leads: leads ?? 0,
+        unlocks: totals.unlocks,
+        revenue: totals.revenue,
+        pending: pending ?? 0,
+      });
     })();
   }, []);
   if (!stats) return <Skeleton className="mt-4 h-32 w-full" />;
