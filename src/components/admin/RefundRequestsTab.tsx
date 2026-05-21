@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { fetchProviderNames, fetchLeadsByIds, fetchUnlocksByIds } from "@/lib/admin-joins";
+import { fetchProviderNames, fetchLeadsByIds } from "@/lib/admin-joins";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -13,23 +13,96 @@ export function RefundRequestsTab() {
   const { data: rows } = useQuery({
     queryKey: ["admin", "refund-requests"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("unlock_refund_requests")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) { toast.error(error.message); return []; }
-      const list = data ?? [];
-      const [provMap, leadMap, unlockMap] = await Promise.all([
-        fetchProviderNames(list.map((r: any) => r.provider_id)),
-        fetchLeadsByIds(list.map((r: any) => r.lead_id)),
-        fetchUnlocksByIds(list.map((r: any) => r.unlock_id)),
+      const [{ data: requestData, error: requestError }, { data: legacyData, error: legacyError }] = await Promise.all([
+        supabase
+          .from("unlock_refund_requests")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("lead_refunds")
+          .select("id, unlock_id, amount_credits, reason, approved_by, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200),
       ]);
-      return list.map((r: any) => ({
+
+      if (requestError) {
+        toast.error(requestError.message);
+        return [];
+      }
+      if (legacyError) {
+        toast.error(legacyError.message);
+      }
+
+      const requestList = requestData ?? [];
+      const requestUnlockIds = new Set(requestList.map((r: any) => r.unlock_id));
+      const groupedLegacy = new Map<string, any>();
+
+      for (const refund of legacyData ?? []) {
+        if (!refund.unlock_id || requestUnlockIds.has(refund.unlock_id)) continue;
+        const existing = groupedLegacy.get(refund.unlock_id);
+        const reason = refund.reason?.trim() || "Legacy refund";
+
+        if (!existing) {
+          groupedLegacy.set(refund.unlock_id, {
+            id: `legacy-${refund.unlock_id}`,
+            unlock_id: refund.unlock_id,
+            provider_id: null,
+            lead_id: null,
+            reason,
+            status: "approved",
+            resolution_note: "Legacy provider lead refund",
+            resolved_at: refund.created_at,
+            resolved_by: refund.approved_by,
+            created_at: refund.created_at,
+            legacy: true,
+            amount_credits: refund.amount_credits ?? 0,
+          });
+          continue;
+        }
+
+        existing.amount_credits += refund.amount_credits ?? 0;
+        existing.created_at = new Date(refund.created_at) < new Date(existing.created_at) ? refund.created_at : existing.created_at;
+        existing.resolved_at = new Date(refund.created_at) > new Date(existing.resolved_at) ? refund.created_at : existing.resolved_at;
+        if (!existing.reason.includes(reason)) {
+          existing.reason = `${existing.reason} | ${reason}`;
+        }
+      }
+
+      const combinedBase = [...requestList, ...groupedLegacy.values()];
+      const unlockIds = [...new Set(combinedBase.map((r: any) => r.unlock_id).filter(Boolean))];
+      const { data: unlocks, error: unlockError } = await supabase
+        .from("provider_lead_unlocks")
+        .select("id, provider_id, lead_id, unlock_price_credits, refunded_amount_credits, status")
+        .in("id", unlockIds);
+
+      if (unlockError) {
+        toast.error(unlockError.message);
+      }
+
+      const unlockMap = new Map((unlocks ?? []).map((u: any) => [u.id, u]));
+      const hydrated = combinedBase
+        .map((r: any) => {
+          const unlock = unlockMap.get(r.unlock_id) ?? null;
+          return {
+            ...r,
+            provider_id: r.provider_id ?? unlock?.provider_id ?? null,
+            lead_id: r.lead_id ?? unlock?.lead_id ?? null,
+            unlock,
+          };
+        })
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      const [provMap, leadMap] = await Promise.all([
+        fetchProviderNames(hydrated.map((r: any) => r.provider_id)),
+        fetchLeadsByIds(hydrated.map((r: any) => r.lead_id)),
+      ]);
+
+      return hydrated.map((r: any) => ({
         ...r,
-        provider_name: provMap.get(r.provider_id) ?? r.provider_id.slice(0, 8),
+        provider_name: r.provider_id ? (provMap.get(r.provider_id) ?? r.provider_id.slice(0, 8)) : "Unknown provider",
         lead: leadMap.get(r.lead_id) ?? null,
-        unlock: unlockMap.get(r.unlock_id) ?? null,
+        unlock: r.unlock,
       }));
     },
   });
