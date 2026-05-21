@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { BlockUserDialog } from "./BlockUserDialog";
+import { Link } from "@tanstack/react-router";
 
 type ProviderRow = {
   id: string;
@@ -54,7 +55,13 @@ export function ProvidersTab() {
         <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium">{p.business_name ?? "—"}</span>
+              <Link
+                to="/p/$providerId"
+                params={{ providerId: p.id }}
+                className="font-medium underline-offset-2 hover:underline"
+              >
+                {p.business_name ?? "—"}
+              </Link>
               {p.is_verified && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Verified</span>}
               {p.is_blocked && (
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.block_type === "hard" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
