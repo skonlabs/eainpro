@@ -233,8 +233,8 @@ function AccountPage() {
 
   const makeDefault = async (id: string) => {
     if (!user) return;
-    await supabase.from("saved_addresses").update({ is_default: false }).eq("user_id", user.id);
-    await supabase.from("saved_addresses").update({ is_default: true }).eq("id", id);
+    const { error } = await supabase.rpc("set_default_address", { p_address_id: id });
+    if (error) { toast.error(error.message); return; }
     setAddrs((cur) =>
       cur
         .map((x) => ({ ...x, is_default: x.id === id }))
