@@ -63,7 +63,11 @@ export function ProvidersTab() {
               <span className="font-medium">{p.business_name ?? "—"}</span>
               {p.is_verified && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Verified</span>}
               {p.is_suspended && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Suspended</span>}
-              {p.is_blocked && <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Blocked{p.block_type ? ` · ${p.block_type}` : ""}</span>}
+              {p.is_blocked && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.block_type === "hard" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
+                  {p.block_type === "hard" ? "Blocked" : "Suspended"}
+                </span>
+              )}
             </div>
             <div className="mt-0.5 text-xs text-muted-foreground">{p.rating_avg.toFixed(1)}★ · {p.jobs_completed} jobs</div>
           </div>
