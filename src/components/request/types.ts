@@ -40,6 +40,8 @@ export type Booking = {
   status: string;
   time_confirmed_by_customer?: boolean | null;
   time_confirmed_by_provider?: boolean | null;
+  customer_confirmed_at?: string | null;
+  provider_confirmed_at?: string | null;
 };
 
 export type Msg = {
