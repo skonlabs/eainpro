@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { saveProviderProfile } from "@/lib/provider";
 import { CATEGORIES, CITIES } from "@/lib/catalog";
 import { Loader2, Upload, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -117,34 +118,20 @@ function OnboardingPage() {
       return;
     }
     setSaving(true);
-    const { error: upErr } = await supabase.from("providers").upsert({
-      id: user.id,
-      business_name: businessName.trim(),
-      business_type: businessType,
-      bio: bio.trim() || null,
-      years_experience: years || 0,
-      supports_urgent: supportsUrgent,
-    });
-    if (upErr) {
+    try {
+      await saveProviderProfile(user.id, {
+        business_name: businessName,
+        business_type: businessType,
+        bio,
+        years_experience: years,
+        supports_urgent: supportsUrgent,
+        services: cats,
+        cities,
+      });
+    } catch (e: any) {
       setSaving(false);
-      setErr(upErr.message);
+      setErr(e?.message ?? "Failed to save");
       return;
-    }
-    await supabase.from("provider_services").delete().eq("provider_id", user.id);
-    if (Object.keys(cats).length) {
-      await supabase.from("provider_services").insert(
-        Object.entries(cats).map(([slug, p]) => ({
-          provider_id: user.id,
-          category_slug: slug,
-          base_price: p ? Number(p) : null,
-        })),
-      );
-    }
-    await supabase.from("provider_service_areas").delete().eq("provider_id", user.id);
-    if (cityList.length) {
-      await supabase.from("provider_service_areas").insert(
-        cityList.map((c) => ({ provider_id: user.id, city_slug: c })),
-      );
     }
     // Ensure provider role
     await supabase.from("user_roles").upsert(
