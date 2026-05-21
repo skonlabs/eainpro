@@ -72,6 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setSessionReady(true);
       await loadRoles(s?.user?.id);
+      if (s?.user?.id) {
+        // Best-effort DAU ping. Idempotent per UTC day via the RPC.
+        void supabase.rpc("log_user_activity");
+      }
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
