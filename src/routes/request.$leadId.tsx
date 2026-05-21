@@ -522,8 +522,18 @@ function QuoteCard({
   onAccept: () => void;
 }) {
   const accepted = booking?.quote_id === quote.id || quote.status === "accepted";
+  const withdrawn = quote.status === "withdrawn";
+  const [busy, setBusy] = useState(false);
+  const withdraw = async () => {
+    if (!confirm("Withdraw this quote?")) return;
+    setBusy(true);
+    const { error } = await supabase.from("quotes").update({ status: "withdrawn" }).eq("id", quote.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(L("Quote withdrawn", "ပယ်ဖျက်ပြီး"));
+  };
   return (
-    <li className={`rounded-xl border p-3 ${accepted ? "border-emerald-500/50 bg-emerald-500/5" : "border-border bg-card"}`}>
+    <li className={`rounded-xl border p-3 ${accepted ? "border-emerald-500/50 bg-emerald-500/5" : withdrawn ? "border-border bg-muted/30 opacity-60" : "border-border bg-card"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -545,7 +555,15 @@ function QuoteCard({
         </div>
       </div>
       {isCustomer && !booking && !accepted && (
-        <Button size="sm" className="mt-2 w-full" onClick={onAccept}>{L("Accept this quote", "လက်ခံ")}</Button>
+        <Button size="sm" className="mt-2 w-full" onClick={onAccept} disabled={withdrawn}>{L("Accept this quote", "လက်ခံ")}</Button>
+      )}
+      {isMine && !booking && !accepted && !withdrawn && (
+        <Button size="sm" variant="outline" className="mt-2 w-full" onClick={withdraw} disabled={busy}>
+          {L("Withdraw quote", "ပယ်ဖျက်")}
+        </Button>
+      )}
+      {withdrawn && (
+        <p className="mt-2 text-xs text-muted-foreground">{L("Withdrawn", "ပယ်ဖျက်ပြီး")}</p>
       )}
     </li>
   );
