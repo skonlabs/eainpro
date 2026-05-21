@@ -416,6 +416,34 @@ function DetailsCard({
   };
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Service", "ဝန်ဆောင်မှု")}</div>
+          <div>{serviceName ? L(serviceName.en, serviceName.my) : "—"}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Status", "အခြေအနေ")}</div>
+          <div className="capitalize">{lead.status.replace(/_/g, " ")}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Posted", "တင်ခဲ့")}</div>
+          <div>{new Date(lead.created_at).toLocaleString()}</div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Budget", "ဘတ်ဂျက်")}</div>
+          <div>
+            {lead.budget_min || lead.budget_max
+              ? `${lead.budget_min ? lead.budget_min.toLocaleString() : "—"} – ${lead.budget_max ? lead.budget_max.toLocaleString() : "—"} MMK`
+              : "—"}
+          </div>
+        </div>
+      </div>
+      {lead.short_description && lead.full_description && lead.short_description !== lead.full_description && (
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Summary", "အကျဉ်း")}</div>
+          <p className="mt-1 text-sm">{lead.short_description}</p>
+        </div>
+      )}
       <div>
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Description", "ဖော်ပြ")}</div>
