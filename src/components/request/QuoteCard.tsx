@@ -11,6 +11,7 @@ export function QuoteCard({
   isCustomer,
   isMine,
   booking,
+  locked = false,
   L,
   onAccept,
 }: {
@@ -18,6 +19,7 @@ export function QuoteCard({
   isCustomer: boolean;
   isMine: boolean;
   booking: Booking | null;
+  locked?: boolean;
   L: T;
   onAccept: () => void;
 }) {
@@ -64,10 +66,10 @@ export function QuoteCard({
           {accepted && <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-3 w-3" />{L("Accepted", "လက်ခံပြီး")}</span>}
         </div>
       </div>
-      {isCustomer && !booking && !accepted && (
+      {isCustomer && !booking && !accepted && !locked && (
         <Button size="sm" className="mt-2 w-full" onClick={onAccept} disabled={withdrawn}>{L("Accept this quote", "လက်ခံ")}</Button>
       )}
-      {isMine && !booking && !accepted && !withdrawn && (
+      {isMine && !booking && !accepted && !withdrawn && !locked && (
         <Button size="sm" variant="outline" className="mt-2 w-full" onClick={withdraw} disabled={busy}>
           {L("Withdraw quote", "ပယ်ဖျက်")}
         </Button>
