@@ -292,6 +292,7 @@ function NewRequestPage() {
 
   const submit = async () => {
     setErr(null);
+    if (submittingRef.current) return;
     if (!user) {
       nav({ to: "/signin", search: { redirect: "/request/new" } });
       return;
@@ -301,6 +302,7 @@ function NewRequestPage() {
       setErr(L("Please pick a service type.", "ဝန်ဆောင်မှု ရွေးပါ။"));
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     const { data: sts, error: stErr } = await supabase
       .from("service_types")
