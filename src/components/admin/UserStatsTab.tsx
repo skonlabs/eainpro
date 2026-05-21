@@ -30,8 +30,10 @@ function pctChange(curr: number, prev: number): { text: string; tone: "up" | "do
   const c = Number(curr ?? 0);
   const p = Number(prev ?? 0);
   if (p === 0) {
-    if (c === 0) return { text: "—", tone: "flat" };
-    return { text: "+∞%", tone: "up" };
+    // No prior-period data to compare against. Showing "+∞%" is
+    // misleading — the activity table only started collecting recently,
+    // so prev_* is 0 for every metric until two full windows have passed.
+    return { text: "no prior data", tone: "flat" };
   }
   const pct = ((c - p) / p) * 100;
   const tone = pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat";
