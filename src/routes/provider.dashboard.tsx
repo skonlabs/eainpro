@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -19,55 +20,72 @@ function DashboardPage() {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
-  const [bookings, setBookings] = useState<Booking[] | null>(null);
-  const [earnings, setEarnings] = useState<EarningsRow[]>([]);
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [ratingAvg, setRatingAvg] = useState<number | null>(null);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) { nav({ to: "/signin", search: { redirect: "/provider/dashboard" } }); return; }
-    (async () => {
-      const { data: prov } = await supabase.from("providers").select("id").eq("id", user.id).maybeSingle();
-      if (!prov) { nav({ to: "/provider/onboarding" }); return; }
-      const { data } = await supabase
-        .from("bookings")
-        .select("id, lead_id, status, scheduled_at, amount, lead:customer_leads(short_description, city_slug, address)")
-        .eq("provider_id", user.id)
-        .in("status", ["accepted", "on_the_way", "started", "in_progress"])
-        .order("scheduled_at", { ascending: true });
-      setBookings((data ?? []) as unknown as Booking[]);
-      const { data: done } = await supabase
-        .from("bookings")
-        .select("id, amount, provider_confirmed_at, scheduled_at, status")
-        .eq("provider_id", user.id)
-        .eq("status", "completed")
-        .order("provider_confirmed_at", { ascending: false })
-        .limit(500);
-      setEarnings((done ?? []) as EarningsRow[]);
-      const [{ data: rvs }, { data: provRow }] = await Promise.all([
+    if (!loading && !user) {
+      nav({ to: "/signin", search: { redirect: "/provider/dashboard" } });
+    }
+  }, [loading, user, nav]);
+
+  const { data } = useQuery({
+    queryKey: ["provider-dashboard", user?.id],
+    enabled: !!user,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const uid = user!.id;
+      const { data: prov } = await supabase
+        .from("providers").select("id, rating_avg").eq("id", uid).maybeSingle();
+      if (!prov) {
+        nav({ to: "/provider/onboarding" });
+        return { missing: true as const };
+      }
+      const [{ data: bks }, { data: done }, { data: rvs }] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("id, lead_id, status, scheduled_at, amount, lead:customer_leads(short_description, city_slug, address)")
+          .eq("provider_id", uid)
+          .in("status", ["accepted", "on_the_way", "started", "in_progress"])
+          .order("scheduled_at", { ascending: true }),
+        supabase
+          .from("bookings")
+          .select("id, amount, provider_confirmed_at, scheduled_at, status")
+          .eq("provider_id", uid)
+          .eq("status", "completed")
+          .order("provider_confirmed_at", { ascending: false })
+          .limit(500),
         supabase
           .from("reviews")
           .select("id, rating, comment, created_at")
-          .eq("provider_id", user.id)
+          .eq("provider_id", uid)
           .order("created_at", { ascending: false })
           .limit(20),
-        supabase.from("providers").select("rating_avg").eq("id", user.id).maybeSingle(),
       ]);
-      setReviews((rvs ?? []) as ReviewRow[]);
-      setRatingAvg(provRow?.rating_avg ?? null);
-    })();
-  }, [loading, user, nav]);
+      return {
+        missing: false as const,
+        bookings: (bks ?? []) as unknown as Booking[],
+        earnings: (done ?? []) as EarningsRow[],
+        reviews: (rvs ?? []) as ReviewRow[],
+        ratingAvg: prov.rating_avg ?? null,
+      };
+    },
+  });
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const totalEarned = earnings.reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const monthEarned = earnings
-    .filter((r) => {
+  const bookings = data && !data.missing ? data.bookings : null;
+  const earnings = data && !data.missing ? data.earnings : [];
+  const reviews = data && !data.missing ? data.reviews : [];
+  const ratingAvg = data && !data.missing ? data.ratingAvg : null;
+
+  const { totalEarned, monthEarned } = useMemo(() => {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    let total = 0, month = 0;
+    for (const r of earnings) {
+      const amt = Number(r.amount) || 0;
+      total += amt;
       const t = r.provider_confirmed_at ?? r.scheduled_at;
-      return t && new Date(t).getTime() >= monthStart;
-    })
-    .reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      if (t && new Date(t).getTime() >= monthStart) month += amt;
+    }
+    return { totalEarned: total, monthEarned: month };
+  }, [earnings]);
   const fmtMmk = (n: number) => `${Math.round(n).toLocaleString()} MMK`;
 
   return (
