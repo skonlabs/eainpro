@@ -368,6 +368,10 @@ function DetailsCard({
   const showContact = !isProvider || hasUnlock;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(lead.full_description ?? lead.short_description);
+  const [urgency, setUrgency] = useState(lead.urgency);
+  const [preferredDate, setPreferredDate] = useState(lead.preferred_date ?? "");
+  const [preferredTime, setPreferredTime] = useState(lead.preferred_time ?? "");
+  const [address, setAddress] = useState(lead.address ?? "");
   const [saving, setSaving] = useState(false);
   const save = async () => {
     const text = draft.trim();
@@ -375,11 +379,23 @@ function DetailsCard({
     setSaving(true);
     const { error } = await supabase
       .from("customer_leads")
-      .update({ full_description: text })
+      .update({
+        full_description: text,
+        urgency,
+        preferred_date: preferredDate || null,
+        preferred_time: preferredTime || null,
+        address: address.trim() || null,
+      })
       .eq("id", lead.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    onUpdated({ full_description: text });
+    onUpdated({
+      full_description: text,
+      urgency,
+      preferred_date: preferredDate || null,
+      preferred_time: preferredTime || null,
+      address: address.trim() || null,
+    });
     setEditing(false);
     toast.success(L("Updated", "ပြင်ပြီး"));
   };
@@ -403,8 +419,43 @@ function DetailsCard({
               onChange={(e) => setDraft(e.target.value)}
               disabled={saving}
             />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Urgency", "အရေးပေါ်")}</div>
+                <select
+                  className="mt-1 w-full rounded-md border border-border bg-background p-2 text-sm"
+                  value={urgency}
+                  onChange={(e) => setUrgency(e.target.value)}
+                  disabled={saving}
+                >
+                  <option value="now">now</option>
+                  <option value="today">today</option>
+                  <option value="this_week">this_week</option>
+                  <option value="flexible">flexible</option>
+                </select>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Preferred date", "ရက်")}</div>
+                <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} disabled={saving} />
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Preferred time", "အချိန်")}</div>
+                <Input type="time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} disabled={saving} />
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Address", "လိပ်စာ")}</div>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={L("Street, ward…", "လမ်း, ရပ်ကွက်…")} disabled={saving} />
+              </div>
+            </div>
             <div className="flex justify-end gap-2">
-              <Button size="sm" variant="ghost" onClick={() => { setDraft(lead.full_description ?? lead.short_description); setEditing(false); }} disabled={saving}>
+              <Button size="sm" variant="ghost" onClick={() => {
+                setDraft(lead.full_description ?? lead.short_description);
+                setUrgency(lead.urgency);
+                setPreferredDate(lead.preferred_date ?? "");
+                setPreferredTime(lead.preferred_time ?? "");
+                setAddress(lead.address ?? "");
+                setEditing(false);
+              }} disabled={saving}>
                 {L("Cancel", "ပယ်ဖျက်")}
               </Button>
               <Button size="sm" onClick={save} disabled={saving || !draft.trim()}>
