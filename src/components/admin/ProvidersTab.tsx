@@ -1,0 +1,64 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
+
+type ProviderRow = {
+  id: string;
+  business_name: string | null;
+  is_verified: boolean;
+  is_suspended: boolean;
+  rating_avg: number;
+  jobs_completed: number;
+  created_at: string;
+};
+
+export function ProvidersTab() {
+  const { lang } = useI18n();
+  const [providers, setProviders] = useState<ProviderRow[] | null>(null);
+  const refresh = async () => {
+    const { data } = await supabase
+      .from("providers")
+      .select("id, business_name, is_verified, is_suspended, rating_avg, jobs_completed, created_at")
+      .order("created_at", { ascending: false });
+    setProviders((data ?? []) as ProviderRow[]);
+  };
+  useEffect(() => { refresh(); }, []);
+  const setVerified = async (id: string, v: boolean) => {
+    const { error } = await supabase.from("providers").update({ is_verified: v }).eq("id", id);
+    if (error) toast.error(error.message); else toast.success(v ? "Verified" : "Unverified");
+    refresh();
+  };
+  const setSuspended = async (id: string, s: boolean) => {
+    const { error } = await supabase.from("providers").update({ is_suspended: s }).eq("id", id);
+    if (error) toast.error(error.message); else toast.success(s ? "Suspended" : "Unsuspended");
+    refresh();
+  };
+  if (!providers) return <Skeleton className="mt-4 h-48 w-full" />;
+  return (
+    <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+      {providers.map((p) => (
+        <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{p.business_name ?? "—"}</span>
+              {p.is_verified && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Verified</span>}
+              {p.is_suspended && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Suspended</span>}
+            </div>
+            <div className="mt-0.5 text-xs text-muted-foreground">{p.rating_avg.toFixed(1)}★ · {p.jobs_completed} jobs</div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant={p.is_verified ? "outline" : "default"} onClick={() => setVerified(p.id, !p.is_verified)}>
+              {p.is_verified ? (lang==="en"?"Unverify":"ပယ်ဖျက်") : (lang==="en"?"Verify":"အတည်ပြု")}
+            </Button>
+            <Button size="sm" variant="ghost" className={p.is_suspended ? "" : "text-destructive hover:bg-destructive/10"} onClick={() => setSuspended(p.id, !p.is_suspended)}>
+              {p.is_suspended ? "Unsuspend" : "Suspend"}
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
