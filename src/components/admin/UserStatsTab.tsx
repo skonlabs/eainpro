@@ -2,14 +2,28 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 
 type Bucket = { last_7: number; prev_7: number; last_30: number; prev_30: number };
 type RoleSplit = { customers: Bucket; providers: Bucket };
+type DailyRow = { day: string; customers: number; providers: number };
 type Stats = {
   totals: { customers: number; providers: number };
   dau: RoleSplit;
   new_users: RoleSplit;
-  daily: { day: string; customers: number; providers: number }[];
+  daily: DailyRow[];
+  new_daily?: DailyRow[];
 };
 
 function pctChange(curr: number, prev: number): { text: string; tone: "up" | "down" | "flat" } {
@@ -27,6 +41,68 @@ function pctChange(curr: number, prev: number): { text: string; tone: "up" | "do
 
 function fmtNum(n: number) {
   return Number(n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+const COLOR_CUST = "hsl(var(--primary))";
+const COLOR_PROV = "hsl(35 92% 50%)";
+
+function shortDay(s: string) {
+  const d = new Date(s);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function TrendChart({
+  data,
+  kind,
+}: {
+  data: DailyRow[];
+  kind: "line" | "bar";
+}) {
+  const rows = data.map((d) => ({ ...d, day: shortDay(d.day) }));
+  return (
+    <div className="h-56 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        {kind === "line" ? (
+          <LineChart data={rows} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 8 }}
+              labelStyle={{ fontWeight: 600 }}
+            />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Line
+              type="monotone"
+              dataKey="customers"
+              name="Homeowners"
+              stroke={COLOR_CUST}
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="providers"
+              name="Providers"
+              stroke={COLOR_PROV}
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        ) : (
+          <BarChart data={rows} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar dataKey="customers" name="Homeowners" fill={COLOR_CUST} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="providers" name="Providers" fill={COLOR_PROV} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        )}
+      </ResponsiveContainer>
+    </div>
+  );
 }
 
 function MetricRow({
@@ -51,20 +127,28 @@ function MetricRow({
 }
 
 function ReportCard({
-  title, subtitle, split, kind,
-}: { title: string; subtitle: string; split: RoleSplit; kind: "dau" | "new" }) {
+  title, subtitle, split, kind, series, chartKind,
+}: {
+  title: string;
+  subtitle: string;
+  split: RoleSplit;
+  kind: "dau" | "new";
+  series: DailyRow[];
+  chartKind: "line" | "bar";
+}) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <header className="mb-3">
         <h3 className="text-sm font-semibold">{title}</h3>
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </header>
+      <TrendChart data={series} kind={chartKind} />
       <div className="grid gap-4 sm:grid-cols-2">
         {(["customers", "providers"] as const).map((role) => {
           const b = split[role];
           const roleLabel = role === "customers" ? "Homeowners" : "Providers";
           return (
-            <div key={role} className="rounded-xl border border-border bg-background p-3">
+            <div key={role} className="mt-3 rounded-xl border border-border bg-background p-3">
               <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {roleLabel}
               </div>
@@ -106,10 +190,7 @@ export function UserStatsTab() {
 
   if (!stats) return <Skeleton className="mt-4 h-64 w-full" />;
 
-  const maxDaily = Math.max(
-    1,
-    ...stats.daily.map((d) => Number(d.customers) + Number(d.providers)),
-  );
+  const newDaily = stats.new_daily ?? [];
 
   return (
     <div className="mt-4 space-y-4">
@@ -126,60 +207,20 @@ export function UserStatsTab() {
 
       <ReportCard
         title="Daily active users"
-        subtitle="Average distinct users active per day, by role"
+        subtitle="Distinct users active per day (last 30d) · WoW & MoM averages below"
         split={stats.dau}
         kind="dau"
+        series={stats.daily}
+        chartKind="line"
       />
       <ReportCard
         title="New users"
-        subtitle="Sign-ups by role"
+        subtitle="Sign-ups per day (last 30d) · WoW & MoM totals below"
         split={stats.new_users}
         kind="new"
+        series={newDaily}
+        chartKind="bar"
       />
-
-      <section className="rounded-2xl border border-border bg-card p-4">
-        <header className="mb-3">
-          <h3 className="text-sm font-semibold">Last 30 days — DAU</h3>
-          <p className="text-xs text-muted-foreground">Homeowners (primary) + Providers stacked</p>
-        </header>
-        {stats.daily.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">No activity yet.</p>
-        ) : (
-          <ul className="space-y-1">
-            {stats.daily.map((d) => {
-              const total = Number(d.customers) + Number(d.providers);
-              const widthPct = Math.round((total / maxDaily) * 100);
-              const custPct = total === 0 ? 0 : Math.round((Number(d.customers) / total) * 100);
-              return (
-                <li key={d.day} className="flex items-center gap-3 text-xs">
-                  <span className="w-20 shrink-0 tabular-nums text-muted-foreground">
-                    {new Date(d.day).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div className="flex h-full" style={{ width: `${widthPct}%` }}>
-                      <div className="h-full bg-primary" style={{ width: `${custPct}%` }} />
-                      <div className="h-full bg-amber-500" style={{ width: `${100 - custPct}%` }} />
-                    </div>
-                  </div>
-                  <span className="w-24 shrink-0 text-right tabular-nums">
-                    <span className="text-primary">{d.customers}</span>
-                    {" / "}
-                    <span className="text-amber-600">{d.providers}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <div className="mt-3 flex items-center gap-4 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-primary" /> Homeowners
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" /> Providers
-          </span>
-        </div>
-      </section>
     </div>
   );
 }
