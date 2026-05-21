@@ -34,6 +34,8 @@ type Lead = {
   full_description: string | null;
   status: string;
   created_at: string;
+  budget_min: number | null;
+  budget_max: number | null;
 };
 
 type Quote = {
@@ -79,6 +81,7 @@ function LeadPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [serviceName, setServiceName] = useState<{ en: string; my: string } | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -141,6 +144,15 @@ function LeadPage() {
       setBooking((bk as Booking) ?? null);
       setMessages((msgs ?? []) as Msg[]);
       setProviderHasUnlock(!!unlockRes.data);
+      const stId = (rpcLead as Lead).service_type_id;
+      if (stId) {
+        const { data: st } = await supabase
+          .from("service_types")
+          .select("name_en, name_my")
+          .eq("id", stId)
+          .maybeSingle();
+        if (st) setServiceName({ en: st.name_en, my: st.name_my });
+      }
     })();
   }, [authLoading, user, leadId, nav, isProvider]);
 
