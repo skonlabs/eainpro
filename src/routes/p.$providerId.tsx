@@ -88,7 +88,7 @@ function ProviderProfilePage() {
         supabase.from("providers").select("*").eq("id", providerId).maybeSingle(),
         supabase.from("provider_services").select("category_slug, base_price").eq("provider_id", providerId),
         supabase.from("provider_service_areas").select("city_slug").eq("provider_id", providerId),
-        supabase.from("reviews").select("id, rating, comment, created_at").eq("provider_id", providerId).order("created_at", { ascending: false }).limit(20),
+        supabase.from("reviews").select("id, rating, comment, created_at").eq("provider_id", providerId).eq("rated_by", "customer").order("created_at", { ascending: false }).limit(20),
       ]);
       if (!pr) {
         setNotFound(true);
