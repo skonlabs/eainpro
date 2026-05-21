@@ -71,6 +71,7 @@ export function BookingPanel({
   const isMyBooking = booking.provider_id === userId || booking.customer_id === userId;
   const next = NEXT_STATUS[booking.status];
   const canAdvance = isProvider && booking.provider_id === userId && next;
+  const reviewsUnlocked = booking.status === "completed" && !!booking.customer_confirmed_at;
 
   const advance = async () => {
     if (!next) return;
@@ -92,6 +93,18 @@ export function BookingPanel({
     await supabase.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
     setBusy(false);
     onChange();
+  };
+
+  const confirmCompleted = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("bookings")
+      .update({ customer_confirmed_at: new Date().toISOString() })
+      .eq("id", booking.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    onChange();
+    toast.success(L("Confirmed — thanks!", "အတည်ပြုပြီး — ကျေးဇူးတင်ပါသည်!"));
   };
 
   const submitReview = async () => {
@@ -158,7 +171,23 @@ export function BookingPanel({
         <Button onClick={cancel} disabled={busy} variant="outline" className="w-full">{L("Cancel booking", "ပယ်ဖျက်")}</Button>
       )}
 
-      {booking.status === "completed" && myRole && hasMyReview === false && (
+      {booking.status === "completed" && isCustomer && !booking.customer_confirmed_at && (
+        <div className="space-y-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+          <div className="font-semibold">{L("Did the provider complete the job?", "ဝန်ဆောင်မှု ပြီးစီးပါသလား?")}</div>
+          <p className="text-xs text-muted-foreground">
+            {L("Confirm completion to leave a review. If something went wrong, report instead.", "ပြီးစီးကြောင်း အတည်ပြုပါ။ ပြဿနာရှိပါက တိုင်ကြားနိုင်ပါသည်။")}
+          </p>
+          <Button onClick={confirmCompleted} disabled={busy} className="w-full">
+            {L("Confirm completed", "ပြီးစီးကြောင်း အတည်ပြု")}
+          </Button>
+        </div>
+      )}
+      {booking.status === "completed" && myRole === "provider" && !booking.customer_confirmed_at && (
+        <p className="rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+          {L("Waiting for the customer to confirm completion before reviews open.", "ဖောက်သည် အတည်ပြုပြီးမှ သုံးသပ်ချက် ဖွင့်ပါမည်။")}
+        </p>
+      )}
+      {reviewsUnlocked && myRole && hasMyReview === false && (
         <div className="space-y-2 rounded-xl border border-border bg-background p-3">
           <div className="text-sm font-semibold">
             {myRole === "customer" ? L("Rate the provider", "ပညာရှင်ကို အဆင့်ပေး") : L("Rate the customer", "ဖောက်သည်ကို အဆင့်ပေး")}
@@ -174,7 +203,7 @@ export function BookingPanel({
           <Button onClick={submitReview} disabled={busy} className="w-full">{L("Submit", "ပေးပို့")}</Button>
         </div>
       )}
-      {booking.status === "completed" && hasMyReview && (
+      {reviewsUnlocked && hasMyReview && (
         <p className="text-xs text-muted-foreground">{L("Your review was submitted.", "သင်၏ သုံးသပ်ချက် ပေးပို့ပြီး။")}</p>
       )}
 
