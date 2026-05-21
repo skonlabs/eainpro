@@ -63,30 +63,24 @@ export function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex h-16 max-w-screen-md items-stretch justify-between px-2">
-        // If any item targeting the same path has a `search.tab`, treat items as
-        // tab-scoped so we don't activate two entries at once (e.g. /admin vs /admin?tab=topups).
-        const tabScopedPaths = new Set(
-          items.filter((i) => i.search?.tab).map((i) => i.to),
-        );
-        const currentTab = (search as Record<string, unknown> | undefined)?.tab as string | undefined;
-        return items.map((it) => {
-          const Icon = it.icon;
-          let active: boolean;
-          if (it.to === "/") {
-            active = pathname === "/";
-          } else if (tabScopedPaths.has(it.to)) {
-            const pathMatch = pathname === it.to || pathname.startsWith(it.to + "/");
-            const itemTab = it.search?.tab;
-            if (itemTab) {
-              active = pathMatch && currentTab === itemTab;
+        {(() => {
+          const tabScopedPaths = new Set(
+            items.filter((i) => i.search?.tab).map((i) => i.to),
+          );
+          const currentTab = (search as Record<string, unknown> | undefined)?.tab as string | undefined;
+          return items.map((it) => {
+            const Icon = it.icon;
+            let active: boolean;
+            if (it.to === "/") {
+              active = pathname === "/";
+            } else if (tabScopedPaths.has(it.to)) {
+              const pathMatch = pathname === it.to || pathname.startsWith(it.to + "/");
+              const itemTab = it.search?.tab;
+              active = itemTab ? pathMatch && currentTab === itemTab : pathMatch && !currentTab;
             } else {
-              // Base item (no tab) is active only when no tab-scoped sibling matches.
-              active = pathMatch && !currentTab;
+              active = pathname === it.to || pathname.startsWith(it.to + "/");
             }
-          } else {
-            active = pathname === it.to || pathname.startsWith(it.to + "/");
-          }
-          return (
+            return (
             <li key={it.to} className="flex-1">
               <Link
                 to={it.to as "/"}
@@ -106,8 +100,8 @@ export function BottomNav() {
                 </span>
               </Link>
             </li>
-          );
-        });
+            );
+          });
         })()}
       </ul>
     </nav>
