@@ -1,10 +1,36 @@
 import { ReactNode } from "react";
 
-export function Field({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
+export function FieldLabel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={className}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{label}</div>
-      <div className="mt-1.5 text-sm font-medium text-foreground">{children}</div>
+    <div
+      className={`text-[11px] font-medium uppercase tracking-[0.12em] leading-none text-muted-foreground ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function FieldValue({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`mt-2 text-sm font-medium leading-snug text-foreground ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <FieldLabel>{label}</FieldLabel>
+      <FieldValue>{children}</FieldValue>
     </div>
   );
 }
