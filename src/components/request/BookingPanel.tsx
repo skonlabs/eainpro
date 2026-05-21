@@ -50,36 +50,35 @@ export function BookingPanel({
     logo_url: string | null;
   } | null>(null);
 
-  useEffect(() => {
-    if (!booking?.provider_id) { setProviderInfo(null); return; }
-    let active = true;
-    supabase
-      .from("providers")
-      .select("id, business_name, is_verified, rating_avg, rating_count, logo_url")
-      .eq("id", booking.provider_id)
-      .maybeSingle()
-      .then(({ data }) => { if (active) setProviderInfo(data as any); });
-    return () => { active = false; };
-  }, [booking?.provider_id]);
+  const myRole: "customer" | "provider" | null = isCustomer
+    ? "customer"
+    : isProvider && booking?.provider_id === userId
+    ? "provider"
+    : null;
 
-  const myRole: "customer" | "provider" | null = isCustomer ? "customer" : (isProvider && booking?.provider_id === userId ? "provider" : null);
+  useEffect(() => {
+    const providerId = booking?.provider_id;
+    if (!providerId) { setProviderInfo(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("providers")
+        .select("id, business_name, is_verified, rating_avg, rating_count, logo_url")
+        .eq("id", providerId)
+        .maybeSingle();
+      setProviderInfo(data as any);
+    })();
+  }, [booking?.provider_id]);
 
   useEffect(() => {
     if (!booking || booking.status !== "completed" || !myRole) return;
-    supabase
-      .from("reviews")
-      .select("id")
-      .eq("booking_id", booking.id)
-      .eq("rated_by", myRole)
-      .maybeSingle()
-      .then(({ data }) => setHasMyReview(!!data));
-    supabase
-      .from("reports")
-      .select("id")
-      .eq("booking_id", booking.id)
-      .eq("reporter_id", userId)
-      .maybeSingle()
-      .then(({ data }) => setReported(!!data));
+    (async () => {
+      const [{ data: rev }, { data: rep }] = await Promise.all([
+        supabase.from("reviews").select("id").eq("booking_id", booking.id).eq("rated_by", myRole).maybeSingle(),
+        supabase.from("reports").select("id").eq("booking_id", booking.id).eq("reporter_id", userId).maybeSingle(),
+      ]);
+      setHasMyReview(!!rev);
+      setReported(!!rep);
+    })();
   }, [booking?.id, booking?.status, myRole, userId]);
 
   if (!booking) {

@@ -68,7 +68,8 @@ function LeadPage() {
       }
       setLead(rpcLead as Lead);
 
-      const [{ data: ph }, { data: qs }, { data: bk }, { data: msgs }, unlockRes] = await Promise.all([
+      const stId = (rpcLead as Lead).service_type_id;
+      const [{ data: ph }, { data: qs }, { data: bk }, { data: msgs }, unlockRes, { data: st }] = await Promise.all([
         supabase.from("lead_photos").select("url").eq("lead_id", leadId).order("sort_order"),
         supabase
           .from("quotes")
@@ -89,21 +90,16 @@ function LeadPage() {
               .eq("provider_id", user.id)
               .maybeSingle()
           : Promise.resolve({ data: null }),
+        stId
+          ? supabase.from("service_types").select("name_en, name_my").eq("id", stId).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
       setPhotos((ph ?? []).map((r) => r.url));
       setQuotes((qs ?? []) as Quote[]);
       setBooking((bk as Booking) ?? null);
       setMessages((msgs ?? []) as Msg[]);
       setProviderHasUnlock(!!unlockRes.data);
-      const stId = (rpcLead as Lead).service_type_id;
-      if (stId) {
-        const { data: st } = await supabase
-          .from("service_types")
-          .select("name_en, name_my")
-          .eq("id", stId)
-          .maybeSingle();
-        if (st) setServiceName({ en: st.name_en, my: st.name_my });
-      }
+      if (st) setServiceName({ en: (st as any).name_en, my: (st as any).name_my });
     })();
   }, [authLoading, user, leadId, nav, isProvider]);
 
