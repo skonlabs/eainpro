@@ -102,9 +102,6 @@ export function BookingPanel({
     const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    if (next.key === "completed") {
-      await supabase.from("customer_leads").update({ status: "completed" }).eq("id", lead.id);
-    }
     onChange();
     toast.success(L("Updated", "ပြောင်းပြီး"));
   };
