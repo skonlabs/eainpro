@@ -9,6 +9,7 @@ import { safeRedirect } from "@/lib/safe-redirect";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Loader2, Mail } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 const searchSchema = z.object({
   as: z.enum(["customer", "provider"]).optional(),
