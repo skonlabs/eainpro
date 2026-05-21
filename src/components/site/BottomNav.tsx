@@ -27,9 +27,9 @@ export function BottomNav() {
   const items: NavItem[] = isAdmin
     ? [
         { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-        { to: "/providers", icon: Users, en: "Pros", my: "ပညာရှင်", search: { cat: "", city: "" } },
+        { to: "/admin", icon: Briefcase, en: "Providers", my: "ပညာရှင်", search: { tab: "providers" } },
         { to: "/admin", icon: Shield, en: "Admin", my: "Admin", primary: true },
-        { to: "/admin", icon: Wallet2, en: "Top-ups", my: "ငွေဖြည့်", search: { tab: "topups" } },
+        { to: "/admin", icon: Users, en: "Customers", my: "ဖောက်သည်", search: { tab: "customers" } },
         { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
       ]
     : isProvider
