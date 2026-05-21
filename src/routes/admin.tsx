@@ -349,13 +349,10 @@ function RefundRequestsTab() {
   useEffect(() => { load(); }, [filter]);
 
   const approve = async (row: any) => {
-    const remaining = (row.unlock?.unlock_price_credits ?? 0) - (row.unlock?.refunded_amount_credits ?? 0);
-    if (remaining <= 0) { toast.error("Already fully refunded"); return; }
-    const { data, error } = await supabase.rpc("refund_unlock", { p_unlock_id: row.unlock_id, p_amount: remaining, p_reason: row.reason });
+    const { data, error } = await supabase.rpc("approve_unlock_refund", { p_request_id: row.id });
     if (error) return toast.error(error.message);
     if (!data?.ok) return toast.error(data?.error ?? "Failed");
-    const upd = await supabase.from("unlock_refund_requests").update({ status: "approved", resolved_at: new Date().toISOString() }).eq("id", row.id);
-    if (upd.error) toast.error(upd.error.message); else toast.success(`Refunded ${remaining} credits`);
+    toast.success(data.already_refunded ? "Marked approved" : `Refunded ${data.amount} credits`);
     load();
   };
   const reject = async (row: any) => {
