@@ -107,7 +107,7 @@ function CalendarPage() {
       {rows.length === 0 ? (
         <div className="mt-8 grid place-items-center rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
           <CalendarIcon className="h-6 w-6 text-muted-foreground" />
-          <p className="mt-3 text-sm font-semibold">{L("No bookings yet", "မရှိ")}</p>
+          <p className="mt-3 text-sm font-semibold">{L("No bookings yet", "ဘွတ်ကင်မှု မရှိသေးပါ")}</p>
         </div>
       ) : (
         <ul className="mt-4 space-y-2">

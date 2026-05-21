@@ -42,7 +42,7 @@ export function ChatPanel({
   return (
     <div className="rounded-2xl border border-border bg-card">
       <ul className="max-h-[420px] space-y-2 overflow-y-auto p-3">
-        {messages.length === 0 && <li className="text-center text-xs text-muted-foreground">{L("No messages yet.", "မက်ဆေ့ မရှိ။")}</li>}
+        {messages.length === 0 && <li className="text-center text-xs text-muted-foreground">{L("No messages yet.", "မက်ဆေ့ဂျ် မရှိသေးပါ။ စတင် စကားပြောကြည့်ပါ။")}</li>}
         {messages.map((m) => {
           const mine = m.sender_id === userId;
           return (

@@ -115,7 +115,7 @@ function DashboardPage() {
         {bookings === null ? (
           <LoadingState label={L("Loading…", "ခဏစောင့်ပါ…")} className="mt-6 min-h-[20vh]" />
         ) : bookings.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{L("No active jobs. Unlock leads to start.", "မရှိ။ Lead ဖွင့်ပါ")}</p>
+          <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{L("No active jobs. Unlock leads to start.", "လက်ရှိ အလုပ် မရှိသေးပါ။ Lead များကို ဖွင့်၍ စတင်ပါ။")}</p>
         ) : (
           <ul className="mt-6 space-y-3">
             {bookings.map((b) => (

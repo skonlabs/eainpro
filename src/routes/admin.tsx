@@ -56,7 +56,7 @@ function AdminPage() {
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin console</h1>
         <Tabs value={tab} onValueChange={setTab}>
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <div className="relative -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] sm:[mask-image:none]">
             <TabsList className="inline-flex h-auto w-max gap-1 p-1">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="pricing">Lead pricing</TabsTrigger>

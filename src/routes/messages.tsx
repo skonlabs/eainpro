@@ -62,7 +62,7 @@ function MessagesPage() {
       {threads.length === 0 ? (
         <div className="mt-10 grid place-items-center rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
           <MessageSquare className="h-6 w-6 text-muted-foreground" />
-          <p className="mt-3 text-sm font-semibold">{L("No messages yet", "မရှိ")}</p>
+          <p className="mt-3 text-sm font-semibold">{L("No messages yet", "မက်ဆေ့ဂျ် မရှိသေးပါ")}</p>
         </div>
       ) : (
         <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">

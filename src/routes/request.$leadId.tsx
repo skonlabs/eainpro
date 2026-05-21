@@ -62,7 +62,7 @@ function LeadPage() {
       });
       if (rErr) { setError(rErr.message); return; }
       if (!rpcLead) {
-        setError(L("Lead not found or not accessible.", "မရှိ သို့မဟုတ် ဝင်ခွင့်မရှိ။"));
+        setError(L("Lead not found or not accessible.", "ဤ lead ကို ရှာမတွေ့ပါ သို့မဟုတ် ဝင်ခွင့်မရှိပါ။"));
         return;
       }
       setLead(rpcLead as Lead);

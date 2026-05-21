@@ -16,6 +16,10 @@ const TAB_ROOTS = new Set([
   "/admin",
 ]);
 
+// Routes that own their own back/exit affordance — the global AppBar should
+// not render a second back button on these.
+const NO_BACK_ROUTES = new Set<string>(["/request/new", "/guided"]);
+
 // Sensible parent fallbacks when there's no browser history (e.g. user opened
 // a deep link directly). Keep these in sync with TAB_ROOTS above.
 function parentFor(pathname: string): string {
@@ -66,6 +70,7 @@ export function AppBar() {
   const navigate = useNavigate();
 
   const isRoot = TAB_ROOTS.has(pathname);
+  const hideBack = NO_BACK_ROUTES.has(pathname);
   const title = titleFor(pathname, lang);
 
   const goBack = () => {
@@ -84,7 +89,7 @@ export function AppBar() {
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto flex h-14 max-w-screen-md items-center gap-2 px-3 sm:px-4">
-        {isRoot ? (
+        {isRoot || hideBack ? (
           <Link to="/" className="flex items-center gap-2">
             <img
               src={logoUrl}
@@ -105,7 +110,7 @@ export function AppBar() {
         )}
 
         <h1 className="flex-1 truncate font-display text-lg font-extrabold tracking-tight">
-          {isRoot ? "" : title}
+          {isRoot || hideBack ? "" : title}
         </h1>
 
         <button
