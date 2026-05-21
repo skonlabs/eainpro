@@ -222,7 +222,10 @@ function AdminPage() {
 
 function AdminSidebar({ current, onSelect }: { current: TabKey; onSelect: (k: TabKey) => void }) {
   return (
-    <Sidebar collapsible="icon" className="top-14 h-[calc(100vh-3.5rem)]">
+    <Sidebar
+      collapsible="icon"
+      className="top-14 !h-[calc(100svh-3.5rem)]"
+    >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-1.5">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
