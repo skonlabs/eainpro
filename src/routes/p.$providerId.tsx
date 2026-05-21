@@ -35,7 +35,7 @@ type Provider = {
 
 function ProviderProfilePage() {
   const { providerId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { lang } = useI18n();
   const nav = useNavigate();
   const [p, setP] = useState<Provider | null>(null);
