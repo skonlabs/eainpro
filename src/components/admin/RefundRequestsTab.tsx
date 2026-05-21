@@ -13,7 +13,11 @@ export function RefundRequestsTab() {
   const { data: rows } = useQuery({
     queryKey: ["admin", "refund-requests"],
     queryFn: async () => {
-      const [{ data: requestData, error: requestError }, { data: legacyData, error: legacyError }] = await Promise.all([
+      const [
+        { data: requestData, error: requestError },
+        { data: legacyData, error: legacyError },
+        { data: reportData, error: reportError },
+      ] = await Promise.all([
         supabase
           .from("unlock_refund_requests")
           .select("*")
@@ -24,6 +28,12 @@ export function RefundRequestsTab() {
           .select("id, unlock_id, amount_credits, reason, approved_by, created_at")
           .order("created_at", { ascending: false })
           .limit(200),
+        supabase
+          .from("reports")
+          .select("id, reporter_id, target_user_id, lead_id, kind, reason, status, created_at")
+          .in("kind", ["wrong_info", "spam_lead", "fraud"])
+          .order("created_at", { ascending: false })
+          .limit(200),
       ]);
 
       if (requestError) {
@@ -32,6 +42,9 @@ export function RefundRequestsTab() {
       }
       if (legacyError) {
         toast.error(legacyError.message);
+      }
+      if (reportError) {
+        toast.error(reportError.message);
       }
 
       const requestList = requestData ?? [];
@@ -69,7 +82,47 @@ export function RefundRequestsTab() {
         }
       }
 
-      const combinedBase = [...requestList, ...groupedLegacy.values()];
+      const reportLeadIds = [...new Set((reportData ?? []).map((r: any) => r.lead_id).filter(Boolean))];
+      const { data: reportUnlocks, error: reportUnlockError } = reportLeadIds.length
+        ? await supabase
+            .from("provider_lead_unlocks")
+            .select("id, provider_id, lead_id, unlock_price_credits, refunded_amount_credits, status")
+            .in("lead_id", reportLeadIds)
+        : { data: [], error: null };
+
+      if (reportUnlockError) {
+        toast.error(reportUnlockError.message);
+      }
+
+      const leadUnlocksMap = new Map<string, any[]>();
+      for (const unlock of reportUnlocks ?? []) {
+        const list = leadUnlocksMap.get(unlock.lead_id) ?? [];
+        list.push(unlock);
+        leadUnlocksMap.set(unlock.lead_id, list);
+      }
+
+      const reportDerived = (reportData ?? [])
+        .filter((report: any) => !requestList.some((req: any) => req.lead_id === report.lead_id && req.provider_id === report.reporter_id))
+        .map((report: any) => {
+          const matchingUnlock = (leadUnlocksMap.get(report.lead_id) ?? []).find((unlock: any) => unlock.provider_id === report.reporter_id) ?? null;
+          return {
+            id: `report-${report.id}`,
+            unlock_id: matchingUnlock?.id ?? null,
+            provider_id: report.reporter_id,
+            lead_id: report.lead_id,
+            reason: `[${report.kind ?? "other"}] ${report.reason}`,
+            status: report.status === "dismissed" ? "rejected" : report.status === "resolved" ? "approved" : "open",
+            resolution_note: "Imported from provider dispute report",
+            resolved_at: report.status === "resolved" || report.status === "dismissed" ? report.created_at : null,
+            resolved_by: null,
+            created_at: report.created_at,
+            legacy: true,
+            report_backed: true,
+            unlock: matchingUnlock,
+          };
+        });
+
+      const combinedBase = [...requestList, ...groupedLegacy.values(), ...reportDerived];
       const unlockIds = [...new Set(combinedBase.map((r: any) => r.unlock_id).filter(Boolean))];
       const { data: unlocks, error: unlockError } = await supabase
         .from("provider_lead_unlocks")
