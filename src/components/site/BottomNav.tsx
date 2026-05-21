@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, MessageSquare, Wallet, Inbox, Wallet2 } from "lucide-react";
+import { Home, LayoutGrid, PlusCircle, Users, User, Briefcase, Shield, ClipboardList, Wallet, Inbox, Wallet2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -81,25 +81,25 @@ export function BottomNav() {
               active = pathname === it.to || pathname.startsWith(it.to + "/");
             }
             return (
-            <li key={it.to} className="flex-1">
-              <Link
-                to={it.to as "/"}
-                search={it.search as Record<string, never>}
-                aria-current={active ? "page" : undefined}
-                className="relative flex h-full flex-col items-center justify-center text-[10px] font-semibold tracking-tight"
-              >
-                <span
-                  className={`flex h-12 w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                      : "text-muted-foreground"
-                  } ${it.primary && !active ? "ring-1 ring-primary/30 text-primary" : ""}`}
+              <li key={it.to} className="flex-1">
+                <Link
+                  to={it.to as "/"}
+                  search={it.search as Record<string, never>}
+                  aria-current={active ? "page" : undefined}
+                  className="relative flex h-full flex-col items-center justify-center text-[10px] font-semibold tracking-tight"
                 >
-                  <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} />
-                  <span className="leading-none">{lang === "en" ? it.en : it.my}</span>
-                </span>
-              </Link>
-            </li>
+                  <span
+                    className={`flex h-12 w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                        : "text-muted-foreground"
+                    } ${it.primary && !active ? "ring-1 ring-primary/30 text-primary" : ""}`}
+                  >
+                    <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} />
+                    <span className="leading-none">{lang === "en" ? it.en : it.my}</span>
+                  </span>
+                </Link>
+              </li>
             );
           });
         })()}
