@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { fetchProviderNames, fetchLeadsByIds, fetchUnlocksByIds } from "@/lib/admin-joins";
@@ -11,11 +11,13 @@ export function RefundRequestsTab() {
   const [filter, setFilter] = useState<"open" | "approved" | "rejected" | "all">("all");
   const qc = useQueryClient();
   const { data: rows } = useQuery({
-    queryKey: ["admin", "refund-requests", filter],
+    queryKey: ["admin", "refund-requests"],
     queryFn: async () => {
-      let q = supabase.from("unlock_refund_requests").select("*").order("created_at", { ascending: false }).limit(200);
-      if (filter !== "all") q = q.eq("status", filter);
-      const { data, error } = await q;
+      const { data, error } = await supabase
+        .from("unlock_refund_requests")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (error) { toast.error(error.message); return []; }
       const list = data ?? [];
       const [provMap, leadMap, unlockMap] = await Promise.all([
@@ -31,6 +33,13 @@ export function RefundRequestsTab() {
       }));
     },
   });
+  useEffect(() => {
+    setFilter("all");
+  }, []);
+  const visibleRows = useMemo(() => {
+    const list = rows ?? [];
+    return filter === "all" ? list : list.filter((row) => row.status === filter);
+  }, [filter, rows]);
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "refund-requests"] });
 
   const approve = async (row: any) => {
@@ -54,9 +63,9 @@ export function RefundRequestsTab() {
         ))}
       </div>
       {!rows ? <Skeleton className="h-48 w-full" /> :
-        rows.length === 0 ? <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No requests.</p> :
+        visibleRows.length === 0 ? <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No requests.</p> :
         <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <li key={r.id} className="space-y-2 p-3 text-sm">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
