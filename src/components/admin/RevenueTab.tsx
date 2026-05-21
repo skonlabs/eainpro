@@ -1,21 +1,66 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmt } from "@/lib/wallet";
 
+type UnlockRow = {
+  id: string;
+  unlock_price_credits: number | null;
+  refunded_amount_credits: number | null;
+  unlocked_at: string;
+  lead: {
+    service_type_id: string | null;
+    service_type: { id: string; slug: string | null; name_en: string | null; category_slug: string | null } | { id: string; slug: string | null; name_en: string | null; category_slug: string | null }[] | null;
+  } | null;
+};
+
+type ByService = { service_type_id: string; name_en: string; slug: string; category_slug: string; unlocks_count: number; gross_credits: number; refunded_credits: number; net_credits: number };
+type Daily = { day: string; unlocks_count: number; net_credits: number };
+
 export function RevenueTab() {
-  const [byService, setByService] = useState<any[] | null>(null);
-  const [daily, setDaily] = useState<any[] | null>(null);
+  const [unlocks, setUnlocks] = useState<UnlockRow[] | null>(null);
   useEffect(() => {
     (async () => {
-      const [{ data: s }, { data: d }] = await Promise.all([
-        supabase.from("lead_revenue_by_service").select("*").order("net_credits", { ascending: false }),
-        supabase.from("lead_revenue_daily").select("*").order("day", { ascending: false }).limit(30),
-      ]);
-      setByService(s ?? []);
-      setDaily(d ?? []);
+      const { data } = await supabase
+        .from("provider_lead_unlocks")
+        .select("id, unlock_price_credits, refunded_amount_credits, unlocked_at, lead:customer_leads(service_type_id, service_type:service_types(id, slug, name_en, category_slug))")
+        .order("unlocked_at", { ascending: false })
+        .limit(1000);
+      setUnlocks((data ?? []) as unknown as UnlockRow[]);
     })();
   }, []);
+  const byService = useMemo<ByService[] | null>(() => {
+    if (!unlocks) return null;
+    const map = new Map<string, ByService>();
+    for (const u of unlocks) {
+      const st = Array.isArray(u.lead?.service_type) ? u.lead?.service_type[0] : u.lead?.service_type;
+      const id = st?.id ?? u.lead?.service_type_id ?? "unknown";
+      const cur = map.get(id) ?? { service_type_id: id, name_en: st?.name_en ?? "—", slug: st?.slug ?? "—", category_slug: st?.category_slug ?? "—", unlocks_count: 0, gross_credits: 0, refunded_credits: 0, net_credits: 0 };
+      const gross = Number(u.unlock_price_credits ?? 0);
+      const refunded = Number(u.refunded_amount_credits ?? 0);
+      cur.unlocks_count += 1;
+      cur.gross_credits += gross;
+      cur.refunded_credits += refunded;
+      cur.net_credits += gross - refunded;
+      map.set(id, cur);
+    }
+    return [...map.values()].sort((a, b) => b.net_credits - a.net_credits);
+  }, [unlocks]);
+  const daily = useMemo<Daily[] | null>(() => {
+    if (!unlocks) return null;
+    const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+    const map = new Map<string, Daily>();
+    for (const u of unlocks) {
+      const t = new Date(u.unlocked_at).getTime();
+      if (t < cutoff) continue;
+      const day = new Date(u.unlocked_at).toISOString().slice(0, 10);
+      const cur = map.get(day) ?? { day, unlocks_count: 0, net_credits: 0 };
+      cur.unlocks_count += 1;
+      cur.net_credits += Number(u.unlock_price_credits ?? 0) - Number(u.refunded_amount_credits ?? 0);
+      map.set(day, cur);
+    }
+    return [...map.values()].sort((a, b) => (a.day < b.day ? 1 : -1));
+  }, [unlocks]);
   const totals = (byService ?? []).reduce(
     (a, r) => ({ unlocks: a.unlocks + (r.unlocks_count ?? 0), gross: a.gross + Number(r.gross_credits ?? 0), net: a.net + Number(r.net_credits ?? 0) }),
     { unlocks: 0, gross: 0, net: 0 },
