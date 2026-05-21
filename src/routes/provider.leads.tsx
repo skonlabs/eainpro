@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle } from "lucide-react";
+import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle } from "lucide-react";
 import { X as XIcon } from "lucide-react";
 
 export const Route = createFileRoute("/provider/leads")({
@@ -292,6 +292,38 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
   const [price, setPrice] = useState<string>(unlock.quoted_price_mmk?.toString() ?? "");
   const [notes, setNotes] = useState(unlock.provider_notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportKind, setReportKind] = useState<"wrong_info" | "spam_lead" | "fraud" | "other">("wrong_info");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("unlock_refund_requests")
+      .select("id")
+      .eq("unlock_id", unlock.id)
+      .maybeSingle()
+      .then(({ data }) => { if (active) setReportSent(!!data); });
+    return () => { active = false; };
+  }, [unlock.id]);
+
+  const submitReport = async () => {
+    if (!reportReason.trim()) { toast.error("Add a short reason"); return; }
+    setReportBusy(true);
+    const { error } = await supabase.from("unlock_refund_requests").insert({
+      unlock_id: unlock.id,
+      provider_id: unlock.provider_id,
+      lead_id: unlock.lead_id,
+      reason: `[${reportKind}] ${reportReason.trim()}`,
+    });
+    setReportBusy(false);
+    if (error) return toast.error(error.message);
+    setReportSent(true);
+    setReportOpen(false);
+    toast.success("Report sent. Admin will review.");
+  };
 
   const save = async () => {
     setSaving(true);
@@ -379,6 +411,52 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       </div>
       <Textarea className="mt-2" placeholder="Internal notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
       {unlock.is_refunded && <p className="mt-2 text-xs text-amber-600">Refunded: {fmt(unlock.refunded_amount_credits)} credits</p>}
+      <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
+        {reportSent ? (
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <AlertTriangle className="h-3 w-3" /> Refund request submitted
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setReportOpen(true)}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 hover:underline"
+          >
+            <AlertTriangle className="h-3 w-3" /> Report invalid lead / request refund
+          </button>
+        )}
+      </div>
+      <Dialog open={reportOpen} onOpenChange={(o) => !o && setReportOpen(false)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Report this lead</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-xs text-muted-foreground">
+              Use this when the lead has wrong contact info, is spam, or fraudulent. Admin will review and refund your credits if approved.
+            </p>
+            <div>
+              <label className="text-xs font-medium">Reason</label>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-background p-2 text-sm"
+                value={reportKind}
+                onChange={(e) => setReportKind(e.target.value as typeof reportKind)}
+              >
+                <option value="wrong_info">Wrong contact info / unreachable</option>
+                <option value="spam_lead">Spam or duplicate</option>
+                <option value="fraud">Fraudulent</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Details</label>
+              <Textarea rows={3} value={reportReason} onChange={(e) => setReportReason(e.target.value)} placeholder="What happened?" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reportBusy}>Cancel</Button>
+            <Button onClick={submitReport} disabled={reportBusy || !reportReason.trim()}>{reportBusy ? "Sending…" : "Submit report"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
