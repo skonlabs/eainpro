@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Phone } from "lucide-react";
 import type { Lead, T } from "./types";
+import { Field } from "./Field";
 
 export function DetailsCard({
   lead,
@@ -62,37 +63,30 @@ export function DetailsCard({
   };
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Service", "ဝန်ဆောင်မှု")}</div>
-          <div>{serviceName ? L(serviceName.en, serviceName.my) : "—"}</div>
-        </div>
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Status", "အခြေအနေ")}</div>
-          <div className="capitalize">{lead.status.replace(/_/g, " ")}</div>
-        </div>
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Posted", "တင်ခဲ့")}</div>
-          <div>{new Date(lead.created_at).toLocaleString()}</div>
-        </div>
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Budget", "ဘတ်ဂျက်")}</div>
-          <div>
-            {lead.budget_min || lead.budget_max
+      <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-muted/30 p-3.5">
+        <Field label={L("Service", "ဝန်ဆောင်မှု")}>
+          {serviceName ? L(serviceName.en, serviceName.my) : "—"}
+        </Field>
+        <Field label={L("Status", "အခြေအနေ")}>
+          <span className="capitalize">{lead.status.replace(/_/g, " ")}</span>
+        </Field>
+        <Field label={L("Posted", "တင်ခဲ့")}>
+          {new Date(lead.created_at).toLocaleString()}
+        </Field>
+        <Field label={L("Budget", "ဘတ်ဂျက်")}>
+          {lead.budget_min || lead.budget_max
               ? `${lead.budget_min ? lead.budget_min.toLocaleString() : "—"} – ${lead.budget_max ? lead.budget_max.toLocaleString() : "—"} MMK`
               : "—"}
-          </div>
-        </div>
+        </Field>
       </div>
       {lead.short_description && lead.full_description && lead.short_description !== lead.full_description && (
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Summary", "အကျဉ်း")}</div>
-          <p className="mt-1 text-sm">{lead.short_description}</p>
-        </div>
+        <Field label={L("Summary", "အကျဉ်း")}>
+          <p className="font-normal">{lead.short_description}</p>
+        </Field>
       )}
       <div>
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Description", "ဖော်ပြ")}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Description", "ဖော်ပြ")}</div>
           {canEdit && !editing && (
             <button type="button" onClick={() => setEditing(true)} className="text-xs font-medium text-primary hover:underline">
               {L("Edit", "ပြင်")}
@@ -100,7 +94,7 @@ export function DetailsCard({
           )}
         </div>
         {editing ? (
-          <div className="mt-1 space-y-2">
+          <div className="mt-1.5 space-y-2">
             <textarea
               className="w-full rounded-md border border-border bg-background p-2 text-sm"
               rows={4}
@@ -110,7 +104,7 @@ export function DetailsCard({
             />
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Urgency", "အရေးပေါ်")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Urgency", "အရေးပေါ်")}</div>
                 <select
                   className="mt-1 w-full rounded-md border border-border bg-background p-2 text-sm"
                   value={urgency}
@@ -124,15 +118,15 @@ export function DetailsCard({
                 </select>
               </div>
               <div>
-                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Preferred date", "ရက်")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Preferred date", "ရက်")}</div>
                 <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} disabled={saving} />
               </div>
               <div>
-                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Preferred time", "အချိန်")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Preferred time", "အချိန်")}</div>
                 <Input type="time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} disabled={saving} />
               </div>
               <div>
-                <div className="text-[10px] font-semibold uppercase text-muted-foreground">{L("Address", "လိပ်စာ")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{L("Address", "လိပ်စာ")}</div>
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={L("Street, ward…", "လမ်း, ရပ်ကွက်…")} disabled={saving} />
               </div>
             </div>
@@ -153,25 +147,22 @@ export function DetailsCard({
             </div>
           </div>
         ) : (
-          <p className="mt-1 text-sm whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</p>
+          <p className="mt-1.5 text-sm font-medium text-foreground whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</p>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Urgency", "အရေးပေါ်")}</div>
-          <div>{lead.urgency}</div>
-        </div>
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Preferred", "နှစ်သက်ရာ")}</div>
-          <div>{lead.preferred_date ?? "—"} {lead.preferred_time ? `· ${lead.preferred_time}` : ""}</div>
-        </div>
-      </div>
-      <div>
-        <div className="text-xs font-semibold uppercase text-muted-foreground">{L("Location", "နေရာ")}</div>
-        <div className="mt-1 flex items-center gap-1 text-sm">
-          <MapPin className="h-3.5 w-3.5" />
-          {lead.city_slug}{showContact && lead.address ? ` · ${lead.address}` : ""}
-        </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-border/60 pt-3">
+        <Field label={L("Urgency", "အရေးပေါ်")}>
+          <span className="capitalize">{lead.urgency.replace(/_/g, " ")}</span>
+        </Field>
+        <Field label={L("Preferred", "နှစ်သက်ရာ")}>
+          {lead.preferred_date ?? "—"}{lead.preferred_time ? ` · ${lead.preferred_time}` : ""}
+        </Field>
+        <Field label={L("Location", "နေရာ")} className="col-span-2">
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="capitalize">{lead.city_slug}</span>{showContact && lead.address ? <span className="text-muted-foreground"> · {lead.address}</span> : null}
+          </span>
+        </Field>
       </div>
       {showContact && (
         <div className="rounded-lg border border-border bg-background p-3 text-sm">
