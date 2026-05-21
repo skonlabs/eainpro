@@ -302,19 +302,9 @@ function LeadPage() {
                     booking={booking}
                     L={L}
                     onAccept={async () => {
-                      const { error } = await supabase.from("bookings").insert({
-                        lead_id: lead.id,
-                        quote_id: q.id,
-                        customer_id: user.id,
-                        provider_id: q.provider_id,
-                        amount: q.amount,
-                        status: "accepted",
-                      });
+                      const { data, error } = await supabase.rpc("accept_quote", { p_quote_id: q.id });
                       if (error) { toast.error(error.message); return; }
-                      await supabase.from("quotes").update({ status: "accepted" }).eq("id", q.id);
-                      await supabase.from("customer_leads").update({ status: "booked" }).eq("id", lead.id);
-                      const { data: b } = await supabase.from("bookings").select("*").eq("lead_id", lead.id).maybeSingle();
-                      setBooking((b as Booking) ?? null);
+                      setBooking((data as Booking) ?? null);
                       setTab("booking");
                       toast.success(L("Booked!", "ဘုတ်ကင်ပြီး!"));
                     }}
