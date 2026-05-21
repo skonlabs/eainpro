@@ -72,6 +72,7 @@ export function AppBar() {
   const isRoot = TAB_ROOTS.has(pathname);
   const hideBack = NO_BACK_ROUTES.has(pathname);
   const title = titleFor(pathname, lang);
+  const isFullBleed = pathname === "/admin" || pathname.startsWith("/admin/");
 
   const goBack = () => {
     // If there's prior history within this session, use it; otherwise fall
@@ -88,7 +89,13 @@ export function AppBar() {
       className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-14 max-w-screen-md items-center gap-2 px-3 sm:px-4">
+      <div
+        className={
+          isFullBleed
+            ? "flex h-14 w-full items-center gap-2 px-3 sm:px-4"
+            : "mx-auto flex h-14 max-w-screen-md items-center gap-2 px-3 sm:px-4"
+        }
+      >
         {isRoot || hideBack ? (
           <Link to="/" className="flex items-center gap-2">
             <img
