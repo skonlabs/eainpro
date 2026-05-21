@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [rolesReady, setRolesReady] = useState(false);
   const lastResolvedAuthState = useRef<string | undefined>(undefined);
   const lastSessionKey = useRef<string | undefined>(undefined);
-  const signedOutRef = useRef(false);
+  const suppressAuthEventsRef = useRef(false);
 
   const loadRoles = async (userId: string | undefined): Promise<void> => {
     setRolesReady(false);
@@ -60,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const apply = async (s: Session | null) => {
       if (!active) return;
-      if (signedOutRef.current && s) return;
 
       const nextKey = `${s?.user?.id ?? "guest"}|${s?.access_token ?? ""}`;
       if (lastSessionKey.current === nextKey) {
@@ -76,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
-      if (e === "SIGNED_IN") signedOutRef.current = false;
+      if (suppressAuthEventsRef.current && e !== "SIGNED_OUT" && s) return;
       if (e === "SIGNED_OUT") {
-        signedOutRef.current = true;
+        suppressAuthEventsRef.current = false;
         lastSessionKey.current = "guest|";
       }
       void apply(s);
@@ -87,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Cross-tab safety: if another tab clears the auth token, drop session here.
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === SUPABASE_AUTH_STORAGE_KEY && !ev.newValue) {
-        signedOutRef.current = true;
+        suppressAuthEventsRef.current = false;
         lastSessionKey.current = "guest|";
         setSession(null);
         setSessionReady(true);
@@ -145,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rolesReady,
       signOut: async () => {
         // Optimistically clear local state.
-        signedOutRef.current = true;
+        suppressAuthEventsRef.current = true;
         lastSessionKey.current = "guest|";
         setSession(null);
         setSessionReady(true);
