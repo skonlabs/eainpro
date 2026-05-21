@@ -6,6 +6,15 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
+import { deriveBookingState, statusMeta } from "@/lib/booking-status";
+
+const TONE_CLASS: Record<string, string> = {
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  active: "bg-primary/10 text-primary",
+  confirmed: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  done: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  cancelled: "bg-muted text-muted-foreground line-through",
+};
 
 export const Route = createFileRoute("/my-requests")({
   component: MyRequestsPage,
@@ -33,10 +42,22 @@ function MyRequestsPage() {
         .order("created_at", { ascending: false });
       if (!leads?.length) return [];
       const ids = leads.map((l) => l.id);
-      const { data: qs } = await supabase.from("quotes").select("lead_id").in("lead_id", ids);
+      const [{ data: qs }, { data: bks }] = await Promise.all([
+        supabase.from("quotes").select("lead_id").in("lead_id", ids),
+        supabase
+          .from("bookings")
+          .select("lead_id, status, scheduled_at, time_confirmed_by_customer, time_confirmed_by_provider")
+          .in("lead_id", ids),
+      ]);
       const counts = new Map<string, number>();
       (qs ?? []).forEach((r) => counts.set(r.lead_id, (counts.get(r.lead_id) ?? 0) + 1));
-      return leads.map((l) => ({ ...l, quote_count: counts.get(l.id) ?? 0 }));
+      const bookingMap = new Map<string, any>();
+      (bks ?? []).forEach((b) => bookingMap.set(b.lead_id, b));
+      return leads.map((l) => ({
+        ...l,
+        quote_count: counts.get(l.id) ?? 0,
+        booking: bookingMap.get(l.id) ?? null,
+      }));
     },
   });
 
@@ -57,13 +78,18 @@ function MyRequestsPage() {
         )}
         {rows && rows.length > 0 && (
           <ul className="mt-6 grid gap-2">
-            {rows.map((r) => (
+            {rows.map((r) => {
+              const state = deriveBookingState(r.booking, { status: r.status, quotes_count: r.quote_count });
+              const meta = statusMeta(state);
+              return (
               <li key={r.id}>
                 <Link to="/request/$leadId" params={{ leadId: r.id }} search={{ tab: "details" }} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate font-semibold">{r.short_description}</span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold">{r.status}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${TONE_CLASS[meta.tone] ?? "bg-muted"}`}>
+                        {L(meta.en, meta.my)}
+                      </span>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />{r.city_slug}{r.address ? ` · ${r.address}` : ""}
@@ -74,7 +100,8 @@ function MyRequestsPage() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </Link>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </main>
