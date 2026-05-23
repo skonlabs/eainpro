@@ -16,6 +16,7 @@ import { AppBar } from "@/components/site/AppBar";
 import { BlockedBanner } from "@/components/site/BlockedBanner";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
+import { CrawlerGate } from "@/components/site/CrawlerGate";
 
 function NotFoundComponent() {
   return (
@@ -142,6 +143,7 @@ function RootComponent() {
   const isFullBleed = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
     <QueryClientProvider client={queryClient}>
+      <CrawlerGate>
       <AuthProvider>
         <I18nProvider>
           <div className="flex min-h-screen flex-col bg-background">
@@ -161,6 +163,7 @@ function RootComponent() {
           <Toaster position="top-center" richColors />
         </I18nProvider>
       </AuthProvider>
+      </CrawlerGate>
     </QueryClientProvider>
   );
 }
