@@ -60,6 +60,9 @@ export function QuoteCard({
           </div>
           {quote.eta_text && <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{quote.eta_text}</div>}
           {quote.notes && <p className="mt-1 text-sm text-muted-foreground">{quote.notes}</p>}
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {L("Sent", "ပို့ပြီး")}: {new Date(quote.created_at).toLocaleString()}
+          </p>
         </div>
         <div className="shrink-0 text-right">
           <div className="text-lg font-bold">{Number(quote.amount).toLocaleString()} MMK</div>

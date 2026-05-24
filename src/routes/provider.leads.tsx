@@ -266,6 +266,9 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
       <p className="mt-2 text-sm text-muted-foreground italic">
         Lead details are hidden. View the lead to see the customer's request, contact info and address.
       </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Received: {new Date(lead.created_at).toLocaleString()}
+      </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
@@ -401,7 +404,11 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""} · unlocked {new Date(unlock.unlocked_at).toLocaleDateString()}
+            {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""}
+          </div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            {l?.created_at && <>Lead received: {new Date(l.created_at).toLocaleString()} · </>}
+            Unlocked: {new Date(unlock.unlocked_at).toLocaleString()}
           </div>
         </div>
         {l?.customer_phone && (
