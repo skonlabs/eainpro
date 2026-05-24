@@ -21,6 +21,17 @@ export const Route = createFileRoute("/provider/leads")({
 });
 
 const STATUS_OPTIONS = ["unlocked","contacted","quoted","won","lost","customer_no_response","invalid","completed"] as const;
+type StatusKey = typeof STATUS_OPTIONS[number];
+const STATUS_META: Record<StatusKey, { label: string; hint: string; tone: string }> = {
+  unlocked: { label: "New — not contacted yet", hint: "You just unlocked this lead.", tone: "bg-muted text-foreground" },
+  contacted: { label: "Contacted customer", hint: "Use after you've called or messaged the customer.", tone: "bg-blue-100 text-blue-800" },
+  quoted: { label: "Quote sent", hint: "Set automatically when you send a quote.", tone: "bg-indigo-100 text-indigo-800" },
+  won: { label: "Won — customer accepted", hint: "Customer agreed to hire you.", tone: "bg-emerald-100 text-emerald-800" },
+  lost: { label: "Lost — chose another provider", hint: "Customer picked someone else or declined.", tone: "bg-rose-100 text-rose-800" },
+  customer_no_response: { label: "No response from customer", hint: "You tried to reach them but got no reply.", tone: "bg-amber-100 text-amber-800" },
+  invalid: { label: "Invalid lead", hint: "Wrong info, spam, or fraud — also submit a refund report.", tone: "bg-amber-100 text-amber-800" },
+  completed: { label: "Job completed", hint: "Work is finished. (Bookings auto-update this too.)", tone: "bg-emerald-100 text-emerald-800" },
+};
 
 const DISMISS_KEY = "fixido.dismissedLeads.v1";
 const readDismissed = (): Set<string> => {
