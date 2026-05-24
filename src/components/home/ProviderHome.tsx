@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useProviderActivity } from "@/hooks/useProviderActivity";
+import { useNotifications } from "@/hooks/useNotifications";
 import { CATEGORIES } from "@/lib/catalog";
 import { listAvailableLeads } from "@/lib/leads";
 import {
@@ -66,7 +66,7 @@ export function ProviderHome({
   L: Lfn;
 }) {
   const nav = useNavigate();
-  const { items: activity } = useProviderActivity(userId, 8);
+  const { items: activity } = useNotifications(userId, 8);
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [bookings, setBookings] = useState<ProviderBooking[] | null>(null);
   const [newJobsCount, setNewJobsCount] = useState<number>(0);
