@@ -4,6 +4,7 @@ import { Bell, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/useNotifications";
+import { translateNotificationTitle, translateNotificationBody } from "@/lib/notification-i18n";
 import {
   Popover,
   PopoverContent,
@@ -58,8 +59,8 @@ export function NotificationBell() {
                 <div className="flex gap-2 px-3 py-3 text-left">
                   {!n.read_at && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   <div className={`min-w-0 flex-1 ${n.read_at ? "opacity-70" : ""}`}>
-                    <p className="truncate text-sm font-medium">{n.title}</p>
-                    {n.body && <p className="line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
+                    <p className="truncate text-sm font-medium">{translateNotificationTitle(n.title, lang)}</p>
+                    {n.body && <p className="line-clamp-2 text-xs text-muted-foreground">{translateNotificationBody(n.body, lang)}</p>}
                     <p className="mt-1 text-[10px] text-muted-foreground">
                       {new Date(n.created_at).toLocaleString()}
                     </p>
