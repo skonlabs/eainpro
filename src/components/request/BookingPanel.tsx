@@ -8,6 +8,7 @@ import { Star, AlertTriangle, Phone, MessageCircle, MapPin, ShieldCheck, User } 
 import { RescheduleControl } from "./RescheduleControl";
 import type { Lead, Booking, T } from "./types";
 import { Field, FieldLabel } from "./Field";
+import { bookingStatusPair } from "@/lib/status-i18n";
 
 const NEXT_STATUS: Record<string, { key: string; en: string; my: string }> = {
   accepted: { key: "on_the_way", en: "On the way", my: "လမ်းပေါ်" },
@@ -249,7 +250,7 @@ export function BookingPanel({
 
       <div className="flex items-center justify-between">
         <FieldLabel>{L("Status", "အခြေအနေ")}</FieldLabel>
-        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold capitalize text-primary">{booking.status.replace(/_/g, " ")}</span>
+        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold capitalize text-primary">{L(bookingStatusPair(booking.status).en, bookingStatusPair(booking.status).my)}</span>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-5">
         <Field label={L("Amount", "ပမာဏ")}>

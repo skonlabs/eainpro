@@ -8,6 +8,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star, Bell, Trophy, XCircle, Send, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
+import { bookingStatusPair } from "@/lib/status-i18n";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
@@ -166,7 +167,7 @@ function DashboardPage() {
                 <Link to="/request/$leadId" params={{ leadId: b.lead_id }} search={{ tab: "booking" }} className="block">
                   <div className="flex items-center justify-between">
                     <div className="font-semibold">{b.lead?.short_description ?? L("Booking", "ဘုတ်ကင်")}</div>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{b.status.replace(/_/g, " ")}</span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{L(bookingStatusPair(b.status).en, bookingStatusPair(b.status).my)}</span>
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{b.scheduled_at ? new Date(b.scheduled_at).toLocaleString() : L("TBD", "မသတ်မှတ်")}</span>

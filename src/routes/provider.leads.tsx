@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle, Send } from "lucide-react";
 import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
+import { useI18n } from "@/lib/i18n";
+import { unlockStatusPair, unlockHintPair } from "@/lib/status-i18n";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -325,6 +327,9 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
 }
 
 function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void }) {
+  const { lang } = useI18n();
+  const tStatus = (s: string) => (lang === "en" ? unlockStatusPair(s).en : unlockStatusPair(s).my);
+  const tHint = (s: string) => (lang === "en" ? unlockHintPair(s).en : unlockHintPair(s).my);
   const l = unlock.customer_leads;
   const [status, setStatus] = useState(unlock.status);
   const [price, setPrice] = useState<string>(unlock.quoted_price_mmk?.toString() ?? "");
@@ -525,23 +530,23 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             <div className="text-[11px] text-muted-foreground">Track this lead so you remember where it stands. Only you see this.</div>
           </div>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_META[unlock.status as StatusKey]?.tone ?? "bg-muted text-foreground"}`}>
-            {STATUS_META[unlock.status as StatusKey]?.label ?? unlock.status}
+            {tStatus(unlock.status)}
           </span>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <label className="text-[11px] font-medium text-muted-foreground">Change to:</label>
+          <label className="text-[11px] font-medium text-muted-foreground">{lang === "en" ? "Change to:" : "ပြောင်းရန်:"}</label>
           <select
             className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{tStatus(s)}</option>)}
           </select>
           {status !== unlock.status && (
             <Button
               size="sm"
               onClick={async () => {
-                if (!confirm(`Update job progress to "${STATUS_META[status as StatusKey].label}"?`)) return;
+                if (!confirm(`Update job progress to "${tStatus(status)}"?`)) return;
                 await save();
               }}
               disabled={saving}
@@ -551,7 +556,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           )}
         </div>
         {status !== unlock.status && (
-          <p className="mt-2 text-[11px] text-muted-foreground">{STATUS_META[status as StatusKey]?.hint}</p>
+          <p className="mt-2 text-[11px] text-muted-foreground">{tHint(status)}</p>
         )}
       </div>
       {unlock.is_refunded && <p className="mt-2 text-xs text-amber-600">Refunded: {fmt(unlock.refunded_amount_credits)} credits</p>}

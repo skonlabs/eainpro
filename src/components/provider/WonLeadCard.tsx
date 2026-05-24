@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Phone, MessageCircle, Calendar, MapPin, CheckCircle2, Truck, Play, Clock, ChevronRight } from "lucide-react";
 import type { Booking } from "@/components/request/types";
+import { useI18n } from "@/lib/i18n";
+import { bookingStatusPair } from "@/lib/status-i18n";
 
 const ADVANCE: Record<string, { key: string; label: string; icon: any }> = {
   accepted: { key: "on_the_way", label: "I'm on the way", icon: Truck },
@@ -15,16 +17,8 @@ const ADVANCE: Record<string, { key: string; label: string; icon: any }> = {
   in_progress: { key: "completed", label: "Mark completed", icon: CheckCircle2 },
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  accepted: "Booked",
-  on_the_way: "On the way",
-  started: "In progress",
-  in_progress: "In progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
 export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId: string; onChange: () => void }) {
+  const { lang } = useI18n();
   const l = unlock.customer_leads;
   const leadId: string = unlock.lead_id;
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -97,7 +91,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
           <div className="text-base font-semibold">{l?.customer_name ?? "Customer"}</div>
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-              {STATUS_LABEL[status] ?? status}
+              {lang === "en" ? bookingStatusPair(status).en : bookingStatusPair(status).my}
             </span>
             {booking?.amount && <span className="font-semibold text-foreground">{Number(booking.amount).toLocaleString()} MMK</span>}
           </div>
