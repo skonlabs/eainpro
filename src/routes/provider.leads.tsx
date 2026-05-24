@@ -266,6 +266,9 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
       <p className="mt-2 text-sm text-muted-foreground italic">
         Lead details are hidden. View the lead to see the customer's request, contact info and address.
       </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Received: {new Date(lead.created_at).toLocaleString()}
+      </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
