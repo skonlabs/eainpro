@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useNotifications } from "@/hooks/useNotifications";
 import { CATEGORIES } from "@/lib/catalog";
 import { listAvailableLeads } from "@/lib/leads";
 import {
@@ -16,6 +17,9 @@ import {
   MapPin,
   Calendar as CalendarIcon,
   BadgeCheck,
+  Bell,
+  Trophy,
+  XCircle,
 } from "lucide-react";
 import {
   Greeting,
@@ -62,6 +66,7 @@ export function ProviderHome({
   L: Lfn;
 }) {
   const nav = useNavigate();
+  const { items: notifications } = useNotifications(userId, 8);
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [bookings, setBookings] = useState<ProviderBooking[] | null>(null);
   const [newJobsCount, setNewJobsCount] = useState<number>(0);
@@ -271,6 +276,41 @@ export function ProviderHome({
           </ul>
         </section>
       )}
+
+      <section>
+        <SectionHeader title={L("Recent activity", "လတ်တလော လှုပ်ရှားမှု")} />
+        {notifications.length === 0 ? (
+          <Empty
+            icon={<Bell className="h-5 w-5" />}
+            title={L("No notifications yet", "အသိပေးချက် မရှိသေးပါ")}
+            sub={L("New leads and customer updates will appear here.", "Lead အသစ်များနှင့် customer update များ ဒီမှာ ပေါ်မည်။")}
+          />
+        ) : (
+          <ul className="space-y-2">
+            {notifications.map((n) => {
+              const icon =
+                n.kind === "new_matching_lead" ? <Briefcase className="h-4 w-4" /> :
+                n.kind === "quote_accepted" ? <Trophy className="h-4 w-4" /> :
+                n.kind === "lead_lost" || n.kind === "booking_cancelled" ? <XCircle className="h-4 w-4" /> :
+                <Bell className="h-4 w-4" />;
+              return (
+                <li key={n.id}>
+                  <Link
+                    to={(n.link || "/provider/leads") as never}
+                    className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/40"
+                  >
+                    <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">{icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">{n.title}</div>
+                      {n.body && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</div>}
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       <section className="grid grid-cols-2 gap-2">
         <QuickAction
