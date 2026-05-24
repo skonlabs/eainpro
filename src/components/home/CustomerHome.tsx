@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
+import { useNotifications } from "@/hooks/useNotifications";
 import { CATEGORIES } from "@/lib/catalog";
 import {
   ChevronRight,
@@ -12,6 +13,7 @@ import {
   Star,
   Clock,
   RotateCw,
+  Bell,
 } from "lucide-react";
 import {
   HeroCard,
@@ -64,6 +66,7 @@ export function CustomerHome({
   const [bookings, setBookings] = useState<CustomerBooking[] | null>(null);
   const [needsReview, setNeedsReview] = useState<CustomerBooking[]>([]);
   const [q, setQ] = useState("");
+  const { items: notifications } = useNotifications(userId, 6);
 
   useEffect(() => {
     (async () => {
@@ -369,6 +372,34 @@ export function CustomerHome({
           </ul>
         </section>
       )}
+
+      <section>
+        <SectionHeader title={L("Recent activity", "လတ်တလော လှုပ်ရှားမှု")} />
+        {notifications.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-center text-xs text-muted-foreground">
+            {L("Quotes, booking updates, and visit confirmations will show here.", "Quote များ၊ booking update များနှင့် visit confirmation များ ဒီမှာ ပေါ်မည်။")}
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {notifications.map((n) => (
+              <li key={n.id}>
+                <Link
+                  to={(n.link || "/my-requests") as never}
+                  className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <Bell className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{n.title}</div>
+                    {n.body && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</div>}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between px-1">
