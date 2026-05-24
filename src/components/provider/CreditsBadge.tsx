@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Wallet, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getWallet, fmt } from "@/lib/wallet";
@@ -10,6 +10,7 @@ type Props = { size?: "sm" | "md"; variant?: "solid" | "onDark"; compact?: boole
 export function CreditsBadge({ size = "md", variant = "solid", compact = false }: Props) {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
+  const instanceId = useId();
 
   useEffect(() => {
     if (!user) return;
@@ -20,7 +21,7 @@ export function CreditsBadge({ size = "md", variant = "solid", compact = false }
     };
     load();
     const ch = supabase
-      .channel(`wallet-badge-${user.id}`)
+      .channel(`wallet-badge-${user.id}-${instanceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "wallets", filter: `provider_id=eq.${user.id}` }, load)
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
