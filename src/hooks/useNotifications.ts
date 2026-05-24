@@ -17,7 +17,7 @@ function sortNotifications(items: AppNotification[]) {
   );
 }
 
-export function useNotifications(userId?: string, limit = 20) {
+export function useNotifications(userId?: string, limit = 20, enabled = true) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -27,7 +27,7 @@ export function useNotifications(userId?: string, limit = 20) {
   }, []);
 
   useEffect(() => {
-    if (!userId) {
+    if (!enabled || !userId) {
       setItems([]);
       setLoading(false);
       return;
@@ -54,10 +54,10 @@ export function useNotifications(userId?: string, limit = 20) {
     return () => {
       active = false;
     };
-  }, [userId, limit, refreshKey]);
+  }, [userId, limit, refreshKey, enabled]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!enabled || !userId) return;
 
     const channel = supabase
       .channel(`notifications:${userId}:${limit}`)
@@ -92,7 +92,7 @@ export function useNotifications(userId?: string, limit = 20) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, limit]);
+  }, [userId, limit, enabled]);
 
   const unreadCount = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
