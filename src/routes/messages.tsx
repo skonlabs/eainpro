@@ -180,49 +180,58 @@ function MessagesPage() {
         </div>
       ) : (
         <div className="mt-4 space-y-4">
-          {threads.map((g) => (
-            <section key={g.peerId} className="overflow-hidden rounded-2xl border border-border bg-card">
-              <header className="flex items-center gap-3 border-b border-border/60 bg-muted/30 px-3 py-2.5">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  {g.peerName.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-bold">{g.peerName}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {g.peerRole === "provider" ? L("Provider", "ပညာရှင်") : g.peerRole === "customer" ? L("Homeowner", "အိမ်ပိုင်ရှင်") : ""}
-                    {" · "}
-                    {g.leads.length} {g.leads.length === 1 ? L("job", "အလုပ်") : L("jobs", "အလုပ်များ")}
+          {threads.map((g) => {
+            const isOpen = expanded.has(g.peerId);
+            return (
+              <section key={g.peerId} className="overflow-hidden rounded-2xl border border-border bg-card">
+                <header
+                  onClick={() => togglePeer(g.peerId)}
+                  className={`flex cursor-pointer items-center gap-3 bg-muted/30 px-3 py-2.5 select-none ${isOpen ? "border-b border-border/60" : ""}`}
+                >
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                    {g.peerName.slice(0, 1).toUpperCase()}
                   </div>
-                </div>
-              </header>
-              <ul className="divide-y divide-border">
-                {g.leads.map((t) => (
-                  <li key={t.leadId}>
-                    <Link
-                      to="/request/$leadId"
-                      params={{ leadId: t.leadId }}
-                      search={{ tab: "messages" }}
-                      className="flex items-start gap-3 p-3 transition-colors hover:bg-accent/40"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="truncate text-sm font-semibold">{t.title}</div>
-                          <div className="shrink-0 text-[11px] text-muted-foreground">{new Date(t.lastAt).toLocaleDateString()}</div>
-                        </div>
-                        {t.serviceLabel && t.serviceLabel !== t.title && (
-                          <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{t.serviceLabel}</div>
-                        )}
-                        <div className="mt-1 truncate text-sm text-muted-foreground">
-                          {t.isMine ? L("You: ", "သင်: ") : ""}{t.lastBody}
-                        </div>
-                      </div>
-                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold">{g.peerName}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {g.peerRole === "provider" ? L("Provider", "ပညာရှင်") : g.peerRole === "customer" ? L("Homeowner", "အိမ်ပိုင်ရှင်") : ""}
+                      {" · "}
+                      {g.leads.length} {g.leads.length === 1 ? L("job", "အလုပ်") : L("jobs", "အလုပ်များ")}
+                    </div>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                </header>
+                {isOpen && (
+                  <ul className="divide-y divide-border">
+                    {g.leads.map((t) => (
+                      <li key={t.leadId}>
+                        <Link
+                          to="/request/$leadId"
+                          params={{ leadId: t.leadId }}
+                          search={{ tab: "messages" }}
+                          className="flex items-start gap-3 p-3 transition-colors hover:bg-accent/40"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="truncate text-sm font-semibold">{t.title}</div>
+                              <div className="shrink-0 text-[11px] text-muted-foreground">{new Date(t.lastAt).toLocaleDateString()}</div>
+                            </div>
+                            {t.serviceLabel && t.serviceLabel !== t.title && (
+                              <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{t.serviceLabel}</div>
+                            )}
+                            <div className="mt-1 truncate text-sm text-muted-foreground">
+                              {t.isMine ? L("You: ", "သင်: ") : ""}{t.lastBody}
+                            </div>
+                          </div>
+                          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>
