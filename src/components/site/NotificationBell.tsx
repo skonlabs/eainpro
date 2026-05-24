@@ -20,7 +20,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const isProvider = roles.includes("provider");
   const providerActivity = useProviderActivity(user?.id, 20);
-  const notifications = useNotifications(user?.id, 20);
+  const notifications = useNotifications(user?.id, 20, !isProvider);
   const { items, unreadCount, markAllRead, markOneRead } = isProvider ? providerActivity : notifications;
 
   if (!user) return null;
