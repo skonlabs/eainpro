@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle, Send } from "lucide-react";
 import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
-import { CreditsBadge } from "@/components/provider/CreditsBadge";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -142,10 +141,7 @@ function LeadsPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6 sm:py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Leads</h1>
-          <CreditsBadge />
-        </div>
+        <h1 className="text-2xl font-bold">Leads</h1>
 
         {loadError ? (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
