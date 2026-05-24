@@ -304,13 +304,13 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteEta, setQuoteEta] = useState("");
   const [quoteBusy, setQuoteBusy] = useState(false);
-  const [existingQuote, setExistingQuote] = useState<{ id: string; amount: number } | null>(null);
+  const [existingQuote, setExistingQuote] = useState<{ id: string; amount: number; created_at: string } | null>(null);
 
   useEffect(() => {
     let active = true;
     supabase
       .from("quotes")
-      .select("id, amount")
+      .select("id, amount, created_at")
       .eq("lead_id", unlock.lead_id)
       .eq("provider_id", unlock.provider_id)
       .maybeSingle()
@@ -335,7 +335,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         },
         { onConflict: "lead_id,provider_id" },
       )
-      .select("id, amount")
+      .select("id, amount, created_at")
       .single();
     if (!error) {
       await updateUnlockStatus(unlock.id, {
@@ -472,7 +472,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         </Button>
         {existingQuote && (
           <span className="text-[11px] text-muted-foreground">
-            Sent: {fmt(existingQuote.amount)} MMK
+            Sent: {fmt(existingQuote.amount)} MMK · {new Date(existingQuote.created_at).toLocaleString()}
           </span>
         )}
         <select
