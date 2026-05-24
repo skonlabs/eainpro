@@ -213,14 +213,19 @@ export function StatusPill({ status }: { status: string }) {
   const { lang } = useI18n();
   const tint: Record<string, string> = {
     open: "bg-amber-500/15 text-amber-700",
+    active: "bg-amber-500/15 text-amber-700",
     quoted: "bg-sky-500/15 text-sky-700",
     accepted: "bg-emerald-500/15 text-emerald-700",
     in_progress: "bg-violet-500/15 text-violet-700",
     completed: "bg-muted text-muted-foreground",
     cancelled: "bg-muted text-muted-foreground",
+    fully_booked: "bg-emerald-500/15 text-emerald-700",
+    closed: "bg-muted text-muted-foreground",
+    expired: "bg-muted text-muted-foreground",
   };
   const labels: Record<string, { en: string; my: string }> = {
     open: { en: "open", my: "ဖွင့်ထား" },
+    active: { en: "active", my: "ဆောင်ရွက်ဆဲ" },
     quoted: { en: "quoted", my: "စျေးပေး" },
     accepted: { en: "accepted", my: "လက်ခံ" },
     in_progress: { en: "in progress", my: "ဆောင်ရွက်ဆဲ" },
@@ -228,6 +233,9 @@ export function StatusPill({ status }: { status: string }) {
     cancelled: { en: "cancelled", my: "ပယ်ဖျက်" },
     on_the_way: { en: "on the way", my: "လမ်းပေါ်" },
     started: { en: "started", my: "စတင်" },
+    fully_booked: { en: "fully booked", my: "ဘွတ်ကင် ပြည့်" },
+    closed: { en: "closed", my: "ပိတ်ထား" },
+    expired: { en: "expired", my: "သက်တမ်းကုန်" },
   };
   const l = labels[status];
   const text = l ? (lang === "en" ? l.en : l.my) : status.replace("_", " ");
