@@ -15,6 +15,11 @@ const TITLES: Pair[] = [
   { en: "Top-up rejected", my: "ငွေဖြည့်ခြင်း ပယ်ချ" },
   { en: "Low wallet balance", my: "ပိုက်ဆံအိတ် လက်ကျန် နည်းပါးနေ" },
   { en: "You lost a lead", my: "Lead တစ်ခု လက်လွတ်" },
+  { en: "Job marked completed", my: "အလုပ် ပြီးစီးကြောင်း မှတ်သားပြီး" },
+  { en: "Job started", my: "အလုပ် စတင်ပြီး" },
+  { en: "Job in progress", my: "အလုပ် ဆောင်ရွက်ဆဲ" },
+  { en: "Customer cancelled a lead", my: "ဖောက်သည် Lead ကို ပယ်ဖျက်လိုက်ပြီ" },
+  { en: "Lead closed — customer chose another provider", my: "Lead ပိတ်ပြီး — ဖောက်သည် အခြားသူကိုရွေး" },
 ];
 
 const BODIES: Pair[] = [
@@ -30,6 +35,10 @@ const BODIES: Pair[] = [
   { en: "They are heading to your address now.", my: "သင့်လိပ်စာဆီ လာနေပါပြီ။" },
   { en: "Your provider has started the job.", my: "ဝန်ဆောင်မှုပေးသူ အလုပ်စပြီ။" },
   { en: "Open the request to see details.", my: "အသေးစိတ်အတွက် တောင်းဆိုမှုကို ဖွင့်ပါ။" },
+  { en: "A customer sent this request directly to you. Unlock to see details.", my: "ဖောက်သည်က ဤတောင်းဆိုမှုကို သင့်ထံ တိုက်ရိုက်ပို့ထားသည်။ အသေးစိတ်ကြည့်ရန် Unlock လုပ်ပါ။" },
+  { en: "A refund was issued for a lead unlock.", my: "Lead unlock အတွက် ပြန်အမ်းငွေ ထုတ်ပေးပြီး။" },
+  { en: "They may contact you shortly.", my: "မကြာမီ သင့်ကို ဆက်သွယ်ပါမည်။" },
+  { en: "Please contact support.", my: "ကျေးဇူးပြု၍ support ကို ဆက်သွယ်ပါ။" },
 ];
 
 function translateExact(text: string | null | undefined, table: Pair[], lang: Lang): string {
@@ -52,11 +61,46 @@ export function translateNotificationTitle(title: string, lang: Lang): string {
   if (m) return `ပြန်အမ်းငွေ ထုတ်ပေး · +${m[1]} credits`;
   m = title.match(/^Direct request:\s*(.+)$/);
   if (m) return `တိုက်ရိုက်တောင်းဆိုမှု: ${m[1]}`;
+  m = title.match(/^New (.+) lead in (.+)$/);
+  if (m) return `${m[2]} တွင် ${m[1]} lead အသစ်`;
+  m = title.match(/^Booking (.+)$/);
+  if (m) return `ဘွတ်ကင် ${bookingStatusMy(m[1])}`;
   return translateExact(title, TITLES, lang);
 }
 
 export function translateNotificationBody(body: string | null, lang: Lang): string | null {
   if (!body) return body;
   if (lang !== "my") return body;
+  let m = body.match(/^Your booking status is now (.+)\.$/);
+  if (m) return `သင့်ဘွတ်ကင်အခြေအနေသည် ${bookingStatusMy(m[1])} ဖြစ်ပါပြီ။`;
+  m = body.match(/^A booking status is now (.+)\.$/);
+  if (m) return `ဘွတ်ကင်အခြေအနေသည် ${bookingStatusMy(m[1])} ဖြစ်ပါပြီ။`;
+  m = body.match(/^The (.+) lead in (.+) was booked with someone else\.$/);
+  if (m) return `${m[2]} ရှိ ${m[1]} lead ကို အခြားသူနှင့် ဘွတ်ကင်လုပ်လိုက်ပါပြီ။`;
+  m = body.match(/^The customer cancelled "(.+)"\. No further action needed\.$/);
+  if (m) return `ဖောက်သည်က "${m[1]}" ကို ပယ်ဖျက်လိုက်ပါပြီ။ နောက်ထပ် ဆောင်ရွက်စရာ မလိုပါ။`;
+  m = body.match(/^You have (.+) credits left\. Top up to keep unlocking leads\.$/);
+  if (m) return `သင့်တွင် ${m[1]} credits ကျန်ပါသည်။ Lead များ ဆက်လက် unlock လုပ်ရန် ငွေဖြည့်ပါ။`;
+  m = body.match(/^Unlock for (.+) credits to see customer details\.$/);
+  if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} credits ဖြင့် unlock လုပ်ပါ။`;
+  m = body.match(/^(.+) package added to your wallet\.$/);
+  if (m) return `${m[1]} package ကို သင့်ပိုက်ဆံအိတ်ထဲ ထည့်ပြီးပါပြီ။`;
   return translateExact(body, BODIES, lang);
+}
+
+function bookingStatusMy(s: string): string {
+  const map: Record<string, string> = {
+    pending: "စောင့်ဆိုင်းနေ",
+    accepted: "လက်ခံပြီး",
+    booked: "ဘွတ်ကင်ပြီး",
+    scheduled: "အချိန်သတ်မှတ်ပြီး",
+    on_the_way: "လမ်းပေါ်ရောက်နေပြီ",
+    started: "စတင်ပြီး",
+    in_progress: "ဆောင်ရွက်ဆဲ",
+    completed: "ပြီးစီး",
+    cancelled: "ပယ်ဖျက်ပြီး",
+    closed: "ပိတ်ထား",
+    expired: "သက်တမ်းကုန်",
+  };
+  return map[s] ?? s.replace(/_/g, " ");
 }
