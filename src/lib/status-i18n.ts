@@ -63,3 +63,24 @@ export function tUnlockHint(status: string, lang: Lang): string {
   if (!m) return "";
   return lang === "en" ? m.hint_en : m.hint_my;
 }
+
+// Returns {en, my} pair for components that already have an L(en, my) helper.
+export function bookingStatusPair(status: string): { en: string; my: string } {
+  const m = BOOKING_STATUS[status];
+  if (m) return { en: m.en, my: m.my };
+  const fallback = status.replace(/_/g, " ");
+  return { en: fallback, my: fallback };
+}
+
+export function unlockStatusPair(status: string): { en: string; my: string } {
+  const m = UNLOCK_STATUS[status];
+  if (m) return { en: m.en, my: m.my };
+  const fallback = status.replace(/_/g, " ");
+  return { en: fallback, my: fallback };
+}
+
+export function unlockHintPair(status: string): { en: string; my: string } {
+  const m = UNLOCK_STATUS[status];
+  if (m) return { en: m.hint_en, my: m.hint_my };
+  return { en: "", my: "" };
+}

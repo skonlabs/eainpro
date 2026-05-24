@@ -7,6 +7,7 @@ import { MapPin, Phone } from "lucide-react";
 import type { Lead, T } from "./types";
 import { Field, FieldLabel, FieldValue } from "./Field";
 import { CITIES, TOWNSHIPS } from "@/lib/catalog";
+import { bookingStatusPair } from "@/lib/status-i18n";
 
 export function DetailsCard({
   lead,
@@ -69,7 +70,7 @@ export function DetailsCard({
           {serviceName ? L(serviceName.en, serviceName.my) : "—"}
         </Field>
         <Field label={L("Status", "အခြေအနေ")}>
-          <span className="capitalize">{lead.status.replace(/_/g, " ")}</span>
+          <span className="capitalize">{L(bookingStatusPair(lead.status).en, bookingStatusPair(lead.status).my)}</span>
         </Field>
         <Field label={L("Posted", "တင်ခဲ့")}>
           {new Date(lead.created_at).toLocaleString()}
