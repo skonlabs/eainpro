@@ -158,6 +158,7 @@ function MessagesPage() {
       }
       groups.sort((a, b) => +new Date(b.lastAt) - +new Date(a.lastAt));
       setThreads(groups);
+      setExpanded(new Set(groups.map((g) => g.peerId)));
     })();
   }, [user, loading, nav, lang]);
 
