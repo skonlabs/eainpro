@@ -130,26 +130,11 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
                 </div>
               )}
             </div>
-            {booking && status !== "completed" && status !== "cancelled" && scheduled && (
-              <button
-                type="button"
-                onClick={() => setReschedOpen((v) => !v)}
-                className="shrink-0 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-semibold hover:bg-accent"
-              >
-                {reschedOpen ? "Close" : "Reschedule"}
-              </button>
-            )}
           </div>
 
           {booking && !bothConfirmed && customerConfirmed && booking.provider_id === userId && !reschedOpen && (
             <Button size="sm" className="mt-2 w-full" onClick={confirmTime} disabled={busy}>
               <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirm this time
-            </Button>
-          )}
-
-          {booking && !scheduled && status !== "completed" && status !== "cancelled" && !reschedOpen && (
-            <Button size="sm" className="mt-2 w-full" onClick={() => setReschedOpen(true)}>
-              <Calendar className="mr-1 h-3.5 w-3.5" /> Schedule visit
             </Button>
           )}
 
@@ -177,14 +162,23 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
           const blocked = status === "accepted" && !bothConfirmed;
           return (
             <div className="space-y-1">
-              <Button
-                onClick={advance}
-                disabled={busy || blocked}
-                className="w-full"
-                title={blocked ? "Both sides must confirm the visit time first" : undefined}
-              >
-                <next.icon className="mr-1.5 h-4 w-4" /> {next.label}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={blocked ? "default" : "outline"}
+                  onClick={() => setReschedOpen((v) => !v)}
+                  disabled={busy}
+                >
+                  <Calendar className="mr-1.5 h-4 w-4" />
+                  {scheduled ? "Reschedule" : "Schedule visit"}
+                </Button>
+                <Button
+                  onClick={advance}
+                  disabled={busy || blocked}
+                  title={blocked ? "Both sides must confirm the visit time first" : undefined}
+                >
+                  <next.icon className="mr-1.5 h-4 w-4" /> {next.label}
+                </Button>
+              </div>
               {blocked && (
                 <p className="text-center text-[11px] text-muted-foreground">
                   {scheduled
