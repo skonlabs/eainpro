@@ -50,6 +50,9 @@ function translateExact(text: string | null | undefined, table: Pair[], lang: La
 
 export function translateNotificationTitle(title: string, lang: Lang): string {
   if (lang !== "my") return title;
+  // Exact matches first so dynamic patterns don't swallow known titles.
+  const exactTitle = TITLES.find((p) => p.en === title);
+  if (exactTitle) return exactTitle.my;
   // Patterns
   let m = title.match(/^(.+) sent a quote$/);
   if (m) return `${m[1]} က စျေးနှုန်းပေးပို့ပါသည်`;
@@ -92,6 +95,7 @@ function bookingStatusMy(s: string): string {
   const map: Record<string, string> = {
     pending: "စောင့်ဆိုင်းနေ",
     accepted: "လက်ခံပြီး",
+    confirmed: "အတည်ပြုပြီး",
     booked: "ဘွတ်ကင်ပြီး",
     scheduled: "အချိန်သတ်မှတ်ပြီး",
     on_the_way: "လမ်းပေါ်ရောက်နေပြီ",
@@ -101,6 +105,7 @@ function bookingStatusMy(s: string): string {
     cancelled: "ပယ်ဖျက်ပြီး",
     closed: "ပိတ်ထား",
     expired: "သက်တမ်းကုန်",
+    requested: "တောင်းဆိုထား",
   };
   return map[s] ?? s.replace(/_/g, " ");
 }
