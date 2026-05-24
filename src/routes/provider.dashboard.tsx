@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star } from "lucide-react";
+import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star, Bell, Trophy, XCircle, Send, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
@@ -15,6 +15,15 @@ type Booking = { id: string; lead_id: string; status: string; scheduled_at: stri
 type EarningsRow = { id: string; amount: number | null; provider_confirmed_at: string | null; scheduled_at: string | null; status: string };
 
 type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string };
+
+type ActivityRow = {
+  id: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  created_at: string;
+};
 
 function DashboardPage() {
   const { lang } = useI18n();
@@ -40,7 +49,9 @@ function DashboardPage() {
         nav({ to: "/provider/onboarding" });
         return { missing: true as const };
       }
-      const [{ data: bks }, { data: done }, { data: rvs }] = await Promise.all([
+      const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+      const since7d  = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
+      const [{ data: bks }, { data: done }, { data: rvs }, { data: activity }, { count: newLeads }, { count: pendingQuotes }, { count: wonWeek }] = await Promise.all([
         supabase
           .from("bookings")
           .select("id, lead_id, status, scheduled_at, amount, lead:customer_leads(short_description, city_slug, address)")
@@ -61,6 +72,28 @@ function DashboardPage() {
           .eq("rated_by", "customer")
           .order("created_at", { ascending: false })
           .limit(20),
+        supabase
+          .from("notifications")
+          .select("id, kind, title, body, link, created_at")
+          .in("kind", ["new_matching_lead","quote_accepted","lead_lost","booking_cancelled","review_requested","status_changed","lead_unlocked_by_provider"])
+          .order("created_at", { ascending: false })
+          .limit(15),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "new_matching_lead")
+          .gte("created_at", since24h),
+        supabase
+          .from("quotes")
+          .select("id", { count: "exact", head: true })
+          .eq("provider_id", uid)
+          .eq("status", "pending"),
+        supabase
+          .from("provider_lead_unlocks")
+          .select("id", { count: "exact", head: true })
+          .eq("provider_id", uid)
+          .eq("status", "won")
+          .gte("unlocked_at", since7d),
       ]);
       return {
         missing: false as const,
@@ -68,6 +101,10 @@ function DashboardPage() {
         earnings: (done ?? []) as EarningsRow[],
         reviews: (rvs ?? []) as ReviewRow[],
         ratingAvg: prov.rating_avg ?? null,
+        activity: (activity ?? []) as ActivityRow[],
+        newLeads24h: newLeads ?? 0,
+        pendingQuotes: pendingQuotes ?? 0,
+        wonThisWeek: wonWeek ?? 0,
       };
     },
   });
@@ -76,6 +113,10 @@ function DashboardPage() {
   const earnings = data && !data.missing ? data.earnings : [];
   const reviews = data && !data.missing ? data.reviews : [];
   const ratingAvg = data && !data.missing ? data.ratingAvg : null;
+  const activity  = data && !data.missing ? data.activity : [];
+  const newLeads24h = data && !data.missing ? data.newLeads24h : 0;
+  const pendingQuotes = data && !data.missing ? data.pendingQuotes : 0;
+  const wonThisWeek = data && !data.missing ? data.wonThisWeek : 0;
 
   const { totalEarned, monthEarned } = useMemo(() => {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
@@ -96,6 +137,20 @@ function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">{L("Active jobs", "ဆောင်ရွက်ဆဲ")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{L("Bookings from accepted quotes.", "လက်ခံပြီးသော ဘုတ်ကင်")}</p>
         <div className="mt-4 grid grid-cols-3 gap-2">
+          <Link to="/provider/leads" className="rounded-xl border border-border bg-card p-3 hover:bg-secondary/40">
+            <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-muted-foreground"><Sparkles className="h-3 w-3" />{L("New leads · 24h", "Lead အသစ် ၂၄နာရီ")}</div>
+            <div className="mt-1 text-base font-bold tabular-nums">{newLeads24h}</div>
+          </Link>
+          <Link to="/provider/leads" className="rounded-xl border border-border bg-card p-3 hover:bg-secondary/40">
+            <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-muted-foreground"><Send className="h-3 w-3" />{L("Quotes pending", "Quote စောင့်")}</div>
+            <div className="mt-1 text-base font-bold tabular-nums">{pendingQuotes}</div>
+          </Link>
+          <Link to="/provider/leads" className="rounded-xl border border-border bg-card p-3 hover:bg-secondary/40">
+            <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-muted-foreground"><Trophy className="h-3 w-3" />{L("Won · 7d", "နိုင် ၇ရက်")}</div>
+            <div className="mt-1 text-base font-bold tabular-nums">{wonThisWeek}</div>
+          </Link>
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
           <div className="rounded-xl border border-border bg-card p-3">
             <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-muted-foreground"><TrendingUp className="h-3 w-3" />{L("This month", "ဤလ")}</div>
             <div className="mt-1 text-base font-bold tabular-nums">{fmtMmk(monthEarned)}</div>
@@ -136,6 +191,43 @@ function DashboardPage() {
             ))}
           </ul>
         )}
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">{L("Recent activity", "လတ်တလော လှုပ်ရှားမှု")}</h2>
+          </div>
+          {activity.length === 0 ? (
+            <p className="mt-3 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              {L("Nothing yet. New leads and customer responses will show up here.", "လတ်တလော လှုပ်ရှားမှု မရှိသေး။")}
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
+              {activity.map((a) => {
+                const icon =
+                  a.kind === "new_matching_lead" ? <Inbox className="h-4 w-4 text-primary" /> :
+                  a.kind === "quote_accepted"    ? <Trophy className="h-4 w-4 text-emerald-600" /> :
+                  a.kind === "lead_lost"          ? <XCircle className="h-4 w-4 text-rose-500" /> :
+                  a.kind === "booking_cancelled"  ? <XCircle className="h-4 w-4 text-rose-500" /> :
+                  a.kind === "review_requested"   ? <Star className="h-4 w-4 text-amber-500" /> :
+                  <Bell className="h-4 w-4 text-muted-foreground" />;
+                const inner = (
+                  <div className="flex gap-3 px-3 py-3">
+                    <div className="mt-0.5">{icon}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{a.title}</p>
+                      {a.body && <p className="line-clamp-2 text-xs text-muted-foreground">{a.body}</p>}
+                      <p className="mt-1 text-[10px] text-muted-foreground">{new Date(a.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                );
+                return (
+                  <li key={a.id} className="hover:bg-secondary/40">
+                    {a.link ? <Link to={a.link as never}>{inner}</Link> : inner}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
         <section className="mt-8">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold">{L("Customer reviews", "သုံးသပ်ချက်များ")}</h2>

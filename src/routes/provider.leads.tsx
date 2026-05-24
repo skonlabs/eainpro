@@ -157,10 +157,38 @@ function LeadsPage() {
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="available">Available</TabsTrigger>
-            <TabsTrigger value="unlocked">Unlocked</TabsTrigger>
-            <TabsTrigger value="won">Won</TabsTrigger>
-            <TabsTrigger value="lost">Lost</TabsTrigger>
+            <TabsTrigger value="available">
+              Available
+              {available && available.filter((l) => !dismissed.has(l.id)).length > 0 && (
+                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {available.filter((l) => !dismissed.has(l.id)).length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="unlocked">
+              Unlocked
+              {unlocked && unlocked.length > 0 && (
+                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-foreground">
+                  {unlocked.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="won">
+              Won
+              {won.length > 0 && (
+                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold text-white">
+                  {won.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="lost">
+              Lost
+              {lost.length > 0 && (
+                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                  {lost.length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="available" className="space-y-3">
