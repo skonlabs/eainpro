@@ -68,28 +68,37 @@ export function RescheduleControl({
 
   return (
     <div className="space-y-2 rounded-xl border border-border bg-background p-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-xs">
-          {bothConfirmed
-            ? <span className="font-semibold text-emerald-600">{L("Time confirmed by both sides", "နှစ်ဖက်လုံး အတည်ပြုပြီး")}</span>
-            : booking.scheduled_at
-            ? <span className="text-muted-foreground">{L("Proposed time — awaiting confirmation", "တင်ပြထား — အတည်ပြုရန် စောင့်")}</span>
-            : <span className="text-muted-foreground">{L("No time set yet", "အချိန် မသတ်မှတ်ရသေး")}</span>}
-        </div>
-        {!open && (
-          <button
-            type="button"
-            onClick={() => { setValue(toLocal(booking.scheduled_at)); setOpen(true); }}
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            {booking.scheduled_at ? L("Reschedule", "ပြန်ချိန်း") : L("Propose time", "အချိန် တင်ပြ")}
-          </button>
-        )}
+      <div className="text-xs">
+        {bothConfirmed
+          ? <span className="font-semibold text-emerald-600">{L("Visit time confirmed by both sides", "နှစ်ဖက်လုံး အတည်ပြုပြီး")}</span>
+          : booking.scheduled_at
+          ? <span className="text-muted-foreground">{L("Proposed time — awaiting confirmation from the other side", "တင်ပြထား — အခြားဖက် အတည်ပြုရန် စောင့်")}</span>
+          : <span className="text-muted-foreground">{L("No visit time scheduled yet", "လည်ပတ်ရန် အချိန် မသတ်မှတ်ရသေး")}</span>}
       </div>
-      {needsMyConfirm && !open && (
-        <Button size="sm" onClick={confirm} disabled={busy} className="w-full">
-          {L("Confirm this time", "ဤအချိန် အတည်ပြု")}
+      {!open && !needsMyConfirm && (
+        <Button
+          size="sm"
+          variant={booking.scheduled_at ? "outline" : "default"}
+          onClick={() => { setValue(toLocal(booking.scheduled_at)); setOpen(true); }}
+          className="w-full"
+        >
+          {booking.scheduled_at ? L("Reschedule visit", "ပြန်ချိန်း") : L("Schedule visit", "အချိန် သတ်မှတ်")}
         </Button>
+      )}
+      {needsMyConfirm && !open && (
+        <div className="space-y-2">
+          <Button size="sm" onClick={confirm} disabled={busy} className="w-full">
+            {L("Confirm this time", "ဤအချိန် အတည်ပြု")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setValue(toLocal(booking.scheduled_at)); setOpen(true); }}
+            className="w-full"
+          >
+            {L("Propose a different time", "အခြားအချိန် တင်ပြ")}
+          </Button>
+        </div>
       )}
       {open && (
         <div className="space-y-2">
