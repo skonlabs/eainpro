@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle, Send } from "lucide-react";
 import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
+import { useI18n } from "@/lib/i18n";
+import { unlockStatusPair, unlockHintPair } from "@/lib/status-i18n";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -325,6 +327,9 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
 }
 
 function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void }) {
+  const { lang } = useI18n();
+  const tStatus = (s: string) => (lang === "en" ? unlockStatusPair(s).en : unlockStatusPair(s).my);
+  const tHint = (s: string) => (lang === "en" ? unlockHintPair(s).en : unlockHintPair(s).my);
   const l = unlock.customer_leads;
   const [status, setStatus] = useState(unlock.status);
   const [price, setPrice] = useState<string>(unlock.quoted_price_mmk?.toString() ?? "");
