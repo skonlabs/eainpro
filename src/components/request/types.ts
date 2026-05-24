@@ -4,6 +4,7 @@ export type Lead = {
   customer_name: string;
   customer_phone: string;
   city_slug: string;
+  township_slug?: string | null;
   address: string | null;
   service_type_id: string;
   urgency: string;
