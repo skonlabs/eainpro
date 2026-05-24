@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNotifications } from "@/hooks/useNotifications";
+import { translateNotificationTitle, translateNotificationBody } from "@/lib/notification-i18n";
 import { CATEGORIES } from "@/lib/catalog";
 import { listAvailableLeads } from "@/lib/leads";
 import {
@@ -303,8 +304,8 @@ export function ProviderHome({
                   >
                     <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">{icon}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">{n.title}</div>
-                      {n.body && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</div>}
+                      <div className="truncate text-sm font-semibold">{translateNotificationTitle(n.title, lang)}</div>
+                      {n.body && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{translateNotificationBody(n.body, lang)}</div>}
                     </div>
                   </Link>
                 </li>
