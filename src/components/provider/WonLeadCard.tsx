@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Phone, MessageCircle, Calendar, MapPin, CheckCircle2, Truck, Play, Clock, ChevronRight } from "lucide-react";
 import type { Booking } from "@/components/request/types";
 
@@ -139,13 +140,24 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
           )}
 
           {reschedOpen && (
-            <div className="mt-2 space-y-2 rounded-md bg-muted/40 p-2">
-              <label className="text-[11px] font-medium text-muted-foreground">Propose new date &amp; time</label>
-              <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
-              <Button size="sm" className="w-full" onClick={proposeTime} disabled={busy || !when}>
-                Send to customer
-              </Button>
-            </div>
+            <Dialog open={reschedOpen} onOpenChange={setReschedOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{scheduled ? "Reschedule visit" : "Schedule visit"}</DialogTitle>
+                  <DialogDescription>
+                    Pick a date and time. The customer will be asked to confirm.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <label className="text-xs font-medium text-muted-foreground">Date &amp; time</label>
+                  <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+                </div>
+                <DialogFooter className="gap-2 sm:gap-2">
+                  <Button variant="outline" onClick={() => setReschedOpen(false)} disabled={busy}>Cancel</Button>
+                  <Button onClick={proposeTime} disabled={busy || !when}>Send to customer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
 

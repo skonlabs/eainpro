@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import type { Booking, T } from "./types";
 
 export function RescheduleControl({
@@ -100,15 +101,26 @@ export function RescheduleControl({
           </Button>
         </div>
       )}
-      {open && (
-        <div className="space-y-2">
-          <Input type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} />
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)} disabled={busy}>{L("Cancel", "ပယ်")}</Button>
-            <Button size="sm" className="flex-1" onClick={propose} disabled={busy}>{busy ? L("Saving…", "သိမ်းနေ…") : L("Propose", "တင်ပြ")}</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {booking.scheduled_at ? L("Reschedule visit", "ပြန်ချိန်း") : L("Schedule visit", "အချိန် သတ်မှတ်")}
+            </DialogTitle>
+            <DialogDescription>
+              {L("Pick a date and time. The other side will be asked to confirm.", "ရက်/အချိန် ရွေးပါ။ အခြားဖက်က အတည်ပြုပါမည်။")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label className="text-xs font-medium text-muted-foreground">{L("Date & time", "ရက်/အချိန်")}</label>
+            <Input type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} />
           </div>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>{L("Cancel", "ပယ်")}</Button>
+            <Button onClick={propose} disabled={busy}>{busy ? L("Saving…", "သိမ်းနေ…") : L("Propose", "တင်ပြ")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
