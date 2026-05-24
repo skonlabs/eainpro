@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { NotificationBell } from "@/components/site/NotificationBell";
+import { CreditsBadge } from "@/components/provider/CreditsBadge";
 import logoUrl from "@/assets/logo.png";
 
 // Routes that act as tab roots — no back button on these.
@@ -61,7 +62,8 @@ function titleFor(pathname: string, lang: "en" | "my") {
 
 export function AppBar() {
   const { lang, setLang } = useI18n();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isProvider = roles.includes("provider");
   const { pathname } = useLocation();
   const router = useRouter();
   const navigate = useNavigate();
@@ -117,6 +119,7 @@ export function AppBar() {
           {isRoot || hideBack ? "" : title}
         </h1>
 
+        {isProvider && <CreditsBadge size="sm" compact />}
         <button
           onClick={() => setLang(lang === "en" ? "my" : "en")}
           className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground hover:bg-secondary"

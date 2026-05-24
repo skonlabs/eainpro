@@ -5,9 +5,9 @@ import { useAuth } from "@/lib/auth";
 import { getWallet, fmt } from "@/lib/wallet";
 import { supabase } from "@/lib/supabase";
 
-type Props = { size?: "sm" | "md"; variant?: "solid" | "onDark" };
+type Props = { size?: "sm" | "md"; variant?: "solid" | "onDark"; compact?: boolean };
 
-export function CreditsBadge({ size = "md", variant = "solid" }: Props) {
+export function CreditsBadge({ size = "md", variant = "solid", compact = false }: Props) {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
 
@@ -48,9 +48,10 @@ export function CreditsBadge({ size = "md", variant = "solid" }: Props) {
     >
       <Wallet className={iconSize} />
       <span className="tabular-nums">{balance === null ? "—" : fmt(balance)}</span>
-      <span className="opacity-90">credits</span>
-      <span className={`ml-1 hidden items-center gap-0.5 rounded-full ${chip} px-1.5 py-0.5 text-xs sm:inline-flex`}>
-        <Plus className="h-3 w-3" /> Top up
+      {!compact && <span className="opacity-90">credits</span>}
+      <span className={`ml-1 inline-flex items-center gap-0.5 rounded-full ${chip} px-1.5 py-0.5 text-xs`}>
+        <Plus className="h-3 w-3" />
+        {!compact && <span className="hidden sm:inline">Top up</span>}
       </span>
     </Link>
   );
