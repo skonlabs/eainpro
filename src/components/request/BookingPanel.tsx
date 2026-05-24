@@ -9,6 +9,14 @@ import { RescheduleControl } from "./RescheduleControl";
 import type { Lead, Booking, T } from "./types";
 import { Field, FieldLabel } from "./Field";
 import { bookingStatusPair } from "@/lib/status-i18n";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const NEXT_STATUS: Record<string, { key: string; en: string; my: string }> = {
   accepted: { key: "on_the_way", en: "On the way", my: "လမ်းပေါ်" },
@@ -42,6 +50,8 @@ export function BookingPanel({
   const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
   const [reportText, setReportText] = useState("");
   const [reported, setReported] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [providerInfo, setProviderInfo] = useState<{
     id: string;
     business_name: string | null;
@@ -125,10 +135,23 @@ export function BookingPanel({
   };
 
   const cancel = async () => {
-    await updateBooking(
-      { status: "cancelled", cancelled_at: new Date().toISOString() },
+    const reason = cancelReason.trim();
+    if (!reason) {
+      toast.error(L("Please provide a reason.", "အကြောင်းပြချက် ထည့်ပါ။"));
+      return;
+    }
+    const ok = await updateBooking(
+      {
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+        cancel_reason: reason,
+      },
       L("Booking cancelled", "ဘုတ်ကင် ပယ်ဖျက်ပြီး"),
     );
+    if (ok) {
+      setCancelOpen(false);
+      setCancelReason("");
+    }
   };
 
   const confirmCompleted = async () => {
