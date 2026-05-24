@@ -404,7 +404,11 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""} · unlocked {new Date(unlock.unlocked_at).toLocaleDateString()}
+            {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""}
+          </div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            {l?.created_at && <>Lead received: {new Date(l.created_at).toLocaleString()} · </>}
+            Unlocked: {new Date(unlock.unlocked_at).toLocaleString()}
           </div>
         </div>
         {l?.customer_phone && (
