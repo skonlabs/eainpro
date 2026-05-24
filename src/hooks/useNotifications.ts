@@ -40,6 +40,7 @@ export function useNotifications(userId?: string, limit = 20) {
       const { data } = await supabase
         .from("notifications")
         .select("id, kind, title, body, link, read_at, created_at")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -97,6 +98,7 @@ export function useNotifications(userId?: string, limit = 20) {
 
   const markOneRead = useCallback(
     async (id: string) => {
+      if (id.includes(":")) return;
       const readAt = new Date().toISOString();
       setItems((current) => current.map((item) => (item.id === id && !item.read_at ? { ...item, read_at: readAt } : item)));
       await supabase.from("notifications").update({ read_at: readAt }).eq("id", id);
@@ -105,7 +107,7 @@ export function useNotifications(userId?: string, limit = 20) {
   );
 
   const markAllRead = useCallback(async () => {
-    const ids = items.filter((item) => !item.read_at).map((item) => item.id);
+    const ids = items.filter((item) => !item.read_at && !item.id.includes(":" )).map((item) => item.id);
     if (ids.length === 0) return;
     const readAt = new Date().toISOString();
     setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? readAt })));
