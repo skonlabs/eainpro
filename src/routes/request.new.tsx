@@ -49,6 +49,7 @@ const searchSchema = z.object({
   category: z.string().optional(),
   city: z.string().optional(),
   directTo: z.string().optional(),
+  repeat: z.string().optional(),
 });
 
 export const Route = createFileRoute("/request/new")({
@@ -88,6 +89,7 @@ function NewRequestPage() {
   const sub = search.sub;
   const initialCity = search.city;
   const directTo = search.directTo;
+  const repeatLeadId = search.repeat;
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
@@ -196,6 +198,70 @@ function NewRequestPage() {
   useEffect(() => {
     stepIdxRef.current = stepIdx;
   }, [stepIdx]);
+
+  // "Book again": prefill the form from a previous completed request.
+  const [repeatLoaded, setRepeatLoaded] = useState(false);
+  useEffect(() => {
+    if (!repeatLeadId || !user || repeatLoaded) return;
+    let cancelled = false;
+    (async () => {
+      const { data: lead } = await supabase
+        .from("customer_leads")
+        .select(
+          "customer_id, city_slug, township_slug, address, urgency, preferred_date, preferred_time, short_description, full_description, customer_phone, service_type:service_types(slug, category_slug)",
+        )
+        .eq("id", repeatLeadId)
+        .maybeSingle();
+      if (cancelled || !lead || lead.customer_id !== user.id) {
+        setRepeatLoaded(true);
+        return;
+      }
+      const st = Array.isArray(lead.service_type) ? lead.service_type[0] : lead.service_type;
+      const catSlug = st?.category_slug ?? "";
+      const subSlug = st?.slug ?? "";
+      const { data: photoRows } = await supabase
+        .from("lead_photos")
+        .select("url")
+        .eq("lead_id", repeatLeadId)
+        .order("sort_order", { ascending: true });
+      const photos = (photoRows ?? []).map((r: { url: string }) => r.url);
+      const desc = (lead.full_description ?? lead.short_description ?? "").toString();
+      const allowedUrgency = new Set(["today", "tomorrow", "this_week", "flexible"]);
+      const urgencyVal = allowedUrgency.has(lead.urgency)
+        ? (lead.urgency as typeof form.urgency)
+        : "flexible";
+      const allowedWindow = new Set(["morning", "afternoon", "evening", "any"]);
+      const windowVal = allowedWindow.has(lead.preferred_time ?? "")
+        ? (lead.preferred_time as typeof form.window)
+        : "any";
+      setForm((f) => ({
+        ...f,
+        category: catSlug || f.category,
+        subcategories: subSlug ? [subSlug] : f.subcategories,
+        description: desc || f.description,
+        urgency: urgencyVal,
+        city: lead.city_slug ?? f.city,
+        township: lead.township_slug ?? "",
+        address: lead.address ?? "",
+        photoUrls: photos,
+        window: windowVal,
+        customDate: lead.preferred_date ?? "",
+        contactPhone: lead.customer_phone ?? "",
+      }));
+      setRepeatLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [repeatLeadId, user, repeatLoaded]);
+
+  // Once the prefill has populated the form, jump straight to the review step
+  // so the user can confirm and submit (or edit anything they want to change).
+  useEffect(() => {
+    if (!repeatLeadId || !repeatLoaded || steps.length === 0) return;
+    const reviewIdx = steps.findIndex((s) => s.kind === "review");
+    if (reviewIdx >= 0) setStepIdx(reviewIdx);
+  }, [repeatLeadId, repeatLoaded, steps]);
 
   const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
   const goBack = () => {
