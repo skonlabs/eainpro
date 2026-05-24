@@ -9,6 +9,14 @@ import { RescheduleControl } from "./RescheduleControl";
 import type { Lead, Booking, T } from "./types";
 import { Field, FieldLabel } from "./Field";
 import { bookingStatusPair } from "@/lib/status-i18n";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const NEXT_STATUS: Record<string, { key: string; en: string; my: string }> = {
   accepted: { key: "on_the_way", en: "On the way", my: "လမ်းပေါ်" },
@@ -42,6 +50,8 @@ export function BookingPanel({
   const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
   const [reportText, setReportText] = useState("");
   const [reported, setReported] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [providerInfo, setProviderInfo] = useState<{
     id: string;
     business_name: string | null;
@@ -125,10 +135,23 @@ export function BookingPanel({
   };
 
   const cancel = async () => {
-    await updateBooking(
-      { status: "cancelled", cancelled_at: new Date().toISOString() },
+    const reason = cancelReason.trim();
+    if (!reason) {
+      toast.error(L("Please provide a reason.", "အကြောင်းပြချက် ထည့်ပါ။"));
+      return;
+    }
+    const ok = await updateBooking(
+      {
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+        cancel_reason: reason,
+      },
       L("Booking cancelled", "ဘုတ်ကင် ပယ်ဖျက်ပြီး"),
     );
+    if (ok) {
+      setCancelOpen(false);
+      setCancelReason("");
+    }
   };
 
   const confirmCompleted = async () => {
@@ -293,8 +316,33 @@ export function BookingPanel({
         </div>
       )}
       {isMyBooking && booking.status !== "completed" && booking.status !== "cancelled" && (
-        <Button onClick={cancel} disabled={busy} variant="outline" className="w-full">{L("Cancel booking", "ပယ်ဖျက်")}</Button>
+        <Button onClick={() => setCancelOpen(true)} disabled={busy} variant="outline" className="w-full">{L("Cancel booking", "ပယ်ဖျက်")}</Button>
       )}
+
+      <Dialog open={cancelOpen} onOpenChange={(o) => { if (!busy) setCancelOpen(o); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{L("Cancel booking", "ဘုတ်ကင် ပယ်ဖျက်")}</DialogTitle>
+            <DialogDescription>
+              {L("Tell us why you're cancelling. This is shared with the other party.", "ပယ်ဖျက်ရသည့် အကြောင်းပြချက်ကို တစ်ဖက်သားသိရှိစေရန် ရေးပေးပါ။")}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder={L("Reason for cancelling…", "အကြောင်းပြချက်…")}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCancelOpen(false)} disabled={busy}>
+              {L("Back", "နောက်သို့")}
+            </Button>
+            <Button variant="destructive" onClick={cancel} disabled={busy || !cancelReason.trim()}>
+              {busy ? L("Cancelling…", "ပယ်ဖျက်နေ…") : L("Cancel booking", "ပယ်ဖျက်")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {booking.status === "completed" && isCustomer && !booking.customer_confirmed_at && (
         <div className="space-y-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
