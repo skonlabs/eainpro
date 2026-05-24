@@ -49,6 +49,7 @@ const searchSchema = z.object({
   category: z.string().optional(),
   city: z.string().optional(),
   directTo: z.string().optional(),
+  repeat: z.string().optional(),
 });
 
 export const Route = createFileRoute("/request/new")({
