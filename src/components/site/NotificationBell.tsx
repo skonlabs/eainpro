@@ -4,7 +4,6 @@ import { Bell, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useProviderActivity } from "@/hooks/useProviderActivity";
 import {
   Popover,
   PopoverContent,
@@ -13,15 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 export function NotificationBell() {
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
   const { lang } = useI18n();
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [open, setOpen] = useState(false);
-  const isProvider = roles.includes("provider");
-  const providerActivity = useProviderActivity(user?.id, 20);
-  const notifications = useNotifications(user?.id, 20, !isProvider);
-  const { items, unreadCount, markAllRead, markOneRead } = isProvider ? providerActivity : notifications;
+  const { items, unreadCount, markAllRead, markOneRead } = useNotifications(user?.id, 20);
 
   if (!user) return null;
 
