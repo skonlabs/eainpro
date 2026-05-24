@@ -86,8 +86,8 @@ function MyRequestsPage() {
               <li key={r.id}>
                 <Link to="/request/$leadId" params={{ leadId: r.id }} search={{ tab: "details" }} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-semibold">{r.short_description}</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate font-semibold">{r.short_description}</span>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${TONE_CLASS[meta.tone] ?? "bg-muted"}`}>
                         {L(meta.en, meta.my)}
                       </span>
