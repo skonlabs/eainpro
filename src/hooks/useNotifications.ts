@@ -17,18 +17,17 @@ function sortNotifications(items: AppNotification[]) {
   );
 }
 
-export function useNotifications(userId?: string, limit = 20, enabled = true) {
+export function useNotifications(userId?: string, limit = 20) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const channelInstanceId = useRef(`notif${Math.random().toString(36).slice(2, 10)}`);
+  const reloadRef = useRef(0);
 
   const refresh = useCallback(() => {
-    setRefreshKey((key) => key + 1);
+    reloadRef.current += 1;
   }, []);
 
   useEffect(() => {
-    if (!enabled || !userId) {
+    if (!userId) {
       setItems([]);
       setLoading(false);
       return;
@@ -37,31 +36,20 @@ export function useNotifications(userId?: string, limit = 20, enabled = true) {
     let active = true;
     setLoading(true);
 
-    const load = async () => {
+    void (async () => {
       const { data } = await supabase
         .from("notifications")
         .select("id, kind, title, body, link, read_at, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(limit);
-
       if (!active) return;
       setItems((data as AppNotification[]) ?? []);
       setLoading(false);
-    };
-
-    void load();
-
-    return () => {
-      active = false;
-    };
-  }, [userId, limit, refreshKey, enabled]);
-
-  useEffect(() => {
-    if (!enabled || !userId) return;
+    })();
 
     const channel = supabase
-      .channel(`notifications:${userId}:${limit}:${channelInstanceId.current}`)
+      .channel(`notifications:${userId}:${Math.random().toString(36).slice(2, 8)}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
@@ -91,15 +79,15 @@ export function useNotifications(userId?: string, limit = 20, enabled = true) {
       .subscribe();
 
     return () => {
+      active = false;
       void supabase.removeChannel(channel);
     };
-  }, [userId, limit, enabled]);
+  }, [userId, limit]);
 
   const unreadCount = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
   const markOneRead = useCallback(
     async (id: string) => {
-      if (id.includes(":")) return;
       const readAt = new Date().toISOString();
       setItems((current) => current.map((item) => (item.id === id && !item.read_at ? { ...item, read_at: readAt } : item)));
       await supabase.from("notifications").update({ read_at: readAt }).eq("id", id);
@@ -108,7 +96,7 @@ export function useNotifications(userId?: string, limit = 20, enabled = true) {
   );
 
   const markAllRead = useCallback(async () => {
-    const ids = items.filter((item) => !item.read_at && !item.id.includes(":" )).map((item) => item.id);
+    const ids = items.filter((item) => !item.read_at).map((item) => item.id);
     if (ids.length === 0) return;
     const readAt = new Date().toISOString();
     setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? readAt })));
