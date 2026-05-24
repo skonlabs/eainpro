@@ -149,19 +149,15 @@ export function ProviderHome({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <Greeting
-            name={name}
-            sub={
-              profile?.is_verified === false
-                ? L("Profile pending verification.", "ပရိုဖိုင် အတည်ပြုစဉ်")
-                : L("Manage your jobs.", "သင်၏ အလုပ်များကို စီမံပါ။")
-            }
-          />
-        </div>
-        <CreditsBadge size="sm" />
-      </div>
+      <Greeting
+        name={name}
+        sub={
+          profile?.is_verified === false
+            ? L("Profile pending verification.", "ပရိုဖိုင် အတည်ပြုစဉ်")
+            : L("Manage your jobs.", "သင်၏ အလုပ်များကို စီမံပါ။")
+        }
+        trailing={<CreditsBadge size="sm" variant="onDark" />}
+      />
 
       <div className="grid grid-cols-3 gap-2">
         <StatTile
