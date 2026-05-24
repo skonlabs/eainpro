@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { MessageSquare, ChevronRight } from "lucide-react";
+import { MessageSquare, ChevronRight, ChevronDown } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/messages")({ component: MessagesPage });
