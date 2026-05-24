@@ -94,23 +94,31 @@ export function BookingPanel({
   const canAdvance = isProvider && booking.provider_id === userId && next;
   const reviewsUnlocked = booking.status === "completed" && !!booking.customer_confirmed_at;
 
-  const advance = async () => {
-    if (!next) return;
+  const updateBooking = async (patch: Record<string, unknown>, successMessage?: string) => {
     setBusy(true);
-    const patch: Record<string, unknown> = { status: next.key };
-    if (next.key === "completed") patch.provider_confirmed_at = new Date().toISOString();
     const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
     onChange();
-    toast.success(L("Updated", "ပြောင်းပြီး"));
+    if (successMessage) toast.success(successMessage);
+    return true;
+  };
+
+  const advance = async () => {
+    if (!next) return;
+    const patch: Record<string, unknown> = { status: next.key };
+    if (next.key === "completed") patch.provider_confirmed_at = new Date().toISOString();
+    await updateBooking(patch, L("Updated", "ပြောင်းပြီး"));
   };
 
   const cancel = async () => {
-    setBusy(true);
-    await supabase.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
-    setBusy(false);
-    onChange();
+    await updateBooking(
+      { status: "cancelled", cancelled_at: new Date().toISOString() },
+      L("Booking cancelled", "ဘုတ်ကင် ပယ်ဖျက်ပြီး"),
+    );
   };
 
   const confirmCompleted = async () => {
