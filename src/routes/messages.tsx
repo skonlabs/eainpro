@@ -70,7 +70,7 @@ function MessagesPage() {
           : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
         leadIds.length
           ? supabase
-              .from("leads")
+              .from("customer_leads")
               .select("id, short_description, service_type_id, customer_id, customer_name")
               .in("id", leadIds)
           : Promise.resolve({ data: [] as { id: string; short_description: string | null; service_type_id: string | null; customer_id: string | null; customer_name: string | null }[] }),
