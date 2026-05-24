@@ -24,6 +24,7 @@ import { Route as ServicesCategoryRouteImport } from './routes/services.$categor
 import { Route as RequestNewRouteImport } from './routes/request.new'
 import { Route as RequestLeadIdRouteImport } from './routes/request.$leadId'
 import { Route as ProviderWalletRouteImport } from './routes/provider.wallet'
+import { Route as ProviderReviewsRouteImport } from './routes/provider.reviews'
 import { Route as ProviderOnboardingRouteImport } from './routes/provider.onboarding'
 import { Route as ProviderLeadsRouteImport } from './routes/provider.leads'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
@@ -105,6 +106,11 @@ const ProviderWalletRoute = ProviderWalletRouteImport.update({
   path: '/provider/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProviderReviewsRoute = ProviderReviewsRouteImport.update({
+  id: '/provider/reviews',
+  path: '/provider/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProviderOnboardingRoute = ProviderOnboardingRouteImport.update({
   id: '/provider/onboarding',
   path: '/provider/onboarding',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/reviews': typeof ProviderReviewsRoute
   '/provider/wallet': typeof ProviderWalletRoute
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/reviews': typeof ProviderReviewsRoute
   '/provider/wallet': typeof ProviderWalletRoute
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/provider/dashboard': typeof ProviderDashboardRoute
   '/provider/leads': typeof ProviderLeadsRoute
   '/provider/onboarding': typeof ProviderOnboardingRoute
+  '/provider/reviews': typeof ProviderReviewsRoute
   '/provider/wallet': typeof ProviderWalletRoute
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/provider/dashboard'
     | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/reviews'
     | '/provider/wallet'
     | '/request/$leadId'
     | '/request/new'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/provider/dashboard'
     | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/reviews'
     | '/provider/wallet'
     | '/request/$leadId'
     | '/request/new'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/provider/dashboard'
     | '/provider/leads'
     | '/provider/onboarding'
+    | '/provider/reviews'
     | '/provider/wallet'
     | '/request/$leadId'
     | '/request/new'
@@ -284,6 +296,7 @@ export interface RootRouteChildren {
   ProviderDashboardRoute: typeof ProviderDashboardRoute
   ProviderLeadsRoute: typeof ProviderLeadsRoute
   ProviderOnboardingRoute: typeof ProviderOnboardingRoute
+  ProviderReviewsRoute: typeof ProviderReviewsRoute
   ProviderWalletRoute: typeof ProviderWalletRoute
   RequestLeadIdRoute: typeof RequestLeadIdRoute
   RequestNewRoute: typeof RequestNewRoute
@@ -396,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/provider/reviews': {
+      id: '/provider/reviews'
+      path: '/provider/reviews'
+      fullPath: '/provider/reviews'
+      preLoaderRoute: typeof ProviderReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/provider/onboarding': {
       id: '/provider/onboarding'
       path: '/provider/onboarding'
@@ -463,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProviderDashboardRoute: ProviderDashboardRoute,
   ProviderLeadsRoute: ProviderLeadsRoute,
   ProviderOnboardingRoute: ProviderOnboardingRoute,
+  ProviderReviewsRoute: ProviderReviewsRoute,
   ProviderWalletRoute: ProviderWalletRoute,
   RequestLeadIdRoute: RequestLeadIdRoute,
   RequestNewRoute: RequestNewRoute,

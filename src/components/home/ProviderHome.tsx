@@ -181,6 +181,7 @@ export function ProviderHome({
           label={L("Rating", "အဆင့်")}
           value={profile?.rating_avg ? Number(profile.rating_avg).toFixed(1) : "—"}
           sub={profile?.rating_count ? `(${profile.rating_count})` : undefined}
+          to="/provider/reviews"
         />
       </div>
 
