@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle } from "lucide-react";
+import { Lock, Unlock, MapPin, Clock, Image as ImageIcon, Phone, Wallet, MessageCircle, AlertTriangle, Send } from "lucide-react";
 import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
 
@@ -298,6 +298,57 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
   const [reportKind, setReportKind] = useState<"wrong_info" | "spam_lead" | "fraud" | "other">("wrong_info");
   const [reportBusy, setReportBusy] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteEta, setQuoteEta] = useState("");
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const [existingQuote, setExistingQuote] = useState<{ id: string; amount: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("quotes")
+      .select("id, amount")
+      .eq("lead_id", unlock.lead_id)
+      .eq("provider_id", unlock.provider_id)
+      .maybeSingle()
+      .then(({ data }) => { if (active && data) setExistingQuote(data as any); });
+    return () => { active = false; };
+  }, [unlock.lead_id, unlock.provider_id]);
+
+  const sendQuote = async () => {
+    const amt = price ? parseInt(price, 10) : 0;
+    if (!amt || amt <= 0) { toast.error("Enter a valid quote amount first"); return; }
+    setQuoteBusy(true);
+    const { data, error } = await supabase
+      .from("quotes")
+      .upsert(
+        {
+          lead_id: unlock.lead_id,
+          provider_id: unlock.provider_id,
+          amount: amt,
+          eta_text: quoteEta || null,
+          notes: notes || null,
+          status: "pending",
+        },
+        { onConflict: "lead_id,provider_id" },
+      )
+      .select("id, amount")
+      .single();
+    if (!error) {
+      await updateUnlockStatus(unlock.id, {
+        status: "quoted",
+        quoted_price_mmk: amt,
+        provider_notes: notes || null,
+      });
+    }
+    setQuoteBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setExistingQuote(data as any);
+    setStatus("quoted");
+    setQuoteOpen(false);
+    toast.success("Quote sent to customer");
+    onChange();
+  };
 
   useEffect(() => {
     let active = true;
@@ -411,6 +462,22 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         <Button size="sm" onClick={save} disabled={saving}>{saving?"Saving…":"Save"}</Button>
       </div>
       <Textarea className="mt-2" placeholder="Internal notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="default"
+          onClick={() => setQuoteOpen(true)}
+          disabled={!price || parseInt(price, 10) <= 0}
+        >
+          <Send className="mr-1 h-3.5 w-3.5" />
+          {existingQuote ? "Update quote to customer" : "Send quote to customer"}
+        </Button>
+        {existingQuote && (
+          <span className="text-[11px] text-muted-foreground">
+            Sent: {fmt(existingQuote.amount)} MMK
+          </span>
+        )}
+      </div>
       {unlock.is_refunded && <p className="mt-2 text-xs text-amber-600">Refunded: {fmt(unlock.refunded_amount_credits)} credits</p>}
       <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
         {reportSent ? (
@@ -455,6 +522,52 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reportBusy}>Cancel</Button>
             <Button onClick={submitReport} disabled={reportBusy || !reportReason.trim()}>{reportBusy ? "Sending…" : "Submit report"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={quoteOpen} onOpenChange={(o) => !o && setQuoteOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{existingQuote ? "Update quote" : "Send quote to customer"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-xs text-muted-foreground">
+              The customer will receive a notification with your quote and can accept it to create a booking.
+            </p>
+            <div>
+              <label className="text-xs font-medium">Price (MMK)</label>
+              <Input
+                className="mt-1"
+                inputMode="numeric"
+                value={price}
+                onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
+                placeholder="e.g. 25000"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium">When can you do it? (optional)</label>
+              <Input
+                className="mt-1"
+                value={quoteEta}
+                onChange={(e) => setQuoteEta(e.target.value)}
+                placeholder="e.g. Tomorrow 10am"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium">Notes for customer (optional)</label>
+              <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+            {price && (
+              <p className="rounded-md bg-primary/5 p-2 text-xs">
+                Confirm sending <strong>{fmt(parseInt(price, 10))} MMK</strong> quote to {l?.customer_name ?? "the customer"}.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setQuoteOpen(false)} disabled={quoteBusy}>Cancel</Button>
+            <Button onClick={sendQuote} disabled={quoteBusy || !price || parseInt(price, 10) <= 0}>
+              {quoteBusy ? "Sending…" : existingQuote ? "Update quote" : "Confirm & send"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
