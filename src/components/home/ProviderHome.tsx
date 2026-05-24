@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useProviderActivity } from "@/hooks/useProviderActivity";
 import { CATEGORIES } from "@/lib/catalog";
 import { listAvailableLeads } from "@/lib/leads";
 import {
@@ -66,7 +66,7 @@ export function ProviderHome({
   L: Lfn;
 }) {
   const nav = useNavigate();
-  const { items: notifications } = useNotifications(userId, 8);
+  const { items: activity } = useProviderActivity(userId, 8);
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [bookings, setBookings] = useState<ProviderBooking[] | null>(null);
   const [newJobsCount, setNewJobsCount] = useState<number>(0);
@@ -281,7 +281,7 @@ export function ProviderHome({
 
       <section>
         <SectionHeader title={L("Recent activity", "လတ်တလော လှုပ်ရှားမှု")} />
-        {notifications.length === 0 ? (
+        {activity.length === 0 ? (
           <Empty
             icon={<Bell className="h-5 w-5" />}
             title={L("No notifications yet", "အသိပေးချက် မရှိသေးပါ")}
@@ -289,7 +289,7 @@ export function ProviderHome({
           />
         ) : (
           <ul className="space-y-2">
-            {notifications.map((n) => {
+            {activity.map((n) => {
               const icon =
                 n.kind === "new_matching_lead" ? <Briefcase className="h-4 w-4" /> :
                 n.kind === "quote_accepted" ? <Trophy className="h-4 w-4" /> :
