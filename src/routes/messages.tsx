@@ -61,7 +61,7 @@ function MessagesPage() {
       }
       const peerIds = Array.from(peerIdsSet);
       const leadIds = Array.from(leadIdsSet);
-      const [provRes, profRes, leadRes] = await Promise.all([
+      const [provRes, profRes, leadRes, quoteRes] = await Promise.all([
         peerIds.length
           ? supabase.from("providers").select("id, business_name").in("id", peerIds)
           : Promise.resolve({ data: [] as { id: string; business_name: string | null }[] }),
@@ -69,18 +69,36 @@ function MessagesPage() {
           ? supabase.from("profiles").select("id, full_name").in("id", peerIds)
           : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
         leadIds.length
-          ? supabase.from("leads").select("id, short_description, service_type_id").in("id", leadIds)
-          : Promise.resolve({ data: [] as { id: string; short_description: string | null; service_type_id: string | null }[] }),
+          ? supabase
+              .from("leads")
+              .select("id, short_description, service_type_id, customer_id, customer_name")
+              .in("id", leadIds)
+          : Promise.resolve({ data: [] as { id: string; short_description: string | null; service_type_id: string | null; customer_id: string | null; customer_name: string | null }[] }),
+        leadIds.length
+          ? supabase
+              .from("quotes")
+              .select("provider_id, provider:providers(business_name)")
+              .in("lead_id", leadIds)
+          : Promise.resolve({ data: [] as { provider_id: string; provider: { business_name: string | null } | null }[] }),
       ]);
       const providerNames = new Map<string, string>();
       const profileNames = new Map<string, string>();
+      const customerNames = new Map<string, string>();
       for (const p of (profRes.data ?? []) as { id: string; full_name: string | null }[]) {
         if (p.full_name) profileNames.set(p.id, p.full_name);
       }
       for (const p of (provRes.data ?? []) as { id: string; business_name: string | null }[]) {
         if (p.business_name) providerNames.set(p.id, p.business_name);
       }
-      const leadsArr = (leadRes.data ?? []) as { id: string; short_description: string | null; service_type_id: string | null }[];
+      for (const q of (quoteRes.data ?? []) as { provider_id: string; provider: { business_name: string | null } | null }[]) {
+        if (q.provider?.business_name && !providerNames.has(q.provider_id)) {
+          providerNames.set(q.provider_id, q.provider.business_name);
+        }
+      }
+      const leadsArr = (leadRes.data ?? []) as { id: string; short_description: string | null; service_type_id: string | null; customer_id: string | null; customer_name: string | null }[];
+      for (const l of leadsArr) {
+        if (l.customer_id && l.customer_name) customerNames.set(l.customer_id, l.customer_name);
+      }
       const stIds = Array.from(new Set(leadsArr.map((l) => l.service_type_id).filter(Boolean) as string[]));
       const stRes = stIds.length
         ? await supabase.from("service_types").select("id, name_en, name_my").in("id", stIds)
@@ -93,16 +111,21 @@ function MessagesPage() {
       for (const l of leadsArr) {
         const st = l.service_type_id ? stMap.get(l.service_type_id) : null;
         const svcLabel = st ? ((lang === "en" ? st.en : st.my) || st.en) : null;
-        const title = (l.short_description?.trim()) || svcLabel || L("Request", "တောင်းဆို");
-        leadInfo.set(l.id, { id: l.id, title, serviceLabel: svcLabel });
+        // Title = service name (clear category). Subtitle = short description (the actual job).
+        const title = svcLabel || L("Service request", "ဝန်ဆောင်မှု တောင်းဆို");
+        leadInfo.set(l.id, { id: l.id, title, serviceLabel: l.short_description?.trim() || null });
       }
       const groups: PeerGroup[] = [];
       for (const [peerId, inner] of byPeerLead) {
-        const peerName = providerNames.get(peerId)
-          ?? profileNames.get(peerId)
-          ?? L("Unknown", "အမည်မသိ");
+        const isCustomer = customerNames.has(peerId);
+        const isProvider = providerNames.has(peerId);
+        const peerName =
+          (isProvider ? providerNames.get(peerId) : undefined) ??
+          (isCustomer ? customerNames.get(peerId) : undefined) ??
+          profileNames.get(peerId) ??
+          L("Customer", "ဖောက်သည်");
         const role: "provider" | "customer" | "unknown" =
-          providerNames.has(peerId) ? "provider" : profileNames.has(peerId) ? "customer" : "unknown";
+          isProvider ? "provider" : isCustomer ? "customer" : "unknown";
         const leads: LeadThread[] = [];
         let total = 0;
         let peerLastAt = "";
