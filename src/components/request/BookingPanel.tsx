@@ -91,7 +91,18 @@ export function BookingPanel({
 
   const isMyBooking = booking.provider_id === userId || booking.customer_id === userId;
   const next = NEXT_STATUS[booking.status];
-  const canAdvance = isProvider && booking.provider_id === userId && next;
+  const bothConfirmedTime =
+    !!booking.time_confirmed_by_customer && !!booking.time_confirmed_by_provider;
+  // Provider can only start moving the booking forward once the visit
+  // time is agreed by BOTH sides. After that the normal status ladder
+  // (on_the_way -> started -> completed) applies.
+  const advanceBlockedUntilScheduled =
+    booking.status === "accepted" && !bothConfirmedTime;
+  const canAdvance =
+    isProvider &&
+    booking.provider_id === userId &&
+    next &&
+    !advanceBlockedUntilScheduled;
   const reviewsUnlocked = booking.status === "completed" && !!booking.customer_confirmed_at;
 
   const updateBooking = async (patch: Record<string, unknown>, successMessage?: string) => {
@@ -255,6 +266,14 @@ export function BookingPanel({
         <RescheduleControl booking={booking} isCustomer={isCustomer} isProvider={isProvider && booking.provider_id === userId} L={L} onChanged={onChange} />
       )}
 
+      {advanceBlockedUntilScheduled && (
+        <p className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          {L(
+            "Agree on a visit time with the other side before marking yourself on the way.",
+            "လမ်းပေါ်ရှိကြောင်း မမှတ်မီ နှစ်ဖက်လုံး အချိန် အတည်ပြုပါ။",
+          )}
+        </p>
+      )}
       {canAdvance && (
         <Button onClick={advance} disabled={busy} className="w-full">{L(next.en, next.my)}</Button>
       )}
