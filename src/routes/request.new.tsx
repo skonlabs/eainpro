@@ -351,6 +351,7 @@ function NewRequestPage() {
         city_slug: form.city,
         address: form.address || null,
         service_type_id: primaryId,
+        township_slug: form.township || null,
         urgency: form.urgency,
         preferred_date: form.customDate || null,
         preferred_time: form.window || null,

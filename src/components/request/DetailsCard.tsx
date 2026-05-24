@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Phone } from "lucide-react";
 import type { Lead, T } from "./types";
 import { Field, FieldLabel, FieldValue } from "./Field";
+import { CITIES, TOWNSHIPS } from "@/lib/catalog";
 
 export function DetailsCard({
   lead,
@@ -162,7 +163,25 @@ export function DetailsCard({
         <Field label={L("Location", "နေရာ")} className="col-span-2">
           <span className="inline-flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="capitalize">{lead.city_slug}</span>{showContact && lead.address ? <span className="text-muted-foreground"> · {lead.address}</span> : null}
+            <span>
+              {(() => {
+                const city = CITIES.find((c) => c.slug === lead.city_slug);
+                const cityLabel = city ? city.en : lead.city_slug;
+                const ts = lead.township_slug
+                  ? TOWNSHIPS[lead.city_slug]?.find((t) => t.slug === lead.township_slug)
+                  : null;
+                const tsLabel = ts ? ts.en : lead.township_slug ?? null;
+                return (
+                  <>
+                    <span className="capitalize">{cityLabel}</span>
+                    {tsLabel ? <span> · {tsLabel}</span> : null}
+                    {showContact && lead.address ? (
+                      <span className="text-muted-foreground"> · {lead.address}</span>
+                    ) : null}
+                  </>
+                );
+              })()}
+            </span>
           </span>
         </Field>
       </div>
