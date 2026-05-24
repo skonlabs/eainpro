@@ -130,7 +130,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
                 </div>
               )}
             </div>
-            {booking && status !== "completed" && status !== "cancelled" && (
+            {booking && status !== "completed" && status !== "cancelled" && scheduled && (
               <button
                 type="button"
                 onClick={() => setReschedOpen((v) => !v)}
@@ -144,6 +144,12 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
           {booking && !bothConfirmed && customerConfirmed && booking.provider_id === userId && !reschedOpen && (
             <Button size="sm" className="mt-2 w-full" onClick={confirmTime} disabled={busy}>
               <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirm this time
+            </Button>
+          )}
+
+          {booking && !scheduled && status !== "completed" && status !== "cancelled" && !reschedOpen && (
+            <Button size="sm" className="mt-2 w-full" onClick={() => setReschedOpen(true)}>
+              <Calendar className="mr-1 h-3.5 w-3.5" /> Schedule visit
             </Button>
           )}
 
@@ -167,11 +173,28 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
         )}
 
         {/* Primary action: advance status */}
-        {next && status !== "completed" && status !== "cancelled" && (
-          <Button onClick={advance} disabled={busy} className="w-full">
-            <next.icon className="mr-1.5 h-4 w-4" /> {next.label}
-          </Button>
-        )}
+        {next && status !== "completed" && status !== "cancelled" && (() => {
+          const blocked = status === "accepted" && !bothConfirmed;
+          return (
+            <div className="space-y-1">
+              <Button
+                onClick={advance}
+                disabled={busy || blocked}
+                className="w-full"
+                title={blocked ? "Both sides must confirm the visit time first" : undefined}
+              >
+                <next.icon className="mr-1.5 h-4 w-4" /> {next.label}
+              </Button>
+              {blocked && (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  {scheduled
+                    ? "Waiting for the customer to confirm the visit time."
+                    : "Schedule a visit time and get the customer to confirm to enable this."}
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Secondary actions */}
         <div className="grid grid-cols-2 gap-2">
