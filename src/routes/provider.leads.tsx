@@ -315,17 +315,24 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteEta, setQuoteEta] = useState("");
   const [quoteBusy, setQuoteBusy] = useState(false);
-  const [existingQuote, setExistingQuote] = useState<{ id: string; amount: number; created_at: string } | null>(null);
+  const [existingQuote, setExistingQuote] = useState<{ id: string; amount: number; created_at: string; eta_text: string | null; notes: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
     supabase
       .from("quotes")
-      .select("id, amount, created_at")
+      .select("id, amount, created_at, eta_text, notes")
       .eq("lead_id", unlock.lead_id)
       .eq("provider_id", unlock.provider_id)
       .maybeSingle()
-      .then(({ data }) => { if (active && data) setExistingQuote(data as any); });
+      .then(({ data }) => {
+        if (active && data) {
+          setExistingQuote(data as any);
+          setQuoteEta((data as any).eta_text ?? "");
+          if ((data as any).notes) setNotes((data as any).notes);
+          if ((data as any).amount) setPrice(String((data as any).amount));
+        }
+      });
     return () => { active = false; };
   }, [unlock.lead_id, unlock.provider_id]);
 
@@ -346,7 +353,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         },
         { onConflict: "lead_id,provider_id" },
       )
-      .select("id, amount, created_at")
+      .select("id, amount, created_at, eta_text, notes")
       .single();
     if (!error) {
       await updateUnlockStatus(unlock.id, {
