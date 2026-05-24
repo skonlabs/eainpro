@@ -461,20 +461,11 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         </Link>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <select className="rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
-          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
-        </select>
-        <Input placeholder="Quoted price (MMK)" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} />
-        <Button size="sm" onClick={save} disabled={saving}>{saving?"Saving…":"Save"}</Button>
-      </div>
-      <Textarea className="mt-2" placeholder="Internal notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           variant="default"
           onClick={() => setQuoteOpen(true)}
-          disabled={!price || parseInt(price, 10) <= 0}
         >
           <Send className="mr-1 h-3.5 w-3.5" />
           {existingQuote ? "Update quote to customer" : "Send quote to customer"}
@@ -483,6 +474,19 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           <span className="text-[11px] text-muted-foreground">
             Sent: {fmt(existingQuote.amount)} MMK
           </span>
+        )}
+        <select
+          className="ml-auto rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          title="Mark progress"
+        >
+          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+        </select>
+        {status !== unlock.status && (
+          <Button size="sm" variant="outline" onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Update status"}
+          </Button>
         )}
       </div>
       {unlock.is_refunded && <p className="mt-2 text-xs text-amber-600">Refunded: {fmt(unlock.refunded_amount_credits)} credits</p>}
