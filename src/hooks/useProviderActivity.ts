@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { type AppNotification, useNotifications } from "@/hooks/useNotifications";
 
@@ -23,6 +23,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
   const notifications = useNotifications(userId, limit);
   const [messageActivity, setMessageActivity] = useState<ActivityItem[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [ephemeralReadIds, setEphemeralReadIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!userId) {
@@ -50,7 +51,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
         title: "New message",
         body: message.body ?? null,
         link: message.lead_id ? `/request/${message.lead_id}?tab=messages` : "/messages",
-        read_at: null,
+        read_at: ephemeralReadIds.includes(`message:${message.id}`) ? new Date().toISOString() : null,
         created_at: message.created_at,
       }));
 
@@ -75,7 +76,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [userId, limit]);
+  }, [userId, limit, ephemeralReadIds]);
 
   const items = useMemo(
     () => mergeItems(notifications.items, messageActivity).slice(0, limit),
@@ -84,10 +85,36 @@ export function useProviderActivity(userId?: string, limit = 20) {
 
   const unreadCount = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
+  const markOneRead = useCallback(
+    async (id: string) => {
+      if (id.startsWith("message:")) {
+        setMessageActivity((current) =>
+          current.map((item) => (item.id === id && !item.read_at ? { ...item, read_at: new Date().toISOString() } : item)),
+        );
+        setEphemeralReadIds((current) => (current.includes(id) ? current : [...current, id]));
+        return;
+      }
+      await notifications.markOneRead(id);
+    },
+    [notifications],
+  );
+
+  const markAllRead = useCallback(async () => {
+    const now = new Date().toISOString();
+    const unreadMessageIds = messageActivity.filter((item) => !item.read_at).map((item) => item.id);
+    if (unreadMessageIds.length) {
+      setMessageActivity((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })));
+      setEphemeralReadIds((current) => [...new Set([...current, ...unreadMessageIds])]);
+    }
+    await notifications.markAllRead();
+  }, [messageActivity, notifications]);
+
   return {
     ...notifications,
     items,
     unreadCount,
+    markOneRead,
+    markAllRead,
     loading: notifications.loading || loadingMessages,
   };
 }
