@@ -9,7 +9,15 @@ import { LoadingState } from "@/components/site/LoadingState";
 export const Route = createFileRoute("/messages")({ component: MessagesPage });
 
 type Row = { id: string; lead_id: string; sender_id: string; recipient_id: string | null; body: string; created_at: string };
-type Thread = { leadId: string; peerId: string; lastBody: string; lastAt: string; isMine: boolean };
+type Thread = {
+  peerId: string;
+  peerName: string;
+  lastLeadId: string;
+  lastBody: string;
+  lastAt: string;
+  isMine: boolean;
+  count: number;
+};
 
 function MessagesPage() {
   const { user, loading } = useAuth();
@@ -32,16 +40,38 @@ function MessagesPage() {
       for (const r of rows) {
         const peer = r.sender_id === user.id ? r.recipient_id : r.sender_id;
         if (!peer) continue;
-        const key = `${r.lead_id}::${peer}`;
-        const arr = grouped.get(key) ?? [];
+        const arr = grouped.get(peer) ?? [];
         arr.push(r);
-        grouped.set(key, arr);
+        grouped.set(peer, arr);
+      }
+      const peerIds = Array.from(grouped.keys());
+      const [provRes, profRes] = await Promise.all([
+        peerIds.length
+          ? supabase.from("providers").select("id, business_name").in("id", peerIds)
+          : Promise.resolve({ data: [] as { id: string; business_name: string | null }[] }),
+        peerIds.length
+          ? supabase.from("profiles").select("id, full_name").in("id", peerIds)
+          : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
+      ]);
+      const nameMap = new Map<string, string>();
+      for (const p of (profRes.data ?? []) as { id: string; full_name: string | null }[]) {
+        if (p.full_name) nameMap.set(p.id, p.full_name);
+      }
+      for (const p of (provRes.data ?? []) as { id: string; business_name: string | null }[]) {
+        if (p.business_name) nameMap.set(p.id, p.business_name);
       }
       const list: Thread[] = [];
-      for (const [key, arr] of grouped) {
-        const [leadId, peerId] = key.split("::");
+      for (const [peerId, arr] of grouped) {
         const last = arr[0];
-        list.push({ leadId, peerId, lastBody: last.body, lastAt: last.created_at, isMine: last.sender_id === user.id });
+        list.push({
+          peerId,
+          peerName: nameMap.get(peerId) ?? L("Unknown", "အမည်မသိ"),
+          lastLeadId: last.lead_id,
+          lastBody: last.body,
+          lastAt: last.created_at,
+          isMine: last.sender_id === user.id,
+          count: arr.length,
+        });
       }
       list.sort((a, b) => +new Date(b.lastAt) - +new Date(a.lastAt));
       setThreads(list);
@@ -67,11 +97,24 @@ function MessagesPage() {
       ) : (
         <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
           {threads.map((t) => (
-            <li key={`${t.leadId}-${t.peerId}`}>
-              <Link to="/request/$leadId" params={{ leadId: t.leadId }} search={{ tab: "messages" }} className="flex items-start gap-3 p-3 transition-colors hover:bg-accent/40">
+            <li key={t.peerId}>
+              <Link to="/request/$leadId" params={{ leadId: t.lastLeadId }} search={{ tab: "messages" }} className="flex items-start gap-3 p-3 transition-colors hover:bg-accent/40">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                  {t.peerName.slice(0, 1).toUpperCase()}
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-muted-foreground">{new Date(t.lastAt).toLocaleString()}</div>
-                  <div className="mt-0.5 truncate text-sm">{t.isMine ? `${L("You: ", "သင်: ")}` : ""}{t.lastBody}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="truncate text-sm font-semibold">{t.peerName}</div>
+                    <div className="shrink-0 text-xs text-muted-foreground">{new Date(t.lastAt).toLocaleString()}</div>
+                  </div>
+                  <div className="mt-0.5 truncate text-sm text-muted-foreground">
+                    {t.isMine ? L("You: ", "သင်: ") : ""}{t.lastBody}
+                  </div>
+                  {t.count > 1 && (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {t.count} {L("messages", "မက်ဆေ့များ")}
+                    </div>
+                  )}
                 </div>
               </Link>
             </li>
