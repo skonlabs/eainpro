@@ -98,11 +98,9 @@ export function BookingPanel({
   // (on_the_way -> started -> completed) applies.
   const advanceBlockedUntilScheduled =
     booking.status === "accepted" && !bothConfirmedTime;
-  const canAdvance =
-    isProvider &&
-    booking.provider_id === userId &&
-    next &&
-    !advanceBlockedUntilScheduled;
+  const isProviderOnBooking = isProvider && booking.provider_id === userId;
+  const canAdvance = isProviderOnBooking && next && !advanceBlockedUntilScheduled;
+  const showAdvanceButton = isProviderOnBooking && next;
   const reviewsUnlocked = booking.status === "completed" && !!booking.customer_confirmed_at;
 
   const updateBooking = async (patch: Record<string, unknown>, successMessage?: string) => {
@@ -266,16 +264,32 @@ export function BookingPanel({
         <RescheduleControl booking={booking} isCustomer={isCustomer} isProvider={isProvider && booking.provider_id === userId} L={L} onChanged={onChange} />
       )}
 
-      {advanceBlockedUntilScheduled && (
-        <p className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-          {L(
-            "Agree on a visit time with the other side before marking yourself on the way.",
-            "လမ်းပေါ်ရှိကြောင်း မမှတ်မီ နှစ်ဖက်လုံး အချိန် အတည်ပြုပါ။",
+      {showAdvanceButton && (
+        <div className="space-y-1.5">
+          <Button
+            onClick={advance}
+            disabled={busy || !canAdvance}
+            className="w-full"
+            title={
+              advanceBlockedUntilScheduled
+                ? L(
+                    "Both sides must confirm the visit time first",
+                    "နှစ်ဖက်လုံး အချိန် အတည်ပြုရန် လိုသည်",
+                  )
+                : undefined
+            }
+          >
+            {L(next.en, next.my)}
+          </Button>
+          {advanceBlockedUntilScheduled && (
+            <p className="text-center text-[11px] text-muted-foreground">
+              {L(
+                "Schedule the visit and get both sides to confirm to enable this.",
+                "ဤခလုတ်ဖွင့်ရန် နှစ်ဖက်လုံး အချိန် အတည်ပြုပါ။",
+              )}
+            </p>
           )}
-        </p>
-      )}
-      {canAdvance && (
-        <Button onClick={advance} disabled={busy} className="w-full">{L(next.en, next.my)}</Button>
+        </div>
       )}
       {isMyBooking && booking.status !== "completed" && booking.status !== "cancelled" && (
         <Button onClick={cancel} disabled={busy} variant="outline" className="w-full">{L("Cancel booking", "ပယ်ဖျက်")}</Button>
