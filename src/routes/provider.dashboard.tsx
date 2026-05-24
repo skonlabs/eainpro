@@ -8,7 +8,6 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star, Bell, Trophy, XCircle, Send, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
-import { CreditsBadge } from "@/components/provider/CreditsBadge";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
@@ -120,12 +119,9 @@ function DashboardPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-14">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{L("Active jobs", "ဆောင်ရွက်ဆဲ")}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{L("Bookings from accepted quotes.", "လက်ခံပြီးသော ဘုတ်ကင်")}</p>
-          </div>
-          <CreditsBadge />
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{L("Active jobs", "ဆောင်ရွက်ဆဲ")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{L("Bookings from accepted quotes.", "လက်ခံပြီးသော ဘုတ်ကင်")}</p>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Link to="/provider/leads" className="rounded-xl border border-border bg-card p-3 hover:bg-secondary/40">

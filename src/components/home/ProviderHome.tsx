@@ -33,7 +33,6 @@ import {
   type Lang,
   type Lfn,
 } from "./atoms";
-import { CreditsBadge } from "@/components/provider/CreditsBadge";
 
 type ProviderBooking = {
   id: string;
@@ -156,7 +155,7 @@ export function ProviderHome({
             ? L("Profile pending verification.", "ပရိုဖိုင် အတည်ပြုစဉ်")
             : L("Manage your jobs.", "သင်၏ အလုပ်များကို စီမံပါ။")
         }
-        trailing={<CreditsBadge size="sm" variant="onDark" />}
+        
       />
 
       <div className="grid grid-cols-3 gap-2">
