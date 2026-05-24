@@ -78,13 +78,13 @@ function MyRequestsPage() {
           </div>
         )}
         {rows && rows.length > 0 && (
-          <ul className="mt-6 grid gap-2">
+          <ul className="mt-6 grid gap-2 min-w-0">
             {rows.map((r) => {
               const state = deriveBookingState(r.booking, { status: r.status, quotes_count: r.quote_count });
               const meta = statusMeta(state);
               return (
-              <li key={r.id}>
-                <Link to="/request/$leadId" params={{ leadId: r.id }} search={{ tab: "details" }} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
+              <li key={r.id} className="min-w-0">
+                <Link to="/request/$leadId" params={{ leadId: r.id }} search={{ tab: "details" }} className="flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="min-w-0 flex-1 truncate font-semibold">{r.short_description}</span>
