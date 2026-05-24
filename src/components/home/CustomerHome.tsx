@@ -250,7 +250,7 @@ export function CustomerHome({
                 <Link
                   key={b.id}
                   to="/request/new"
-                  search={{ cat: b.lead?.category_slug }}
+                  search={{ repeat: b.lead_id, cat: b.lead?.category_slug }}
                   className="flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 transition hover:border-primary/50"
                 >
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
