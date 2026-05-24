@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star, Bell, Trophy, XCircle, Send, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
@@ -16,20 +17,12 @@ type EarningsRow = { id: string; amount: number | null; provider_confirmed_at: s
 
 type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string };
 
-type ActivityRow = {
-  id: string;
-  kind: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  created_at: string;
-};
-
 function DashboardPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
+  const { items: activity } = useNotifications(user?.id, 15);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,7 +44,7 @@ function DashboardPage() {
       }
       const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
       const since7d  = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
-      const [{ data: bks }, { data: done }, { data: rvs }, { data: activity }, { count: newLeads }, { count: pendingQuotes }, { count: wonWeek }] = await Promise.all([
+      const [{ data: bks }, { data: done }, { data: rvs }, { count: newLeads }, { count: pendingQuotes }, { count: wonWeek }] = await Promise.all([
         supabase
           .from("bookings")
           .select("id, lead_id, status, scheduled_at, amount, lead:customer_leads(short_description, city_slug, address)")
@@ -72,12 +65,6 @@ function DashboardPage() {
           .eq("rated_by", "customer")
           .order("created_at", { ascending: false })
           .limit(20),
-        supabase
-          .from("notifications")
-          .select("id, kind, title, body, link, created_at")
-          .in("kind", ["new_matching_lead","quote_accepted","lead_lost","booking_cancelled","review_requested","status_changed","lead_unlocked_by_provider"])
-          .order("created_at", { ascending: false })
-          .limit(15),
         supabase
           .from("notifications")
           .select("id", { count: "exact", head: true })
@@ -101,7 +88,6 @@ function DashboardPage() {
         earnings: (done ?? []) as EarningsRow[],
         reviews: (rvs ?? []) as ReviewRow[],
         ratingAvg: prov.rating_avg ?? null,
-        activity: (activity ?? []) as ActivityRow[],
         newLeads24h: newLeads ?? 0,
         pendingQuotes: pendingQuotes ?? 0,
         wonThisWeek: wonWeek ?? 0,
@@ -113,7 +99,6 @@ function DashboardPage() {
   const earnings = data && !data.missing ? data.earnings : [];
   const reviews = data && !data.missing ? data.reviews : [];
   const ratingAvg = data && !data.missing ? data.ratingAvg : null;
-  const activity  = data && !data.missing ? data.activity : [];
   const newLeads24h = data && !data.missing ? data.newLeads24h : 0;
   const pendingQuotes = data && !data.missing ? data.pendingQuotes : 0;
   const wonThisWeek = data && !data.missing ? data.wonThisWeek : 0;

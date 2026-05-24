@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, Check } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   Popover,
   PopoverContent,
@@ -11,72 +11,13 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 
-type Notif = {
-  id: string;
-  kind: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  read_at: string | null;
-  created_at: string;
-};
-
 export function NotificationBell() {
   const { user } = useAuth();
   const { lang } = useI18n();
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
-  const [items, setItems] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      setItems([]);
-      return;
-    }
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("id, kind, title, body, link, read_at, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (active) setItems((data as Notif[]) ?? []);
-    };
-    load();
-    const ch = supabase
-      .channel(`notif:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          setItems((cur) => {
-            const n = payload.new as Notif;
-            if (cur.some((x) => x.id === n.id)) return cur;
-            return [n, ...cur].slice(0, 20);
-          });
-        },
-      )
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, [user]);
-
-  const unread = items.filter((n) => !n.read_at).length;
-
-  const markAllRead = async () => {
-    if (!user || unread === 0) return;
-    const ids = items.filter((n) => !n.read_at).map((n) => n.id);
-    setItems((cur) => cur.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
-  };
-
-  const markOneRead = async (id: string) => {
-    setItems((cur) => cur.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
-  };
+  const { items, unreadCount, markAllRead, markOneRead } = useNotifications(user?.id, 20);
 
   if (!user) return null;
 
@@ -88,9 +29,9 @@ export function NotificationBell() {
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
-          {unread > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unread > 9 ? "9+" : unread}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </button>
@@ -98,7 +39,7 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="text-sm font-semibold">{L("Notifications", "အကြောင်းကြားချက်များ")}</span>
-          {unread > 0 && (
+          {unreadCount > 0 && (
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={markAllRead}>
               <Check className="mr-1 h-3 w-3" />
               {L("Mark all read", "အားလုံး ဖတ်ပြီး")}
