@@ -21,6 +21,17 @@ export const Route = createFileRoute("/provider/leads")({
 });
 
 const STATUS_OPTIONS = ["unlocked","contacted","quoted","won","lost","customer_no_response","invalid","completed"] as const;
+type StatusKey = typeof STATUS_OPTIONS[number];
+const STATUS_META: Record<StatusKey, { label: string; hint: string; tone: string }> = {
+  unlocked: { label: "New — not contacted yet", hint: "You just unlocked this lead.", tone: "bg-muted text-foreground" },
+  contacted: { label: "Contacted customer", hint: "Use after you've called or messaged the customer.", tone: "bg-blue-100 text-blue-800" },
+  quoted: { label: "Quote sent", hint: "Set automatically when you send a quote.", tone: "bg-indigo-100 text-indigo-800" },
+  won: { label: "Won — customer accepted", hint: "Customer agreed to hire you.", tone: "bg-emerald-100 text-emerald-800" },
+  lost: { label: "Lost — chose another provider", hint: "Customer picked someone else or declined.", tone: "bg-rose-100 text-rose-800" },
+  customer_no_response: { label: "No response from customer", hint: "You tried to reach them but got no reply.", tone: "bg-amber-100 text-amber-800" },
+  invalid: { label: "Invalid lead", hint: "Wrong info, spam, or fraud — also submit a refund report.", tone: "bg-amber-100 text-amber-800" },
+  completed: { label: "Job completed", hint: "Work is finished. (Bookings auto-update this too.)", tone: "bg-emerald-100 text-emerald-800" },
+};
 
 const DISMISS_KEY = "fixido.dismissedLeads.v1";
 const readDismissed = (): Set<string> => {
@@ -475,18 +486,42 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             Sent: {fmt(existingQuote.amount)} MMK · {new Date(existingQuote.created_at).toLocaleString()}
           </span>
         )}
-        <select
-          className="ml-auto rounded-md border border-border bg-background px-2 py-1.5 text-xs"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          title="Mark progress"
-        >
-          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-        </select>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="text-xs font-semibold">Job progress</div>
+            <div className="text-[11px] text-muted-foreground">Track this lead so you remember where it stands. Only you see this.</div>
+          </div>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_META[unlock.status as StatusKey]?.tone ?? "bg-muted text-foreground"}`}>
+            {STATUS_META[unlock.status as StatusKey]?.label ?? unlock.status}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label className="text-[11px] font-medium text-muted-foreground">Change to:</label>
+          <select
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+          </select>
+          {status !== unlock.status && (
+            <Button
+              size="sm"
+              onClick={async () => {
+                if (!confirm(`Update job progress to "${STATUS_META[status as StatusKey].label}"?`)) return;
+                await save();
+              }}
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Confirm change"}
+            </Button>
+          )}
+        </div>
         {status !== unlock.status && (
-          <Button size="sm" variant="outline" onClick={save} disabled={saving}>
-            {saving ? "Saving…" : "Update status"}
-          </Button>
+          <p className="mt-2 text-[11px] text-muted-foreground">{STATUS_META[status as StatusKey]?.hint}</p>
         )}
       </div>
       {unlock.is_refunded && <p className="mt-2 text-xs text-amber-600">Refunded: {fmt(unlock.refunded_amount_credits)} credits</p>}
