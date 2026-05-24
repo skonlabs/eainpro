@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import {
   Plus,
   Sparkles,
@@ -30,12 +31,13 @@ export const ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 export function Greeting({ name, sub, trailing }: { name: string; sub: string; trailing?: React.ReactNode }) {
+  const { lang } = useI18n();
   return (
     <div className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20" style={{ background: "var(--gradient-hero)" }}>
       <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">Hi</div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">{lang === "en" ? "Hi" : "မင်္ဂလာပါ"}</div>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{name}</h1>
           <p className="mt-1 text-sm text-primary-foreground/85">{sub}</p>
         </div>
@@ -208,6 +210,7 @@ export function QuickAction({
 }
 
 export function StatusPill({ status }: { status: string }) {
+  const { lang } = useI18n();
   const tint: Record<string, string> = {
     open: "bg-amber-500/15 text-amber-700",
     quoted: "bg-sky-500/15 text-sky-700",
@@ -216,9 +219,21 @@ export function StatusPill({ status }: { status: string }) {
     completed: "bg-muted text-muted-foreground",
     cancelled: "bg-muted text-muted-foreground",
   };
+  const labels: Record<string, { en: string; my: string }> = {
+    open: { en: "open", my: "ဖွင့်ထား" },
+    quoted: { en: "quoted", my: "စျေးပေး" },
+    accepted: { en: "accepted", my: "လက်ခံ" },
+    in_progress: { en: "in progress", my: "ဆောင်ရွက်ဆဲ" },
+    completed: { en: "completed", my: "ပြီးစီး" },
+    cancelled: { en: "cancelled", my: "ပယ်ဖျက်" },
+    on_the_way: { en: "on the way", my: "လမ်းပေါ်" },
+    started: { en: "started", my: "စတင်" },
+  };
+  const l = labels[status];
+  const text = l ? (lang === "en" ? l.en : l.my) : status.replace("_", " ");
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tint[status] ?? "bg-muted text-muted-foreground"}`}>
-      {status.replace("_", " ")}
+      {text}
     </span>
   );
 }
