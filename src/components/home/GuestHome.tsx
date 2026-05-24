@@ -101,7 +101,7 @@ export function GuestHome({ lang, L }: { lang: Lang; L: Lfn }) {
                 {L("Verified providers", "အတည်ပြုပြီးသော ဝန်ဆောင်သူများ")}
               </div>
               <div className="text-xs text-muted-foreground">
-                {L("Every pro is background-checked before joining.", "ဝင်ခွင့်ရောင်း မရမီ အနောက်ခံ စစ်ဆေးထားပါသည်။")}
+                {L("Every provider is reviewed and approved before joining.", "ဝန်ဆောင်သူ တိုင်းကို စိစစ်ပြီးမှ လက်ခံပါသည်။")}
               </div>
             </div>
           </li>
@@ -139,7 +139,7 @@ export function GuestHome({ lang, L }: { lang: Lang; L: Lfn }) {
           {L("Ready to get things fixed?", "ပြင်ဆင်ချင်ပြီလား?")}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {L("Join thousands of homeowners already using Fixido.", "Fixido ကို သုံးနေသည့် အိမ်ရှင်ထောင်ချီ ပူးပေါင်းပါ။")}
+          {L("Post a request and connect with local providers in minutes.", "တောင်းဆိုမှု တင်ပြီး မိနစ်ပိုင်းအတွင်း ဒေသခံ ဝန်ဆောင်သူများနှင့် ချိတ်ဆက်ပါ။")}
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Link to="/signup">
