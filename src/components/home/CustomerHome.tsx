@@ -407,9 +407,14 @@ export function CustomerHome({
           <h2 className="text-sm font-bold tracking-tight">
             {L("Active requests", "လက်ရှိ တောင်းဆိုမှုများ")}
           </h2>
-          <Link to="/my-requests" className="text-xs font-semibold text-primary">
-            {L("See all", "အားလုံး")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/messages" className="text-xs font-semibold text-primary">
+              {L("Messages", "မက်ဆေ့")}
+            </Link>
+            <Link to="/my-requests" className="text-xs font-semibold text-primary">
+              {L("See all", "အားလုံး")}
+            </Link>
+          </div>
         </div>
 
         {requests === null ? (
