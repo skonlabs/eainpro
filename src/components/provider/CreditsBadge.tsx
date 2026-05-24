@@ -5,9 +5,9 @@ import { useAuth } from "@/lib/auth";
 import { getWallet, fmt } from "@/lib/wallet";
 import { supabase } from "@/lib/supabase";
 
-type Props = { size?: "sm" | "md" };
+type Props = { size?: "sm" | "md"; variant?: "solid" | "onDark" };
 
-export function CreditsBadge({ size = "md" }: Props) {
+export function CreditsBadge({ size = "md", variant = "solid" }: Props) {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
 
@@ -31,16 +31,25 @@ export function CreditsBadge({ size = "md" }: Props) {
   const pad = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-base";
   const iconSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
+  const surface =
+    variant === "onDark"
+      ? "bg-white/15 text-primary-foreground ring-1 ring-white/25 backdrop-blur hover:bg-white/20"
+      : "bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/40 hover:shadow-lg hover:shadow-primary/30";
+  const chip =
+    variant === "onDark"
+      ? "bg-white/20 text-primary-foreground"
+      : "bg-primary-foreground/15 text-primary-foreground";
+
   return (
     <Link
       to="/provider/wallet"
       aria-label="Wallet balance"
-      className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/85 ${pad} font-semibold text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/40 transition hover:shadow-lg hover:shadow-primary/30`}
+      className={`group inline-flex items-center gap-2 rounded-full ${surface} ${pad} font-semibold transition`}
     >
       <Wallet className={iconSize} />
       <span className="tabular-nums">{balance === null ? "—" : fmt(balance)}</span>
       <span className="opacity-90">credits</span>
-      <span className="ml-1 hidden items-center gap-0.5 rounded-full bg-primary-foreground/15 px-1.5 py-0.5 text-xs sm:inline-flex">
+      <span className={`ml-1 hidden items-center gap-0.5 rounded-full ${chip} px-1.5 py-0.5 text-xs sm:inline-flex`}>
         <Plus className="h-3 w-3" /> Top up
       </span>
     </Link>
