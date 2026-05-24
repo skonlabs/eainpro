@@ -33,7 +33,16 @@ function MessagesPage() {
   const { lang } = useI18n();
   const nav = useNavigate();
   const [threads, setThreads] = useState<PeerGroup[] | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const L = (en: string, my: string) => (lang === "en" ? en : my);
+
+  const togglePeer = (peerId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(peerId)) next.delete(peerId); else next.add(peerId);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (loading) return;
