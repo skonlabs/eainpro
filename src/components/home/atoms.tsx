@@ -29,14 +29,17 @@ export const ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   Saw: Hammer, Brick: Hammer,
 };
 
-export function Greeting({ name, sub }: { name: string; sub: string }) {
+export function Greeting({ name, sub, trailing }: { name: string; sub: string; trailing?: React.ReactNode }) {
   return (
     <div className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20" style={{ background: "var(--gradient-hero)" }}>
       <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-      <div className="relative">
-        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">Hi</div>
-        <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{name}</h1>
-        <p className="mt-1 text-sm text-primary-foreground/85">{sub}</p>
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/70">Hi</div>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{name}</h1>
+          <p className="mt-1 text-sm text-primary-foreground/85">{sub}</p>
+        </div>
+        {trailing && <div className="shrink-0">{trailing}</div>}
       </div>
     </div>
   );
