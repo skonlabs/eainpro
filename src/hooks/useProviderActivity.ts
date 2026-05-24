@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { type AppNotification, useNotifications } from "@/hooks/useNotifications";
 
@@ -24,6 +24,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
   const [messageActivity, setMessageActivity] = useState<ActivityItem[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [ephemeralReadIds, setEphemeralReadIds] = useState<string[]>([]);
+  const channelInstanceId = useRef(`pact${Math.random().toString(36).slice(2, 10)}`);
 
   useEffect(() => {
     if (!userId) {
@@ -62,7 +63,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
     void loadMessages();
 
     const channel = supabase
-      .channel(`provider-activity:${userId}:${limit}`)
+      .channel(`provider-activity:${userId}:${limit}:${channelInstanceId.current}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${userId}` },
@@ -76,7 +77,7 @@ export function useProviderActivity(userId?: string, limit = 20) {
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [userId, limit, ephemeralReadIds]);
+  }, [userId, limit]);
 
   const items = useMemo(
     () => mergeItems(notifications.items, messageActivity).slice(0, limit),
