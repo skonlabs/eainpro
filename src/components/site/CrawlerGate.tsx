@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock } from "lucide-react";
@@ -7,12 +7,28 @@ const STORAGE_KEY = "fx_gate_ok";
 const USER = "admin";
 const PASS = "fx@123";
 
-export function CrawlerGate({ children }: { children: React.ReactNode }) {
+const PUBLIC_BYPASS_PATHS = ["/auth/confirm", "/reset-password"];
+
+export function CrawlerGate({
+  children,
+  pathname,
+}: {
+  children: React.ReactNode;
+  pathname?: string;
+}) {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const bypassGate = useMemo(
+    () => PUBLIC_BYPASS_PATHS.some((path) => pathname === path || pathname?.startsWith(`${path}/`)),
+    [pathname],
+  );
+
+  if (bypassGate) {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     try {
