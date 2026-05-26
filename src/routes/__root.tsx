@@ -143,7 +143,7 @@ function RootComponent() {
   const isFullBleed = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
     <QueryClientProvider client={queryClient}>
-      <CrawlerGate>
+      <CrawlerGate pathname={pathname}>
       <AuthProvider>
         <I18nProvider>
           <div className="flex min-h-screen flex-col bg-background">
@@ -163,7 +163,7 @@ function RootComponent() {
           <Toaster position="top-center" richColors />
         </I18nProvider>
       </AuthProvider>
-      </CrawlerGate>
+       </CrawlerGate>
     </QueryClientProvider>
   );
 }
