@@ -912,6 +912,30 @@ function NewRequestPage() {
                 ))}
               </div>
             )}
+            {form.videoUrls.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {form.videoUrls.map((u) => (
+                  <div
+                    key={u}
+                    className="relative aspect-square overflow-hidden rounded-xl border bg-black"
+                  >
+                    <video src={u} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                    <button
+                      onClick={() =>
+                        set(
+                          "videoUrls",
+                          form.videoUrls.filter((x) => x !== u),
+                        )
+                      }
+                      className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 shadow"
+                      aria-label="Remove"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </StepShell>
         );
 
