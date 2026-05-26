@@ -61,3 +61,17 @@ begin
 end $func$;
 
 grant execute on function public.adjust_wallet(uuid, int, text) to authenticated;
+
+-- Allow 'wallet_adjustment' kind on notifications (used by adjust_wallet).
+do $$ begin
+  alter table public.notifications drop constraint if exists notifications_kind_check;
+exception when undefined_object then null; end $$;
+alter table public.notifications
+  add constraint notifications_kind_check
+  check (kind in (
+    'quote_received','booking_confirmed','message_received','status_changed',
+    'review_requested','quote_accepted','booking_cancelled',
+    'new_matching_lead','lead_unlocked_by_provider','lead_lost',
+    'topup_approved','topup_rejected','refund_issued','low_balance',
+    'wallet_adjustment'
+  ));
