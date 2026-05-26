@@ -380,7 +380,7 @@ export function BookingPanel({
         <p className="text-xs text-muted-foreground">{L("Your review was submitted.", "သင်၏ သုံးသပ်ချက် ပေးပို့ပြီး။")}</p>
       )}
 
-      {booking.status === "completed" && myRole && (
+      {myRole && booking.status !== "cancelled" && (
         <div className="border-t border-border/60 pt-3">
           {reported ? (
             <p className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
