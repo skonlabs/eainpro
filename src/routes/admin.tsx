@@ -21,7 +21,7 @@ import {
   Activity,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import {
   Sidebar,
   SidebarContent,
@@ -149,9 +149,8 @@ function tabComponent(key: TabKey, setTab: (k: TabKey) => void) {
 
 function AdminPage() {
   const { lang } = useI18n();
-  const { user, roles, loading } = useAuth();
+  const guard = useRoleGuard("admin");
   const nav = useNavigate();
-  const isAdmin = roles.includes("admin");
   const { tab: tabParam } = Route.useSearch();
   const initial = (ALL_ITEMS.find((i) => i.key === tabParam)?.key ?? "overview") as TabKey;
   const [tab, setTabState] = useState<TabKey>(initial);
@@ -168,25 +167,10 @@ function AdminPage() {
     nav({ to: "/admin", search: { tab: next }, replace: true });
   };
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) nav({ to: "/signin", search: { redirect: "/admin" } });
-  }, [loading, user, nav]);
-
   const current = useMemo(() => ALL_ITEMS.find((i) => i.key === tab) ?? ALL_ITEMS[0], [tab]);
 
-  if (loading || !user) return <LoadingState label={lang === "en" ? "Loading…" : "ခဏစောင့်ပါ…"} />;
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background p-8 text-center">
-        <h1 className="text-xl font-bold">Admin only</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {lang === "en"
-            ? "Your account does not have the admin role."
-            : "သင်၏ အကောင့်တွင် admin role မရှိပါ။"}
-        </p>
-      </div>
-    );
+  if (guard.checking || !guard.allowed) {
+    return <LoadingState label={lang === "en" ? "Loading…" : "ခဏစောင့်ပါ…"} />;
   }
 
   return (

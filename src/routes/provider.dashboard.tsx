@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { useI18n } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
@@ -21,19 +22,14 @@ type ReviewRow = { id: string; rating: number; comment: string | null; created_a
 function DashboardPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
+  const guard = useRoleGuard("provider");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
   const { items: activity } = useNotifications(user?.id, 15);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      nav({ to: "/signin", search: { redirect: "/provider/dashboard" } });
-    }
-  }, [loading, user, nav]);
-
   const { data } = useQuery({
     queryKey: ["provider-dashboard", user?.id],
-    enabled: !!user,
+    enabled: !!user && guard.allowed,
     staleTime: 30_000,
     queryFn: async () => {
       const uid = user!.id;

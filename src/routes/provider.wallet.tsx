@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { CREDIT_PACKAGES, listCreditPackages, getWallet, listTransactions, listMyTopups, submitTopup, fmt, type CreditPackage } from "@/lib/wallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/provider/wallet")({
 
 function WalletPage() {
   const { user, roles, loading } = useAuth();
+  const guard = useRoleGuard("provider");
   const nav = useNavigate();
   const [wallet, setWallet] = useState<any>(null);
   const [txs, setTxs] = useState<any[]>([]);
@@ -46,9 +48,8 @@ function WalletPage() {
   };
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/wallet" } });
-    if (!roles.includes("provider")) return void nav({ to: "/provider/onboarding" });
+    if (!guard.allowed) return;
+    if (!user) return;
     refresh();
     (async () => {
       const { data } = await supabase
@@ -62,7 +63,7 @@ function WalletPage() {
       }
     })();
     listCreditPackages().then(setPackages).catch(() => {});
-  }, [loading, user, roles, nav]);
+  }, [guard.allowed, user]);
 
   // Render shell immediately; individual sections handle their own empty state.
 

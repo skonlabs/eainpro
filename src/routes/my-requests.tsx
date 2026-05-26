@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { supabase } from "@/lib/supabase";
 import { ChevronRight, MapPin, Plus, Inbox } from "lucide-react";
 import { deriveBookingState, statusMeta } from "@/lib/booking-status";
@@ -25,16 +25,13 @@ export const Route = createFileRoute("/my-requests")({
 function MyRequestsPage() {
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
+  const guard = useRoleGuard("customer");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/signin", search: { redirect: "/my-requests" } });
-  }, [authLoading, user, nav]);
-
   const { data: rows } = useQuery({
     queryKey: ["my-leads", user?.id],
-    enabled: !!user,
+    enabled: !!user && guard.allowed,
     queryFn: async () => {
       const { data: leads } = await supabase
         .from("customer_leads")

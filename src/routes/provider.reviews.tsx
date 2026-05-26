@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { useI18n } from "@/lib/i18n";
 import { Star } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
@@ -14,16 +14,13 @@ type ReviewRow = { id: string; rating: number; comment: string | null; created_a
 function ReviewsPage() {
   const { lang } = useI18n();
   const { user, loading } = useAuth();
+  const guard = useRoleGuard("provider");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
-  useEffect(() => {
-    if (!loading && !user) nav({ to: "/signin", search: { redirect: "/provider/reviews" } });
-  }, [loading, user, nav]);
-
   const { data } = useQuery({
     queryKey: ["provider-all-reviews", user?.id],
-    enabled: !!user,
+    enabled: !!user && guard.allowed,
     queryFn: async () => {
       const [{ data: prov }, { data: rvs }] = await Promise.all([
         supabase.from("providers").select("rating_avg, rating_count").eq("id", user!.id).maybeSingle(),
