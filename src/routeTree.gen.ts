@@ -30,6 +30,7 @@ import { Route as ProviderLeadsRouteImport } from './routes/provider.leads'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 
 const SignupRoute = SignupRouteImport.update({
@@ -137,6 +138,11 @@ const PProviderIdRoute = PProviderIdRouteImport.update({
   path: '/p/$providerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
   id: '/api/public/auth-email-hook',
   path: '/api/public/auth-email-hook',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/auth/confirm'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/auth/confirm'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/signin'
     | '/signup'
+    | '/auth/confirm'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRouteWithChildren
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderCalendarRoute: typeof ProviderCalendarRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
@@ -464,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PProviderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/auth-email-hook': {
       id: '/api/public/auth-email-hook'
       path: '/api/public/auth-email-hook'
@@ -498,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRouteWithChildren,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   PProviderIdRoute: PProviderIdRoute,
   ProviderCalendarRoute: ProviderCalendarRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
@@ -512,13 +533,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
