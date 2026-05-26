@@ -38,7 +38,7 @@ export function DetailsCard({
   const [address, setAddress] = useState(lead.address ?? "");
   const [saving, setSaving] = useState(false);
   const save = async () => {
-    const text = draft.trim();
+    const text = draft.trim().slice(0, 10000);
     if (!text) return;
     setSaving(true);
     const { error } = await supabase
@@ -102,8 +102,9 @@ export function DetailsCard({
             <textarea
               className="w-full rounded-md border border-border bg-background p-2 text-sm"
               rows={4}
+              maxLength={10000}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => setDraft(e.target.value.slice(0, 10000))}
               disabled={saving}
             />
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
@@ -199,11 +200,18 @@ export function DetailsCard({
       )}
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          {photos.map((u) => (
-            <a key={u} href={u} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg border border-border">
-              <img src={u} alt="" className="h-full w-full object-cover" />
-            </a>
-          ))}
+          {photos.map((u) => {
+            const isVideo = /\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(u);
+            return (
+              <a key={u} href={u} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg border border-border bg-black">
+                {isVideo ? (
+                  <video src={u} className="h-full w-full object-cover" muted playsInline controls />
+                ) : (
+                  <img src={u} alt="" className="h-full w-full object-cover" />
+                )}
+              </a>
+            );
+          })}
         </div>
       )}
     </div>
