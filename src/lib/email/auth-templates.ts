@@ -34,10 +34,10 @@ function escape(s: string) {
 }
 
 function buildConfirmUrl(payload: AuthHookPayload, useNew = false) {
-  const { site_url, token_hash, token_hash_new, email_action_type, redirect_to } =
+  const { token_hash, token_hash_new, email_action_type, redirect_to } =
     payload.email_data;
   const hash = useNew ? token_hash_new || token_hash : token_hash;
-  const base = site_url.replace(/\/$/, "");
+  const base = BRAND_URL.replace(/\/$/, "");
   // Verify on the app via supabase.auth.verifyOtp(token_hash) — avoids
   // hitting Supabase's /auth/v1/verify endpoint directly (which requires apikey).
   const params = new URLSearchParams({
