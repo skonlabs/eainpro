@@ -23,9 +23,16 @@ function ResetPasswordPage() {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+    if (typeof window === "undefined") return;
+    if (window.location.hash.includes("type=recovery")) {
       setMode("update");
+      return;
     }
+    // After verifyOtp on /auth/confirm we land here with an active session
+    // but no hash — switch to update mode if the user is authenticated.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setMode("update");
+    });
   }, []);
 
   const requestLink = async (e: React.FormEvent) => {
