@@ -443,6 +443,12 @@ function NewRequestPage() {
         form.photoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: i })),
       );
     }
+    if (form.videoUrls.length) {
+      const offset = form.photoUrls.length;
+      await supabase.from("lead_photos").insert(
+        form.videoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: offset + i })),
+      );
+    }
     setSubmitting(false);
     nav({ to: "/request/$leadId", params: { leadId: lead.id } });
   };
