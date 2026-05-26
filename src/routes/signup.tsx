@@ -11,6 +11,12 @@ import { useAuth } from "@/lib/auth";
 import { Loader2, Mail } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]).{8,}$/;
+const passwordError = (lang: "en" | "my") =>
+  lang === "en"
+    ? "Password must be at least 8 characters and include one uppercase letter, one number, and one special character."
+    : "စကားဝှက်သည် အနည်းဆုံး ၈ လုံးရှိရမည်၊ စာလုံးကြီးတစ်လုံး၊ ဂဏန်းတစ်လုံးနှင့် အထူးသင်္ကေတတစ်ခု ပါဝင်ရမည်။";
+
 const searchSchema = z.object({
   as: z.enum(["customer", "provider"]).optional(),
   redirect: z.string().optional(),
@@ -53,6 +59,10 @@ function SignUpPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
+    if (!PASSWORD_REGEX.test(password)) {
+      setErr(passwordError(lang));
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -155,8 +165,11 @@ function SignUpPage() {
             <Input
               type="password"
               required
-              minLength={6}
-              placeholder={L("Password (min 6 characters)", "စကားဝှက် (အနည်းဆုံး ၆ လုံး)")}
+              minLength={8}
+              placeholder={L(
+                "Password (8+ chars, 1 uppercase, 1 number, 1 symbol)",
+                "စကားဝှက် (၈ လုံး+၊ စာလုံးကြီး၊ ဂဏန်း၊ သင်္ကေတ)",
+              )}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11"
