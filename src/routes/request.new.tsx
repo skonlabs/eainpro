@@ -443,6 +443,12 @@ function NewRequestPage() {
         form.photoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: i })),
       );
     }
+    if (form.videoUrls.length) {
+      const offset = form.photoUrls.length;
+      await supabase.from("lead_photos").insert(
+        form.videoUrls.map((url, i) => ({ lead_id: lead.id, url, sort_order: offset + i })),
+      );
+    }
     setSubmitting(false);
     nav({ to: "/request/$leadId", params: { leadId: lead.id } });
   };
@@ -1030,12 +1036,13 @@ function NewRequestPage() {
             <Textarea
               autoFocus
               rows={5}
+              maxLength={10000}
               placeholder={L(
                 "Example: Water is leaking under the kitchen sink. Need someone to check and repair.",
                 "ဥပမာ — မီးဖိုခန်း ဇလုံအောက်တွင် ရေယိုနေပါသည်။",
               )}
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
+              onChange={(e) => set("description", e.target.value.slice(0, 10000))}
               className="text-base"
             />
             <div className="mt-2 flex items-center justify-end text-xs">

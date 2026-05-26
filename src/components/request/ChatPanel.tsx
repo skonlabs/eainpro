@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,19 @@ export function ChatPanel({
 }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Mark messages addressed to me on this lead as read whenever the chat
+  // panel mounts or new messages arrive.
+  useEffect(() => {
+    const unread = messages.filter((m) => m.recipient_id === userId);
+    if (!unread.length) return;
+    void supabase
+      .from("messages")
+      .update({ read_at: new Date().toISOString() })
+      .eq("lead_id", leadId)
+      .eq("recipient_id", userId)
+      .is("read_at", null);
+  }, [leadId, userId, messages.length]);
 
   const send = async () => {
     const text = body.trim();
