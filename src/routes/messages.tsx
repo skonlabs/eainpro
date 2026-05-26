@@ -8,7 +8,7 @@ import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/messages")({ component: MessagesPage });
 
-type Row = { id: string; lead_id: string; sender_id: string; recipient_id: string | null; body: string; created_at: string };
+type Row = { id: string; lead_id: string; sender_id: string; recipient_id: string | null; body: string; created_at: string; read_at?: string | null };
 type LeadInfo = { id: string; title: string; serviceLabel: string | null };
 type LeadThread = {
   leadId: string;
@@ -18,6 +18,7 @@ type LeadThread = {
   lastAt: string;
   isMine: boolean;
   count: number;
+  unread: number;
 };
 type PeerGroup = {
   peerId: string;
@@ -25,6 +26,7 @@ type PeerGroup = {
   peerRole: "provider" | "customer" | "unknown";
   lastAt: string;
   totalCount: number;
+  unread: number;
   leads: LeadThread[];
 };
 
@@ -34,6 +36,7 @@ function MessagesPage() {
   const nav = useNavigate();
   const [threads, setThreads] = useState<PeerGroup[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [reloadTick, setReloadTick] = useState(0);
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   const togglePeer = (peerId: string) => {
@@ -50,7 +53,7 @@ function MessagesPage() {
     (async () => {
       const { data } = await supabase
         .from("messages")
-        .select("id, lead_id, sender_id, recipient_id, body, created_at")
+        .select("id, lead_id, sender_id, recipient_id, body, created_at, read_at")
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
       const rows = (data ?? []) as Row[];
@@ -141,6 +144,7 @@ function MessagesPage() {
         for (const [leadId, arr] of inner) {
           const last = arr[0];
           const info = leadInfo.get(leadId);
+          const unread = arr.filter((m) => m.recipient_id === user.id && !m.read_at).length;
           leads.push({
             leadId,
             title: info?.title ?? L("Request", "တောင်းဆို"),
@@ -149,18 +153,46 @@ function MessagesPage() {
             lastAt: last.created_at,
             isMine: last.sender_id === user.id,
             count: arr.length,
+            unread,
           });
           total += arr.length;
           if (last.created_at > peerLastAt) peerLastAt = last.created_at;
         }
         leads.sort((a, b) => +new Date(b.lastAt) - +new Date(a.lastAt));
-        groups.push({ peerId, peerName, peerRole: role, lastAt: peerLastAt, totalCount: total, leads });
+        const peerUnread = leads.reduce((sum, l) => sum + l.unread, 0);
+        groups.push({ peerId, peerName, peerRole: role, lastAt: peerLastAt, totalCount: total, unread: peerUnread, leads });
       }
       groups.sort((a, b) => +new Date(b.lastAt) - +new Date(a.lastAt));
       setThreads(groups);
       setExpanded(new Set(groups.map((g) => g.peerId)));
     })();
-  }, [user, loading, nav, lang]);
+  }, [user, loading, nav, lang, reloadTick]);
+
+  // Realtime: refresh on any new/updated message for this user.
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`messages-page:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => setReloadTick((t) => t + 1),
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
+        () => setReloadTick((t) => t + 1),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => setReloadTick((t) => t + 1),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [user]);
 
   if (loading || threads === null) {
     return (
@@ -199,6 +231,11 @@ function MessagesPage() {
                       {g.leads.length} {g.leads.length === 1 ? L("job", "အလုပ်") : L("jobs", "အလုပ်များ")}
                     </div>
                   </div>
+                  {g.unread > 0 && (
+                    <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                      {g.unread > 9 ? "9+" : g.unread}
+                    </span>
+                  )}
                   <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                 </header>
                 {isOpen && (
@@ -213,7 +250,14 @@ function MessagesPage() {
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="truncate text-sm font-semibold">{t.title}</div>
+                              <div className="flex min-w-0 items-center gap-2">
+                                <div className="truncate text-sm font-semibold">{t.title}</div>
+                                {t.unread > 0 && (
+                                  <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                                    {t.unread > 9 ? "9+" : t.unread}
+                                  </span>
+                                )}
+                              </div>
                               <div className="shrink-0 text-[11px] text-muted-foreground">{new Date(t.lastAt).toLocaleDateString()}</div>
                             </div>
                             {t.serviceLabel && t.serviceLabel !== t.title && (
