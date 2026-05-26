@@ -26,6 +26,10 @@ export function CrawlerGate({
     [pathname],
   );
 
+  if (bypassGate) {
+    return <>{children}</>;
+  }
+
   useEffect(() => {
     try {
       setUnlocked(localStorage.getItem(STORAGE_KEY) === "1");
@@ -36,10 +40,6 @@ export function CrawlerGate({
   }, []);
 
   if (!ready) return null;
-
-  if (bypassGate) {
-    return <>{children}</>;
-  }
 
   if (!unlocked) {
     const onSubmit = (e: React.FormEvent) => {
