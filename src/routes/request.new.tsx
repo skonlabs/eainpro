@@ -1036,12 +1036,13 @@ function NewRequestPage() {
             <Textarea
               autoFocus
               rows={5}
+              maxLength={10000}
               placeholder={L(
                 "Example: Water is leaking under the kitchen sink. Need someone to check and repair.",
                 "ဥပမာ — မီးဖိုခန်း ဇလုံအောက်တွင် ရေယိုနေပါသည်။",
               )}
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
+              onChange={(e) => set("description", e.target.value.slice(0, 10000))}
               className="text-base"
             />
             <div className="mt-2 flex items-center justify-end text-xs">
