@@ -30,6 +30,7 @@ import { Route as ProviderLeadsRouteImport } from './routes/provider.leads'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
+import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -136,6 +137,11 @@ const PProviderIdRoute = PProviderIdRouteImport.update({
   path: '/p/$providerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
+  id: '/api/public/auth-email-hook',
+  path: '/api/public/auth-email-hook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/request/$leadId': typeof RequestLeadIdRoute
   '/request/new': typeof RequestNewRoute
   '/services/$category': typeof ServicesCategoryRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/request/$leadId'
     | '/request/new'
     | '/services/$category'
+    | '/api/public/auth-email-hook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/request/$leadId'
     | '/request/new'
     | '/services/$category'
+    | '/api/public/auth-email-hook'
   id:
     | '__root__'
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/request/$leadId'
     | '/request/new'
     | '/services/$category'
+    | '/api/public/auth-email-hook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -300,6 +312,7 @@ export interface RootRouteChildren {
   ProviderWalletRoute: typeof ProviderWalletRoute
   RequestLeadIdRoute: typeof RequestLeadIdRoute
   RequestNewRoute: typeof RequestNewRoute
+  ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -451,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PProviderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth-email-hook': {
+      id: '/api/public/auth-email-hook'
+      path: '/api/public/auth-email-hook'
+      fullPath: '/api/public/auth-email-hook'
+      preLoaderRoute: typeof ApiPublicAuthEmailHookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProviderWalletRoute: ProviderWalletRoute,
   RequestLeadIdRoute: RequestLeadIdRoute,
   RequestNewRoute: RequestNewRoute,
+  ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
