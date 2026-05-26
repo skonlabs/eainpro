@@ -21,7 +21,6 @@ import {
   Activity,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { useAuth } from "@/lib/auth";
 import { useRoleGuard } from "@/lib/use-role-guard";
 import {
   Sidebar,
@@ -150,7 +149,6 @@ function tabComponent(key: TabKey, setTab: (k: TabKey) => void) {
 
 function AdminPage() {
   const { lang } = useI18n();
-  const { user, roles, loading } = useAuth();
   const guard = useRoleGuard("admin");
   const nav = useNavigate();
   const { tab: tabParam } = Route.useSearch();
