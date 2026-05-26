@@ -51,6 +51,7 @@ export type Msg = {
   recipient_id: string | null;
   body: string;
   created_at: string;
+  read_at?: string | null;
 };
 
 export type T = (en: string, my: string) => string;
