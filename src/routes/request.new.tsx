@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { supabase } from "@/lib/supabase";
 import {
   CATEGORIES,
@@ -92,6 +93,7 @@ function NewRequestPage() {
   const repeatLeadId = search.repeat;
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
+  const guard = useRoleGuard("customer");
   const nav = useNavigate();
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
