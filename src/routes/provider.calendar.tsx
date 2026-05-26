@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Calendar as CalendarIcon, Clock, MapPin, X as XIcon, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ type Blackout = { id: string; date: string; reason: string | null };
 
 function CalendarPage() {
   const { user, loading } = useAuth();
+  const guard = useRoleGuard("provider");
   const { lang } = useI18n();
   const nav = useNavigate();
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -33,8 +35,8 @@ function CalendarPage() {
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) { nav({ to: "/signin", search: { redirect: "/provider/calendar" } }); return; }
+    if (!guard.allowed) return;
+    if (!user) return;
     (async () => {
       const { data } = await supabase
         .from("bookings")

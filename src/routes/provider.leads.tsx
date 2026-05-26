@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { listAvailableLeads, listMyUnlocks, unlockLead, updateUnlockStatus, UNLOCK_ERROR_MESSAGES, isCustomerLeadRecursionError, type LeadPreview } from "@/lib/leads";
 import { fmt, getWallet } from "@/lib/wallet";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +49,7 @@ const writeDismissed = (s: Set<string>) => {
 
 function LeadsPage() {
   const { user, roles, loading, rolesReady } = useAuth();
+  const guard = useRoleGuard("provider");
   const nav = useNavigate();
   const [tab, setTab] = useState("available");
   const [available, setAvailable] = useState<LeadPreview[] | null>(null);
@@ -111,11 +113,10 @@ function LeadsPage() {
   };
 
   useEffect(() => {
-    if (loading || !rolesReady) return;
-    if (!user) return void nav({ to: "/signin", search: { redirect: "/provider/leads" } });
-    if (!roles.includes("provider")) return void nav({ to: "/provider/onboarding" });
+    if (!guard.allowed) return;
+    if (!user) return;
     refresh();
-  }, [loading, rolesReady, user, roles, nav]);
+  }, [guard.allowed, user]);
 
   // Render shell + skeletons immediately. Don't blank the page while auth
   // or initial data is loading — that's the main source of perceived lag.
