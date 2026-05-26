@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export function ReportsTab() {
-  const [filter, setFilter] = useState<"open" | "reviewing" | "resolved" | "dismissed" | "all">("open");
+  const [filter, setFilter] = useState<"open" | "reviewing" | "resolved" | "dismissed" | "all">("all");
   const qc = useQueryClient();
   const { data: rows } = useQuery({
     queryKey: ["admin", "reports", filter],
