@@ -6,6 +6,8 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { Loader2, KeyRound, CheckCircle2 } from "lucide-react";
 
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]).{8,}$/;
+
 export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
   head: () => ({ meta: [{ title: "Reset password — Fixido" }] }),
@@ -51,6 +53,15 @@ function ResetPasswordPage() {
   const updatePw = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
+    if (!PASSWORD_REGEX.test(password)) {
+      setErr(
+        L(
+          "Password must be at least 8 characters and include one uppercase letter, one number, and one special character.",
+          "စကားဝှက်သည် အနည်းဆုံး ၈ လုံးရှိရမည်၊ စာလုံးကြီးတစ်လုံး၊ ဂဏန်းတစ်လုံးနှင့် အထူးသင်္ကေတတစ်ခု ပါဝင်ရမည်။",
+        ),
+      );
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
@@ -96,8 +107,11 @@ function ResetPasswordPage() {
               <Input
                 type="password"
                 required
-                minLength={6}
-                placeholder={L("New password (min 6 characters)", "စကားဝှက်အသစ် (အနည်းဆုံး ၆ လုံး)")}
+                minLength={8}
+                placeholder={L(
+                  "New password (8+ chars, 1 uppercase, 1 number, 1 symbol)",
+                  "စကားဝှက်အသစ် (၈ လုံး+၊ စာလုံးကြီး၊ ဂဏန်း၊ သင်္ကေတ)",
+                )}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11"
