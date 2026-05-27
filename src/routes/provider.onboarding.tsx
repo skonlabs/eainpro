@@ -97,7 +97,7 @@ function OnboardingPage() {
         .order("created_at", { ascending: false });
       setDocs((dRows ?? []) as DocRow[]);
     })();
-  }, [authLoading, user, nav]);
+  }, [authLoading, user, nav, roles, rolesReady]);
 
   const toggleCat = (slug: string) =>
     setCats((c) => {
