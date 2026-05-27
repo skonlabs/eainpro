@@ -35,7 +35,7 @@ export const Route = createFileRoute("/provider/onboarding")({
 
 function OnboardingPage() {
   const { lang } = useI18n();
-  const { user, loading: authLoading, refreshRoles } = useAuth();
+  const { user, loading: authLoading, refreshRoles, roles, rolesReady } = useAuth();
   const nav = useNavigate();
 
   const [businessName, setBusinessName] = useState("");
@@ -54,6 +54,13 @@ function OnboardingPage() {
     if (authLoading) return;
     if (!user) {
       nav({ to: "/signin", search: { redirect: "/provider/onboarding" } });
+      return;
+    }
+    // Block customers (and admins without provider role) from onboarding.
+    // Onboarding is only for users signed up as providers.
+    if (rolesReady && !roles.includes("provider")) {
+      toast.error("Provider account required. Sign up as a provider to onboard.");
+      nav({ to: roles.includes("admin") ? "/admin" : "/", replace: true });
       return;
     }
     (async () => {
@@ -90,7 +97,7 @@ function OnboardingPage() {
         .order("created_at", { ascending: false });
       setDocs((dRows ?? []) as DocRow[]);
     })();
-  }, [authLoading, user, nav]);
+  }, [authLoading, user, nav, roles, rolesReady]);
 
   const toggleCat = (slug: string) =>
     setCats((c) => {

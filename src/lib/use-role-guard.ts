@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/lib/auth";
+import { toast } from "sonner";
 
 /**
  * Gate a route to one or more roles.
@@ -30,21 +31,32 @@ export function useRoleGuard(required: AppRole | AppRole[]) {
     }
     if (allowed) return;
 
-    // Pick a sensible destination based on what the user actually is.
+    // Not allowed: block access and send the user to a role-appropriate home.
+    // Never auto-redirect into another restricted area (e.g. customers must
+    // not be funnelled into /provider/onboarding just by visiting a provider URL).
+    toast.error("You don't have access to that page.");
+
     if (requiredRoles.includes("admin")) {
-      nav({ to: "/", replace: true });
+      nav({
+        to: roles.includes("provider") ? "/provider/dashboard" : "/",
+        replace: true,
+      });
       return;
     }
     if (requiredRoles.includes("provider")) {
-      // Customer trying to view a provider page → start onboarding.
-      // Admin-only account → home.
-      nav({ to: roles.includes("admin") ? "/" : "/provider/onboarding", replace: true });
+      nav({
+        to: roles.includes("admin") ? "/admin" : "/",
+        replace: true,
+      });
       return;
     }
     if (requiredRoles.includes("customer")) {
-      // Provider/admin trying to view a customer page → their own home.
       nav({
-        to: roles.includes("admin") ? "/admin" : "/provider/dashboard",
+        to: roles.includes("admin")
+          ? "/admin"
+          : roles.includes("provider")
+            ? "/provider/dashboard"
+            : "/",
         replace: true,
       });
       return;
