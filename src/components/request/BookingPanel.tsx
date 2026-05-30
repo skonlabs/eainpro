@@ -383,6 +383,31 @@ export function BookingPanel({
       {reviewsUnlocked && hasMyReview && (
         <p className="text-xs text-muted-foreground">{L("Your review was submitted.", "သင်၏ သုံးသပ်ချက် ပေးပို့ပြီး။")}</p>
       )}
+      {reviewsUnlocked && theirReview && (
+        <div className="space-y-2 rounded-xl border border-border bg-background p-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">
+              {myRole === "customer"
+                ? L("Provider's review of you", "ပညာရှင်၏ သုံးသပ်ချက်")
+                : L("Customer's review of you", "ဖောက်သည်၏ သုံးသပ်ချက်")}
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {new Date(theirReview.created_at).toLocaleDateString()}
+            </span>
+          </div>
+          <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star
+                key={n}
+                className={`h-4 w-4 ${n <= theirReview.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`}
+              />
+            ))}
+          </div>
+          {theirReview.comment && (
+            <p className="text-xs text-muted-foreground">{theirReview.comment}</p>
+          )}
+        </div>
+      )}
 
       {myRole && booking.status !== "cancelled" && (
         <div className="border-t border-border/60 pt-3">
