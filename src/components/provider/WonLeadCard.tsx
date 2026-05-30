@@ -88,7 +88,17 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-primary/5 px-4 py-3">
         <div>
-          <div className="text-base font-semibold">{l?.customer_name ?? "Customer"}</div>
+          {l?.customer_id ? (
+            <Link
+              to="/c/$customerId"
+              params={{ customerId: l.customer_id }}
+              className="text-base font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              {l?.customer_name ?? "Customer"}
+            </Link>
+          ) : (
+            <div className="text-base font-semibold">{l?.customer_name ?? "Customer"}</div>
+          )}
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
               {lang === "en" ? bookingStatusPair(status).en : bookingStatusPair(status).my}
