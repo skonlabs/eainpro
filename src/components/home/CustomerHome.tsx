@@ -357,7 +357,6 @@ export function CustomerHome({
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </Link>
-      )}
 
       {upcoming.length > 0 && (
         <section>
