@@ -30,6 +30,7 @@ import { Route as ProviderLeadsRouteImport } from './routes/provider.leads'
 import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboard'
 import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
+import { Route as CustomerReviewsRouteImport } from './routes/customer.reviews'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 
@@ -138,6 +139,11 @@ const PProviderIdRoute = PProviderIdRouteImport.update({
   path: '/p/$providerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomerReviewsRoute = CustomerReviewsRouteImport.update({
+  id: '/customer/reviews',
+  path: '/customer/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
   '/provider/dashboard': typeof ProviderDashboardRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
     | '/provider/dashboard'
@@ -316,6 +328,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  CustomerReviewsRoute: typeof CustomerReviewsRoute
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderCalendarRoute: typeof ProviderCalendarRoute
   ProviderDashboardRoute: typeof ProviderDashboardRoute
@@ -477,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PProviderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer/reviews': {
+      id: '/customer/reviews'
+      path: '/customer/reviews'
+      fullPath: '/customer/reviews'
+      preLoaderRoute: typeof CustomerReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -519,6 +539,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  CustomerReviewsRoute: CustomerReviewsRoute,
   PProviderIdRoute: PProviderIdRoute,
   ProviderCalendarRoute: ProviderCalendarRoute,
   ProviderDashboardRoute: ProviderDashboardRoute,
