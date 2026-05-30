@@ -118,7 +118,11 @@ export function CustomerHome({
 
       const completedIds = bks.filter((b) => b.status === "completed").map((b) => b.id);
       if (completedIds.length) {
-        const { data: rv } = await supabase.from("reviews").select("booking_id").in("booking_id", completedIds);
+        const { data: rv } = await supabase
+          .from("reviews")
+          .select("booking_id")
+          .in("booking_id", completedIds)
+          .eq("rated_by", "customer");
         const reviewed = new Set((rv ?? []).map((r) => r.booking_id as string));
         setNeedsReview(bks.filter((b) => b.status === "completed" && !reviewed.has(b.id)));
       } else {
