@@ -46,6 +46,7 @@ export function BookingPanel({
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [hasMyReview, setHasMyReview] = useState<boolean | null>(null);
+  const [theirReview, setTheirReview] = useState<{ rating: number; comment: string | null; created_at: string } | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
   const [reportText, setReportText] = useState("");
@@ -83,12 +84,15 @@ export function BookingPanel({
   useEffect(() => {
     if (!booking || booking.status !== "completed" || !myRole) return;
     (async () => {
-      const [{ data: rev }, { data: rep }] = await Promise.all([
+      const otherRole = myRole === "customer" ? "provider" : "customer";
+      const [{ data: rev }, { data: rep }, { data: their }] = await Promise.all([
         supabase.from("reviews").select("id").eq("booking_id", booking.id).eq("rated_by", myRole).maybeSingle(),
         supabase.from("reports").select("id").eq("booking_id", booking.id).eq("reporter_id", userId).maybeSingle(),
+        supabase.from("reviews").select("rating, comment, created_at").eq("booking_id", booking.id).eq("rated_by", otherRole).maybeSingle(),
       ]);
       setHasMyReview(!!rev);
       setReported(!!rep);
+      setTheirReview(their ?? null);
     })();
   }, [booking?.id, booking?.status, myRole, userId]);
 
