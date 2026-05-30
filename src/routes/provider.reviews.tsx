@@ -4,12 +4,20 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useRoleGuard } from "@/lib/use-role-guard";
 import { useI18n } from "@/lib/i18n";
-import { Star } from "lucide-react";
+import { Star, User } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/provider/reviews")({ component: ReviewsPage });
 
-type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string };
+type ReviewRow = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  booking_id: string;
+  customer_id: string;
+  customer_name?: string;
+};
 
 function ReviewsPage() {
   const { lang } = useI18n();
@@ -26,12 +34,39 @@ function ReviewsPage() {
         supabase.from("providers").select("rating_avg, rating_count").eq("id", user!.id).maybeSingle(),
         supabase
           .from("reviews")
-          .select("id, rating, comment, created_at")
+          .select("id, rating, comment, created_at, booking_id, customer_id")
           .eq("provider_id", user!.id)
           .eq("rated_by", "customer")
           .order("created_at", { ascending: false }),
       ]);
-      return { prov, reviews: (rvs ?? []) as ReviewRow[] };
+
+      const reviews = (rvs ?? []) as ReviewRow[];
+
+      // Fetch customer names through bookings → leads
+      if (reviews.length > 0) {
+        const bookingIds = [...new Set(reviews.map((r) => r.booking_id))];
+        const { data: bookings } = await supabase
+          .from("bookings")
+          .select("id, job_id")
+          .in("id", bookingIds);
+
+        const jobIds = [...new Set((bookings ?? []).map((b: any) => b.job_id).filter(Boolean))];
+        if (jobIds.length > 0) {
+          const { data: leads } = await supabase.rpc("get_customer_leads", {
+            _lead_ids: jobIds,
+          });
+          const leadMap = new Map<string, any>((leads ?? []).map((l: any) => [l.id, l]));
+          const bookingMap = new Map<string, string>((bookings ?? []).map((b: any) => [b.id, b.job_id]));
+
+          for (const r of reviews) {
+            const jobId = bookingMap.get(r.booking_id);
+            const lead = jobId ? leadMap.get(jobId) : null;
+            r.customer_name = lead?.customer_name || L("Customer", "ဖောက်သည်");
+          }
+        }
+      }
+
+      return { prov, reviews };
     },
   });
 
@@ -69,10 +104,18 @@ function ReviewsPage() {
             {reviews.map((r) => (
               <li key={r.id} className="rounded-xl border border-border bg-card p-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+                      ))}
+                    </div>
+                    {r.customer_name && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        {r.customer_name}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
                 </div>
