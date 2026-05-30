@@ -46,6 +46,7 @@ export function BookingPanel({
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [hasMyReview, setHasMyReview] = useState<boolean | null>(null);
+  const [theirReview, setTheirReview] = useState<{ rating: number; comment: string | null; created_at: string } | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportKind, setReportKind] = useState<"no_show" | "bad_quality" | "rude" | "fraud" | "other">("bad_quality");
   const [reportText, setReportText] = useState("");
@@ -83,12 +84,15 @@ export function BookingPanel({
   useEffect(() => {
     if (!booking || booking.status !== "completed" || !myRole) return;
     (async () => {
-      const [{ data: rev }, { data: rep }] = await Promise.all([
+      const otherRole = myRole === "customer" ? "provider" : "customer";
+      const [{ data: rev }, { data: rep }, { data: their }] = await Promise.all([
         supabase.from("reviews").select("id").eq("booking_id", booking.id).eq("rated_by", myRole).maybeSingle(),
         supabase.from("reports").select("id").eq("booking_id", booking.id).eq("reporter_id", userId).maybeSingle(),
+        supabase.from("reviews").select("rating, comment, created_at").eq("booking_id", booking.id).eq("rated_by", otherRole).maybeSingle(),
       ]);
       setHasMyReview(!!rev);
       setReported(!!rep);
+      setTheirReview(their ?? null);
     })();
   }, [booking?.id, booking?.status, myRole, userId]);
 
@@ -378,6 +382,31 @@ export function BookingPanel({
       )}
       {reviewsUnlocked && hasMyReview && (
         <p className="text-xs text-muted-foreground">{L("Your review was submitted.", "သင်၏ သုံးသပ်ချက် ပေးပို့ပြီး။")}</p>
+      )}
+      {reviewsUnlocked && theirReview && (
+        <div className="space-y-2 rounded-xl border border-border bg-background p-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">
+              {myRole === "customer"
+                ? L("Provider's review of you", "ပညာရှင်၏ သုံးသပ်ချက်")
+                : L("Customer's review of you", "ဖောက်သည်၏ သုံးသပ်ချက်")}
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {new Date(theirReview.created_at).toLocaleDateString()}
+            </span>
+          </div>
+          <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star
+                key={n}
+                className={`h-4 w-4 ${n <= theirReview.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`}
+              />
+            ))}
+          </div>
+          {theirReview.comment && (
+            <p className="text-xs text-muted-foreground">{theirReview.comment}</p>
+          )}
+        </div>
       )}
 
       {myRole && booking.status !== "cancelled" && (
