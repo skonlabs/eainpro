@@ -340,6 +340,25 @@ export function CustomerHome({
         </section>
       )}
 
+      <Link
+        to="/customer/reviews"
+        className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/50"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/10 text-amber-600">
+            <Star className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="text-sm font-semibold">{L("Reviews about you", "သင်အကြောင်း သုံးသပ်ချက်များ")}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {L("See what providers said about you", "ပညာရှင်များ၏ သုံးသပ်ချက်များ")}
+            </div>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
+      )}
+
       {upcoming.length > 0 && (
         <section>
           <SectionHeader title={L("Upcoming visits", "လာမည့် ဘွတ်ကင်")} />
