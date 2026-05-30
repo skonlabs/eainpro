@@ -104,10 +104,18 @@ function ReviewsPage() {
             {reviews.map((r) => (
               <li key={r.id} className="rounded-xl border border-border bg-card p-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+                      ))}
+                    </div>
+                    {r.customer_name && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        {r.customer_name}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
                 </div>
