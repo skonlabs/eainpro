@@ -31,6 +31,7 @@ import { Route as ProviderDashboardRouteImport } from './routes/provider.dashboa
 import { Route as ProviderCalendarRouteImport } from './routes/provider.calendar'
 import { Route as PProviderIdRouteImport } from './routes/p.$providerId'
 import { Route as CustomerReviewsRouteImport } from './routes/customer.reviews'
+import { Route as CCustomerIdRouteImport } from './routes/c.$customerId'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 
@@ -144,6 +145,11 @@ const CustomerReviewsRoute = CustomerReviewsRouteImport.update({
   path: '/customer/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CCustomerIdRoute = CCustomerIdRouteImport.update({
+  id: '/c/$customerId',
+  path: '/c/$customerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/c/$customerId': typeof CCustomerIdRoute
   '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/c/$customerId': typeof CCustomerIdRoute
   '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/c/$customerId': typeof CCustomerIdRoute
   '/customer/reviews': typeof CustomerReviewsRoute
   '/p/$providerId': typeof PProviderIdRoute
   '/provider/calendar': typeof ProviderCalendarRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/c/$customerId'
     | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/c/$customerId'
     | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/auth/confirm'
+    | '/c/$customerId'
     | '/customer/reviews'
     | '/p/$providerId'
     | '/provider/calendar'
@@ -328,6 +340,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  CCustomerIdRoute: typeof CCustomerIdRoute
   CustomerReviewsRoute: typeof CustomerReviewsRoute
   PProviderIdRoute: typeof PProviderIdRoute
   ProviderCalendarRoute: typeof ProviderCalendarRoute
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomerReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/c/$customerId': {
+      id: '/c/$customerId'
+      path: '/c/$customerId'
+      fullPath: '/c/$customerId'
+      preLoaderRoute: typeof CCustomerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -539,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  CCustomerIdRoute: CCustomerIdRoute,
   CustomerReviewsRoute: CustomerReviewsRoute,
   PProviderIdRoute: PProviderIdRoute,
   ProviderCalendarRoute: ProviderCalendarRoute,
@@ -554,13 +575,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
