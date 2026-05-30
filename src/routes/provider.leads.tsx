@@ -448,7 +448,17 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         <div>
           <div className="flex items-center gap-2">
             <Unlock className="h-4 w-4 text-green-600" />
-            <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
+            {l?.customer_id ? (
+              <Link
+                to="/c/$customerId"
+                params={{ customerId: l.customer_id }}
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                {l?.customer_name ?? "Customer"}
+              </Link>
+            ) : (
+              <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
+            )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""}
