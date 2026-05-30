@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, Phone, Star } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { Lead, T } from "./types";
 import { Field, FieldLabel, FieldValue } from "./Field";
 import { CITIES, TOWNSHIPS } from "@/lib/catalog";
@@ -189,7 +190,18 @@ export function DetailsCard({
       </div>
       {showContact && (
         <div className="rounded-lg border border-border bg-background p-3 text-sm">
-          <div className="font-semibold">{lead.customer_name}</div>
+          {lead.customer_id ? (
+            <Link
+              to="/c/$customerId"
+              params={{ customerId: lead.customer_id }}
+              className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              {lead.customer_name}
+              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+            </Link>
+          ) : (
+            <div className="font-semibold">{lead.customer_name}</div>
+          )}
           {lead.customer_phone && (
             <a href={`tel:${lead.customer_phone}`} className="mt-1 inline-flex items-center gap-1 text-primary">
               <Phone className="h-3.5 w-3.5" />
