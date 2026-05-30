@@ -250,7 +250,17 @@ export function BookingPanel({
               <User className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">{lead.customer_name || L("Customer", "ဖောက်သည်")}</div>
+              {lead.customer_id ? (
+                <Link
+                  to="/c/$customerId"
+                  params={{ customerId: lead.customer_id }}
+                  className="block truncate text-sm font-semibold text-primary underline-offset-2 hover:underline"
+                >
+                  {lead.customer_name || L("Customer", "ဖောက်သည်")}
+                </Link>
+              ) : (
+                <div className="truncate text-sm font-semibold">{lead.customer_name || L("Customer", "ဖောက်သည်")}</div>
+              )}
               {lead.customer_phone && (
                 <a href={`tel:${lead.customer_phone}`} className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
                   <Phone className="h-3 w-3" /> {lead.customer_phone}
