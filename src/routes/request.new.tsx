@@ -800,12 +800,13 @@ function NewRequestPage() {
               />
               <Input
                 placeholder={L(
-                  "Street / building / unit (optional, kept private)",
-                  "လမ်း / အဆောက်အအုံ (ရွေး)",
+                  "Street / building / unit (required, kept private)",
+                  "လမ်း / အဆောက်အအုံ (လိုအပ်)",
                 )}
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
                 className="mt-2 h-12 text-base"
+                required
               />
               <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
