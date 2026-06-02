@@ -1091,8 +1091,6 @@ function NewRequestPage() {
                   }`
                 : "—";
               const locationText = `${CITIES.find((c) => c.slug === form.city)?.[lang === "en" ? "en" : "my"] ?? form.city}${form.township ? `, ${form.township}` : ""}${form.area ? ` · ${form.area}` : ""}`;
-              const urgencyText =
-                URGENCY_OPTIONS.find((u) => u.value === form.urgency)?.[lang === "en" ? "en" : "my"] ?? form.urgency;
               const whenText = `${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`;
               const budgetText =
                 BUDGET_OPTIONS.find((b) => b.value === form.budget)?.[lang === "en" ? "en" : "my"] ?? "—";
