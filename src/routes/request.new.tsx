@@ -1160,22 +1160,13 @@ function NewRequestPage() {
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <ReviewItem
-                      icon={<Zap className="h-4 w-4" />}
-                      label={L("Urgency", "အရေးပေါ်")}
-                      value={urgencyText}
-                      onEdit={() => goTo("urgency")}
-                      editLabel={L("Edit", "ပြင်")}
-                    />
-                    <ReviewItem
-                      icon={<CalendarClock className="h-4 w-4" />}
-                      label={L("When", "ဘယ်အချိန်")}
-                      value={whenText}
-                      onEdit={() => goTo("timing")}
-                      editLabel={L("Edit", "ပြင်")}
-                    />
-                  </div>
+                  <ReviewItem
+                    icon={<CalendarClock className="h-4 w-4" />}
+                    label={L("When", "ဘယ်အချိန်")}
+                    value={whenText}
+                    onEdit={() => goTo("timing")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
                   <ReviewItem
                     icon={<Wallet className="h-4 w-4" />}
                     label={L("Budget", "ဘတ်ဂျက်")}
