@@ -474,7 +474,16 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           </a>
         )}
       </div>
-      {l?.address && <p className="mt-2 text-xs"><strong>Address:</strong> {l.address}</p>}
+      {(l?.address || l?.township_slug || l?.city_slug) && (() => {
+        const city = CITIES.find((c) => c.slug === l.city_slug);
+        const cityLabel = city ? city.en : l.city_slug;
+        const ts = l.township_slug
+          ? TOWNSHIPS[l.city_slug]?.find((t) => t.slug === l.township_slug)
+          : null;
+        const tsLabel = ts ? ts.en : l.township_slug ?? null;
+        const parts = [l.address, tsLabel, cityLabel].filter(Boolean);
+        return <p className="mt-2 text-xs"><strong>Address:</strong> {parts.join(", ")}</p>;
+      })()}
       {(l?.full_description || l?.short_description) && (
         <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
       )}
