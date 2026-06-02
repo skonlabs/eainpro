@@ -279,6 +279,8 @@ function Empty({ msg }: { msg: string }) {
 }
 
 function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock: () => void; onDismiss: () => void }) {
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const slotsLeft = lead.max_provider_unlocks - lead.current_unlock_count;
   return (
     <div className={`rounded-2xl border bg-card p-4 ${lead.is_direct ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
