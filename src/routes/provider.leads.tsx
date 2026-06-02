@@ -480,7 +480,8 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {(l?.city_slug ? (CITIES.find((c) => c.slug === l.city_slug)?.[lang] ?? l.city_slug) : "")}{l?.urgency ? ` · ${urgencyLabel(l.urgency, lang)}` : ""}
+            {(l?.city_slug ? (CITIES.find((c) => c.slug === l.city_slug)?.[lang] ?? l.city_slug) : "")}
+            {l?.urgency || l?.preferred_date ? ` · ${whenLabel(l?.urgency, l?.created_at, l?.preferred_date, lang)}` : ""}
           </div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">
             {l?.created_at && <>{L("Lead received:", "Lead ရရှိ:")} {new Date(l.created_at).toLocaleString()} · </>}
@@ -506,9 +507,9 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       {(l?.full_description || l?.short_description) && (
         <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
       )}
-      {l?.preferred_date && (
+      {(l?.preferred_time || l?.preferred_date) && (
         <p className="mt-1 text-xs text-muted-foreground">
-          {L("Preferred:", "ဦးစားပေး:")} {l.preferred_date}{l.preferred_time ? ` ${preferredTimeLabel(l.preferred_time, lang)}` : ""}
+          {L("Preferred Time:", "ဦးစားပေး အချိန်:")} {l?.preferred_time ? windowLabel(l.preferred_time, lang) : (l?.preferred_date ?? "—")}
         </p>
       )}
       {(l?.budget_min || l?.budget_max) && (
