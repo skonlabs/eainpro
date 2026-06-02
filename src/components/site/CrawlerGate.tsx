@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
 
 const STORAGE_KEY = "fx_gate_ok";
 const USER = "admin";
@@ -26,7 +25,15 @@ export function CrawlerGate({
     () => PUBLIC_BYPASS_PATHS.some((path) => pathname === path || pathname?.startsWith(`${path}/`)),
     [pathname],
   );
-  const { lang } = useI18n();
+  const [lang, setLang] = useState<"en" | "my">("en");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("lang");
+      if (saved === "en" || saved === "my") setLang(saved);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   if (bypassGate) {
