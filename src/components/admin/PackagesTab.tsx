@@ -57,15 +57,15 @@ function PackageRow({ row, onSave }: { row: any; onSave: (id: string, p: any) =>
       </div>
       <div>
         <label className="text-[10px] uppercase text-muted-foreground sm:hidden">Price MMK</label>
-        <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} onBlur={() => saveIf("price_mmk", price, row.price_mmk ?? 0)} className="h-9" />
+        <Input type="number" min={0} value={price} onChange={(e) => setPrice(Math.max(0, Number(e.target.value)))} onBlur={() => saveIf("price_mmk", price, row.price_mmk ?? 0)} className="h-9" />
       </div>
       <div>
         <label className="text-[10px] uppercase text-muted-foreground sm:hidden">Credits</label>
-        <Input type="number" value={credits} onChange={(e) => setCredits(Number(e.target.value))} onBlur={() => saveIf("credits", credits, row.credits ?? 0)} className="h-9" />
+        <Input type="number" min={0} value={credits} onChange={(e) => setCredits(Math.max(0, Number(e.target.value)))} onBlur={() => saveIf("credits", credits, row.credits ?? 0)} className="h-9" />
       </div>
       <div>
         <label className="text-[10px] uppercase text-muted-foreground sm:hidden">Bonus</label>
-        <Input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} onBlur={() => saveIf("bonus_credits", bonus, row.bonus_credits ?? 0)} className="h-9" />
+        <Input type="number" min={0} value={bonus} onChange={(e) => setBonus(Math.max(0, Number(e.target.value)))} onBlur={() => saveIf("bonus_credits", bonus, row.bonus_credits ?? 0)} className="h-9" />
       </div>
       <div className="col-span-2 sm:col-span-1">
         <label className="text-[10px] uppercase text-muted-foreground sm:hidden">Badge</label>

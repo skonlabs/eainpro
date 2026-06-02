@@ -13,7 +13,6 @@ import {
   CITIES,
   CATEGORY_SUBCATEGORIES,
   CATEGORY_QUESTIONS,
-  URGENCY_OPTIONS,
   TIMING_OPTIONS,
   WINDOW_OPTIONS,
   CONTACT_OPTIONS,
@@ -39,7 +38,6 @@ import {
   FileText,
   MapPin,
   Image as ImageIcon,
-  Zap,
   CalendarClock,
   Wallet,
 } from "lucide-react";
@@ -63,7 +61,6 @@ type StepKind =
   | "category"
   | "subcategory"
   | "question"
-  | "urgency"
   | "city"
   | "township"
   | "photos"
@@ -174,7 +171,6 @@ function NewRequestPage() {
     if (!form.category) list.push({ kind: "category" });
     if (form.category && subs.length > 0) list.push({ kind: "subcategory" });
     questions.forEach((q) => list.push({ kind: "question", questionId: q.id }));
-    list.push({ kind: "urgency" });
     list.push({ kind: "city" });
     list.push({ kind: "township" });
     list.push({ kind: "photos" });
@@ -293,7 +289,7 @@ function NewRequestPage() {
       case "question":
         return getAnswerValues(step.questionId!).length > 0;
       case "township":
-        return form.township.trim().length > 0;
+        return form.township.trim().length > 0 && form.address.trim().length > 0;
       case "description":
         return form.description.trim().length >= 20;
       case "contact":
@@ -732,26 +728,6 @@ function NewRequestPage() {
         );
       }
 
-      case "urgency":
-        return (
-          <StepShell
-            title={L("How soon do you need this?", "ဘယ်လောက် မြန်ဆန် လိုသလဲ?")}
-            hint={L("Helps providers prioritize.", "ဝန်ဆောင်မှုပေးသူများ ဦးစားပေးနိုင်ရန်။")}
-          >
-            <div className="grid gap-2 sm:grid-cols-2">
-              {URGENCY_OPTIONS.map((u) => (
-                <BigChoice
-                  key={u.value}
-                  active={form.urgency === u.value}
-                  onClick={() => pick("urgency", u.value as typeof form.urgency)}
-                >
-                  {L(u.en, u.my)}
-                </BigChoice>
-              ))}
-            </div>
-          </StepShell>
-        );
-
       case "city":
         return (
           <StepShell
@@ -824,12 +800,13 @@ function NewRequestPage() {
               />
               <Input
                 placeholder={L(
-                  "Street / building / unit (optional, kept private)",
-                  "လမ်း / အဆောက်အအုံ (ရွေး)",
+                  "Street / building / unit (required, kept private)",
+                  "လမ်း / အဆောက်အအုံ (လိုအပ်)",
                 )}
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
                 className="mt-2 h-12 text-base"
+                required
               />
               <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/80">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -1115,8 +1092,6 @@ function NewRequestPage() {
                   }`
                 : "—";
               const locationText = `${CITIES.find((c) => c.slug === form.city)?.[lang === "en" ? "en" : "my"] ?? form.city}${form.township ? `, ${form.township}` : ""}${form.area ? ` · ${form.area}` : ""}`;
-              const urgencyText =
-                URGENCY_OPTIONS.find((u) => u.value === form.urgency)?.[lang === "en" ? "en" : "my"] ?? form.urgency;
               const whenText = `${form.customDate || (TIMING_OPTIONS.find((t) => t.value === form.timing)?.[lang === "en" ? "en" : "my"] ?? form.timing)} · ${WINDOW_OPTIONS.find((w) => w.value === form.window)?.[lang === "en" ? "en" : "my"] ?? form.window}`;
               const budgetText =
                 BUDGET_OPTIONS.find((b) => b.value === form.budget)?.[lang === "en" ? "en" : "my"] ?? "—";
@@ -1182,22 +1157,13 @@ function NewRequestPage() {
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <ReviewItem
-                      icon={<Zap className="h-4 w-4" />}
-                      label={L("Urgency", "အရေးပေါ်")}
-                      value={urgencyText}
-                      onEdit={() => goTo("urgency")}
-                      editLabel={L("Edit", "ပြင်")}
-                    />
-                    <ReviewItem
-                      icon={<CalendarClock className="h-4 w-4" />}
-                      label={L("When", "ဘယ်အချိန်")}
-                      value={whenText}
-                      onEdit={() => goTo("timing")}
-                      editLabel={L("Edit", "ပြင်")}
-                    />
-                  </div>
+                  <ReviewItem
+                    icon={<CalendarClock className="h-4 w-4" />}
+                    label={L("When", "ဘယ်အချိန်")}
+                    value={whenText}
+                    onEdit={() => goTo("timing")}
+                    editLabel={L("Edit", "ပြင်")}
+                  />
                   <ReviewItem
                     icon={<Wallet className="h-4 w-4" />}
                     label={L("Budget", "ဘတ်ဂျက်")}

@@ -9,6 +9,7 @@ import { Phone, MessageCircle, Calendar, MapPin, CheckCircle2, Truck, Play, Cloc
 import type { Booking } from "@/components/request/types";
 import { useI18n } from "@/lib/i18n";
 import { bookingStatusPair } from "@/lib/status-i18n";
+import { CITIES, TOWNSHIPS } from "@/lib/catalog";
 
 const ADVANCE: Record<string, { key: string; label: string; icon: any }> = {
   accepted: { key: "on_the_way", label: "I'm on the way", icon: Truck },
@@ -166,12 +167,21 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
         </div>
 
         {/* Address */}
-        {l?.address && (
-          <div className="flex items-start gap-2 text-xs">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <span>{l.address}</span>
-          </div>
-        )}
+        {(l?.address || l?.township_slug || l?.city_slug) && (() => {
+          const city = CITIES.find((c) => c.slug === l.city_slug);
+          const cityLabel = city ? (lang === "en" ? city.en : city.my) : l.city_slug;
+          const ts = l.township_slug
+            ? TOWNSHIPS[l.city_slug]?.find((t) => t.slug === l.township_slug)
+            : null;
+          const tsLabel = ts ? (lang === "en" ? ts.en : ts.my) : l.township_slug ?? null;
+          const parts = [l.address, tsLabel, cityLabel].filter(Boolean);
+          return (
+            <div className="flex items-start gap-2 text-xs">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span>{parts.join(", ")}</span>
+            </div>
+          );
+        })()}
 
         {/* Primary action: advance status */}
         {next && status !== "completed" && status !== "cancelled" && (() => {
