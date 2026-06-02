@@ -35,7 +35,7 @@ export function BottomNav() {
     : isProvider
       ? [
           { to: "/", icon: Home, en: "Home", my: "ပင်မ" },
-            { to: "/provider/leads", icon: Inbox, en: "Leads", my: "Lead များ" },
+            { to: "/provider/leads", icon: Inbox, en: "Leads", my: "အလုပ်အသစ်များ" },
             { to: "/provider/dashboard", icon: Briefcase, en: "Jobs", my: "အလုပ်", primary: true },
             { to: "/provider/wallet", icon: Wallet, en: "Wallet", my: "ပိုက်ဆံအိတ်" },
           { to: "/account", icon: User, en: "Account", my: "အကောင့်" },
