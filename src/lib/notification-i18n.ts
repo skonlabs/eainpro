@@ -107,20 +107,20 @@ export function translateNotificationBody(body: string | null, lang: Lang): stri
   m = body.match(/^The customer cancelled "(.+)"\. No further action needed\.$/);
   if (m) return `ဖောက်သည်က "${m[1]}" ကို ပယ်ဖျက်လိုက်ပါပြီ။ နောက်ထပ် ဆောင်ရွက်စရာ မလိုပါ။`;
   m = body.match(/^You have (.+) credits left\. Top up to keep unlocking leads\.$/);
-  if (m) return `သင့်တွင် ${m[1]} credits ကျန်ပါသည်။ Lead များ ဆက်လက် unlock လုပ်ရန် ငွေဖြည့်ပါ။`;
+  if (m) return `သင့်တွင် ${m[1]} ခရက်ဒစ် ကျန်ပါသည်။ အလုပ်အပ်စာများကို ဆက်လက်ဖွင့်ရန် ငွေဖြည့်ပါ။`;
   m = body.match(/^Unlock for (.+) credits to see customer details\.$/);
-  if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} credits ဖြင့် unlock လုပ်ပါ။`;
+  if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} ခရက်ဒစ်ဖြင့် ဖွင့်ပါ။`;
   m = body.match(/^(.+) package added to your wallet\.$/);
   if (m) return `${m[1]} package ကို သင့်ပိုက်ဆံအိတ်ထဲ ထည့်ပြီးပါပြီ။`;
   m = body.match(/^Admin added (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
   if (m) {
     const note = m[2] ? ` ${m[2]}` : "";
-    return `Admin က ${m[1]} credits ထည့်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+    return `Admin က ${m[1]} ခရက်ဒစ် ထည့်ပေးခဲ့သည်။${note} (လက်ကျန်အသစ်: ${m[3]})`;
   }
   m = body.match(/^Admin removed (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
   if (m) {
     const note = m[2] ? ` ${m[2]}` : "";
-    return `Admin က ${m[1]} credits နုတ်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+    return `Admin က ${m[1]} ခရက်ဒစ် နုတ်ယူခဲ့သည်။${note} (လက်ကျန်အသစ်: ${m[3]})`;
   }
   return translateExact(body, BODIES, lang);
 }
