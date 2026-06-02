@@ -390,7 +390,7 @@ function AccountPage() {
                     min={0}
                     value={biz.years_experience}
                     onChange={(e) =>
-                      setBiz((b) => ({ ...b, years_experience: Number(e.target.value) }))
+                      setBiz((b) => ({ ...b, years_experience: Math.max(0, Number(e.target.value) || 0) }))
                     }
                   />
                 </div>
