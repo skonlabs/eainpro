@@ -41,6 +41,35 @@ export function windowLabel(value: string | null | undefined, lang: DisplayLang)
   return row ? (lang === "en" ? row.en : row.my) : value;
 }
 
+function formatYMD(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+export function whenLabel(
+  urgency: string | null | undefined,
+  createdAt: string | null | undefined,
+  preferredDate: string | null | undefined,
+  lang: DisplayLang,
+) {
+  if (!urgency && !preferredDate) return "";
+  const created = createdAt ? new Date(createdAt) : new Date();
+  switch (urgency) {
+    case "today":
+      return formatYMD(created);
+    case "tomorrow": {
+      const t = new Date(created);
+      t.setDate(t.getDate() + 1);
+      return formatYMD(t);
+    }
+    case "this_week":
+      return lang === "en" ? "This Week" : "ဒီအပတ်";
+    case "flexible":
+      return preferredDate ?? (lang === "en" ? "Flexible" : "ပြောင်းလဲနိုင်သည်");
+    default:
+      return preferredDate ?? urgencyLabel(urgency, lang);
+  }
+}
+
 export function translateLeadText(text: string | null | undefined, lang: DisplayLang) {
   if (!text) return "";
   if (lang === "en") return text;

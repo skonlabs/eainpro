@@ -17,7 +17,8 @@ import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
 import { useI18n } from "@/lib/i18n";
 import { unlockStatusPair, unlockHintPair } from "@/lib/status-i18n";
-import { CITIES, TOWNSHIPS, WINDOW_OPTIONS } from "@/lib/catalog";
+import { CITIES, TOWNSHIPS } from "@/lib/catalog";
+import { whenLabel, windowLabel, urgencyLabel } from "@/lib/display-i18n";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -46,24 +47,6 @@ const readDismissed = (): Set<string> => {
 const writeDismissed = (s: Set<string>) => {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(s))); } catch {}
-};
-
-const urgencyLabel = (value: string | null | undefined, lang: "en" | "my") => {
-  if (!value) return "";
-  if (lang === "en") return value;
-  const map: Record<string, string> = {
-    today: "ဒီနေ့ပဲ လိုသည်",
-    tomorrow: "၁-၂ ရက်အတွင်း",
-    this_week: "ဒီအပတ်",
-    flexible: "ပြောင်းလဲနိုင်သည်",
-  };
-  return map[value] ?? value;
-};
-
-const preferredTimeLabel = (value: string | null | undefined, lang: "en" | "my") => {
-  if (!value) return "";
-  if (lang === "en") return value;
-  return WINDOW_OPTIONS.find((option) => option.value === value)?.my ?? value;
 };
 
 function LeadsPage() {
@@ -259,7 +242,7 @@ function LeadsPage() {
               <div className="rounded-lg border border-border p-3">
                 <div className="font-medium">{lang === "en" ? pickedLead.service_name_en : pickedLead.service_name_my}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {(CITIES.find((c) => c.slug === pickedLead.city_slug)?.[lang] ?? pickedLead.city_slug)} · {urgencyLabel(pickedLead.urgency, lang)}
+                  {(CITIES.find((c) => c.slug === pickedLead.city_slug)?.[lang] ?? pickedLead.city_slug)} · {whenLabel(pickedLead.urgency, pickedLead.created_at, pickedLead.preferred_date, lang)}
                 </div>
               </div>
               <p>
@@ -320,7 +303,11 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
               const tsLabel = ts ? (lang === "en" ? ts.en : ts.my) : (lead.township_slug ?? null);
               return [tsLabel, cityLabel].filter(Boolean).join(", ");
             })()}</span>
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{lead.preferred_date ? `${lead.preferred_date}${lead.preferred_time && lead.preferred_time !== "any" ? ` · ${preferredTimeLabel(lead.preferred_time, lang)}` : ""}` : urgencyLabel(lead.urgency, lang)}</span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, lang)}
+              {lead.preferred_time && lead.preferred_time !== "any" ? ` · ${windowLabel(lead.preferred_time, lang)}` : ""}
+            </span>
             {lead.photo_count > 0 && <span className="flex items-center gap-1"><ImageIcon className="h-3 w-3" />{lead.photo_count}</span>}
           </div>
         </div>
@@ -491,7 +478,8 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {(l?.city_slug ? (CITIES.find((c) => c.slug === l.city_slug)?.[lang] ?? l.city_slug) : "")}{l?.urgency ? ` · ${urgencyLabel(l.urgency, lang)}` : ""}
+            {(l?.city_slug ? (CITIES.find((c) => c.slug === l.city_slug)?.[lang] ?? l.city_slug) : "")}
+            {l?.urgency || l?.preferred_date ? ` · ${whenLabel(l?.urgency, l?.created_at, l?.preferred_date, lang)}` : ""}
           </div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">
             {l?.created_at && <>{L("Lead received:", "Lead ရရှိ:")} {new Date(l.created_at).toLocaleString()} · </>}
@@ -517,9 +505,9 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       {(l?.full_description || l?.short_description) && (
         <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
       )}
-      {l?.preferred_date && (
+      {(l?.preferred_time || l?.preferred_date) && (
         <p className="mt-1 text-xs text-muted-foreground">
-          {L("Preferred:", "ဦးစားပေး:")} {l.preferred_date}{l.preferred_time ? ` ${preferredTimeLabel(l.preferred_time, lang)}` : ""}
+          {L("Preferred Time:", "ဦးစားပေး အချိန်:")} {l?.preferred_time ? windowLabel(l.preferred_time, lang) : (l?.preferred_date ?? "—")}
         </p>
       )}
       {(l?.budget_min || l?.budget_max) && (
