@@ -97,7 +97,7 @@ function ResetPasswordPage() {
               <Input
                 type="email"
                 required
-                placeholder="Email"
+                placeholder={L("Email", "အီးမေးလ်")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11"

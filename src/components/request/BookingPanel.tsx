@@ -447,18 +447,18 @@ export function BookingPanel({
           >
             {myRole === "customer" ? (
               <>
-                <option value="bad_quality">Poor quality of work</option>
-                <option value="no_show">Provider did not show up</option>
-                <option value="rude">Rude or unprofessional</option>
-                <option value="fraud">Fraud / overcharged</option>
-                <option value="other">Other</option>
+                <option value="bad_quality">{L("Poor quality of work", "အလုပ်အရည်အသွေး မကောင်း")}</option>
+                <option value="no_show">{L("Provider did not show up", "ဝန်ဆောင်မှုပေးသူ မလာ")}</option>
+                <option value="rude">{L("Rude or unprofessional", "မရိုင်းမတင်း / ပညာမဲ့")}</option>
+                <option value="fraud">{L("Fraud / overcharged", "လိမ်ညာ / အပိုကြေးတောင်း")}</option>
+                <option value="other">{L("Other", "အခြား")}</option>
               </>
             ) : (
               <>
-                <option value="no_show">Customer no-show</option>
-                <option value="rude">Rude or abusive</option>
-                <option value="fraud">Fraud / refused to pay</option>
-                <option value="other">Other</option>
+                <option value="no_show">{L("Customer no-show", "ဖောက်သည် မလာ")}</option>
+                <option value="rude">{L("Rude or abusive", "မရိုင်းမတင်း / ဒုက္ခပေး")}</option>
+                <option value="fraud">{L("Fraud / refused to pay", "လိမ်ညာ / ငွေမပေး")}</option>
+                <option value="other">{L("Other", "အခြား")}</option>
               </>
             )}
           </select>

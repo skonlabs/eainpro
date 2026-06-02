@@ -27,7 +27,7 @@ export function QuoteCard({
   const withdrawn = quote.status === "withdrawn";
   const [busy, setBusy] = useState(false);
   const withdraw = async () => {
-    if (!confirm("Withdraw this quote?")) return;
+    if (!confirm(L("Withdraw this quote?", "ဤစျေးနှုန်းကို ပယ်ဖျက်မလား?"))) return;
     setBusy(true);
     const { error } = await supabase.from("quotes").update({ status: "withdrawn" }).eq("id", quote.id);
     setBusy(false);

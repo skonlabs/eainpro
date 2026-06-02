@@ -117,10 +117,10 @@ export function DetailsCard({
                   onChange={(e) => setUrgency(e.target.value)}
                   disabled={saving}
                 >
-                  <option value="now">now</option>
-                  <option value="today">today</option>
-                  <option value="this_week">this_week</option>
-                  <option value="flexible">flexible</option>
+                  <option value="now">{L("Now", "ယခုချက်ချင်း")}</option>
+                  <option value="today">{L("Today", "ယနေ့")}</option>
+                  <option value="this_week">{L("This week", "ဤဆောင်ပတ်")}</option>
+                  <option value="flexible">{L("Flexible", "ကြိုက်တဲ့အချိန်")}</option>
                 </select>
               </div>
               <div className="min-w-0">
