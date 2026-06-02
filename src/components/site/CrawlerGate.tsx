@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 const STORAGE_KEY = "fx_gate_ok";
 const USER = "admin";
@@ -25,6 +26,8 @@ export function CrawlerGate({
     () => PUBLIC_BYPASS_PATHS.some((path) => pathname === path || pathname?.startsWith(`${path}/`)),
     [pathname],
   );
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   if (bypassGate) {
     return <>{children}</>;
@@ -52,7 +55,7 @@ export function CrawlerGate({
         }
         setUnlocked(true);
       } else {
-        setErr("Invalid credentials");
+        setErr(L("Invalid credentials", "အကောင့် သို့မဟုတ် စကားဝှက် မမှန်ပါ"));
       }
     };
     return (
@@ -67,14 +70,14 @@ export function CrawlerGate({
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
                 <Lock className="h-5 w-5" />
               </div>
-              <h1 className="mt-3 text-lg font-bold">Restricted</h1>
+              <h1 className="mt-3 text-lg font-bold">{L("Restricted", "ဝင်ခွင့်ကန့်သတ်ထား")}</h1>
               <p className="mt-1 text-xs text-muted-foreground">
-                Sign in to access this site.
+                {L("Sign in to access this site.", "ဆိုက်ကို ဝင်ရောက်ရန် ဝင်ရောက်ပါ။")}
               </p>
             </div>
             <Input
               autoFocus
-              placeholder="Username"
+              placeholder={L("Username", "အသုံးပြုသူ အမည်")}
               value={u}
               onChange={(e) => setU(e.target.value)}
               className="h-11"
@@ -82,7 +85,7 @@ export function CrawlerGate({
             />
             <Input
               type="password"
-              placeholder="Password"
+              placeholder={L("Password", "စကားဝှက်")}
               value={p}
               onChange={(e) => setP(e.target.value)}
               className="h-11"
@@ -94,7 +97,7 @@ export function CrawlerGate({
               </p>
             )}
             <Button type="submit" className="h-11 w-full rounded-xl font-semibold">
-              Enter
+              {L("Enter", "ဝင်ရောက်")}
             </Button>
           </form>
         </div>

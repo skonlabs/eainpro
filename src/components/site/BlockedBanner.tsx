@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -10,6 +11,8 @@ import { toast } from "sonner";
  */
 export function BlockedBanner() {
   const { user, signOut } = useAuth();
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [blocked, setBlocked] = useState<{ type: "soft" | "hard"; reason: string | null } | null>(null);
 
   useEffect(() => {
@@ -25,7 +28,10 @@ export function BlockedBanner() {
       if (data?.is_blocked) {
         const type = (data.block_type as "soft" | "hard") ?? "soft";
         if (type === "hard") {
-          toast.error("Your account has been blocked. You have been signed out.");
+          toast.error(L(
+            "Your account has been blocked. You have been signed out.",
+            "သင်၏ အကောင့်ကို ပိတ်ဆို့ထားသည်။ ထွက်ပြီးသွားပါပြီ။",
+          ));
           void signOut();
           return;
         }
@@ -51,11 +57,16 @@ export function BlockedBanner() {
   return (
     <div className="mx-auto w-full max-w-screen-md px-3 pt-2 sm:px-4">
       <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
-        <p className="font-semibold">Your account is suspended.</p>
+        <p className="font-semibold">{L("Your account is suspended.", "သင်၏ အကောင့် ဆိုင်းငံ့ထားသည်။")}</p>
         <p className="mt-1 text-xs leading-relaxed">
-          You can still browse, but you cannot submit a request, send messages, book a job,
-          leave reviews, or view/unlock leads.
-          {blocked.reason ? ` Reason: ${blocked.reason}.` : ""} Contact support to resolve this.
+          {L(
+            "You can still browse, but you cannot submit a request, send messages, book a job, leave reviews, or view/unlock leads.",
+            "ကြည့်ရှုနိုင်သော်လည်း တောင်းဆိုမှု၊ မက်ဆေ့ပို့ခြင်း၊ ဘွတ်ကင်လုပ်ခြင်း၊ သုံးသပ်ချက်ပေးခြင်း နှင့် Lead ကြည့်ခြင်း ပြုလုပ်၍ မရပါ။",
+          )}
+          {blocked.reason
+            ? ` ${L("Reason:", "အကြောင်းပြချက်:")} ${blocked.reason}.`
+            : ""}{" "}
+          {L("Contact support to resolve this.", "ဖြေရှင်းရန် ကျွန်ုပ်တို့ကို ဆက်သွယ်ပါ။")}
         </p>
       </div>
     </div>
