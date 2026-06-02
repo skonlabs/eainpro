@@ -162,19 +162,19 @@ export function ProviderHome({
       <div className="grid grid-cols-3 gap-2">
         <StatTile
           icon={<Briefcase className="h-4 w-4" />}
-          label={L("Active", "ဆောင်ရွက်ဆဲ")}
+          label={L("Active jobs", "ဆောင်ရွက်ဆဲ")}
           value={String(activeCount)}
           to="/provider/calendar"
         />
         <StatTile
           icon={<TrendingUp className="h-4 w-4" />}
-          label={L("New jobs", "အသစ်")}
+          label={L("New leads", "Lead များ")}
           value={String(newJobsCount)}
           to="/provider/leads"
         />
         <StatTile
           icon={<Star className="h-4 w-4" />}
-          label={L("Rating", "အဆင့်")}
+          label={L("My rating", "ကျွန်ုပ် အဆင့်")}
           value={profile?.rating_avg ? Number(profile.rating_avg).toFixed(1) : "—"}
           sub={profile?.rating_count ? `(${profile.rating_count})` : undefined}
           to="/provider/reviews"
