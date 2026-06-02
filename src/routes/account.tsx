@@ -170,7 +170,7 @@ function AccountPage() {
       });
       setBizMsg(L("Saved!", "သိမ်းပြီး!"));
     } catch (e: any) {
-      setBizMsg(e?.message ?? "Failed to save");
+      setBizMsg(e?.message ?? L("Failed to save", "သိမ်းမရပါ"));
     } finally {
       setSavingBiz(false);
     }

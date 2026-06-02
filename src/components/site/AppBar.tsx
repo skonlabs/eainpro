@@ -108,7 +108,7 @@ export function AppBar() {
           <button
             type="button"
             onClick={goBack}
-            aria-label="Back"
+            aria-label={lang === "en" ? "Back" : "နောက်သို့"}
             className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 hover:bg-secondary"
           >
             <ChevronLeft className="h-5 w-5" />

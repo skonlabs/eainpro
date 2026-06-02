@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { I18nProvider } from "@/lib/i18n";
+import { I18nProvider, useI18n } from "@/lib/i18n";
 import { BottomNav } from "@/components/site/BottomNav";
 import { AppBar } from "@/components/site/AppBar";
 import { BlockedBanner } from "@/components/site/BlockedBanner";
@@ -19,20 +19,22 @@ import { Toaster } from "@/components/ui/sonner";
 import { CrawlerGate } from "@/components/site/CrawlerGate";
 
 function NotFoundComponent() {
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{L("Page not found", "စာမျက်နှာ မတွေ့ပါ")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          {L("The page you're looking for doesn't exist or has been moved.", "သင်ရှာနေသော စာမျက်နှာ မရှိပါ သို့မဟုတ် ရွှေ့ပြောင်းသွားပါပြီ။")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            {L("Go home", "ပင်မသို့ ပြန်")}
           </Link>
         </div>
       </div>
@@ -43,15 +45,17 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {L("This page didn't load", "ဤ စာမျက်နှာ တင်မရပါ")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {L("Something went wrong on our end. You can try refreshing or head back home.", "ကျွန်ုပ်တို့ဘက်တွင် အမှားတစ်ခု ဖြစ်ပေါ်ခဲ့သည်။ ပြန်လည် ကြိုးစားကြည့်ပါ သို့မဟုတ် ပင်မသို့ ပြန်ပါ။")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -61,13 +65,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            {L("Try again", "ပြန်ကြိုးစား")}
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            {L("Go home", "ပင်မသို့ ပြန်")}
           </a>
         </div>
       </div>

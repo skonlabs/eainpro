@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, Plus, CheckCircle2, Clock, XCircle, Sparkles } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/lib/supabase";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/provider/wallet")({
   component: WalletPage,
@@ -22,6 +23,8 @@ function WalletPage() {
   const { user, roles, loading } = useAuth();
   const guard = useRoleGuard("provider");
   const nav = useNavigate();
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [wallet, setWallet] = useState<any>(null);
   const [txs, setTxs] = useState<any[]>([]);
   const [topups, setTopups] = useState<any[]>([]);
@@ -79,7 +82,7 @@ function WalletPage() {
   const customMmk = Math.max(0, Math.round((Number(customAmount) || 0) / 1000) * 1000);
 
   const openCustom = () => {
-    if (customMmk < MIN_CUSTOM) return toast.error(`Minimum top-up is ${fmt(MIN_CUSTOM)} MMK`);
+    if (customMmk < MIN_CUSTOM) return toast.error(L(`Minimum top-up is ${fmt(MIN_CUSTOM)} MMK`, `အနည်းဆုံး ဖြည့်ငွေ ${fmt(MIN_CUSTOM)} ကျပ် ဖြစ်သည်`));
     setPicked({
       id: "custom",
       slug: "custom",
@@ -94,8 +97,8 @@ function WalletPage() {
 
   const handleSubmit = async () => {
     if (!picked || !user) return;
-    if (!ref.trim()) return toast.error("Enter the transaction reference");
-    if (!selectedMethod) return toast.error("Select a payment method");
+    if (!ref.trim()) return toast.error(L("Enter the transaction reference", "ငွေလွှဲ reference ထည့်ပါ"));
+    if (!selectedMethod) return toast.error(L("Select a payment method", "ငွေပေးချေမှု နည်းလမ်း ရွေးပါ"));
     setBusy(true);
     try {
       await submitTopup({
@@ -105,11 +108,11 @@ function WalletPage() {
         paymentReference: ref.trim(),
         proofFile: file,
       });
-      toast.success("Top-up submitted. Admin will review shortly.");
+      toast.success(L("Top-up submitted. Admin will review shortly.", "ဖြည့်သွင်းမှု တင်ပြီး။ Admin မကြာမီ စစ်ဆေးမည်။"));
       setPicked(null); setRef(""); setFile(null);
       refresh();
     } catch (e: any) {
-      toast.error(e.message ?? "Failed to submit");
+      toast.error(e.message ?? L("Failed to submit", "တင်မရ"));
     } finally {
       setBusy(false);
     }
@@ -119,21 +122,21 @@ function WalletPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Wallet</h1>
-          <Link to="/provider/leads" className="text-sm text-primary hover:underline">View leads →</Link>
+          <h1 className="text-2xl font-bold tracking-tight">{L("Wallet", "ပိုက်ဆံအိတ်")}</h1>
+          <Link to="/provider/leads" className="text-sm text-primary hover:underline">{L("View leads →", "Lead များ →")}</Link>
         </div>
 
         {/* Balance card — gradient hero */}
         <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-6 text-primary-foreground shadow-lg">
           <div className="flex items-center gap-2 text-xs opacity-80">
-            <Wallet className="h-4 w-4" /> Wallet balance
+            <Wallet className="h-4 w-4" /> {L("Wallet balance", "ပိုက်ဆံအိတ် လက်ကျန်")}
           </div>
           <div className="mt-2 text-4xl font-bold tabular-nums">
             {!wallet ? "—" : fmt(balance)}
           </div>
-          <div className="mt-1 text-xs opacity-75">Available credits (1 credit = 1 MMK)</div>
+          <div className="mt-1 text-xs opacity-75">{L("Available credits (1 credit = 1 MMK)", "ရရှိနိုင်သော credits (1 credit = 1 ကျပ်)")}</div>
           {lowBalance && wallet && (
-            <p className="mt-3 text-xs rounded-md bg-destructive/30 px-2 py-1 inline-block">⚠ Low balance — top up to keep unlocking leads.</p>
+            <p className="mt-3 text-xs rounded-md bg-destructive/30 px-2 py-1 inline-block">⚠ {L("Low balance — top up to keep unlocking leads.", "လက်ကျန် နည်းနေ — Lead ဆက်ဖွင့်ရန် ဖြည့်ပါ။")}</p>
           )}
         </div>
 
@@ -141,15 +144,15 @@ function WalletPage() {
           <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
             <Clock className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
-              <div className="font-semibold">{pendingTopups.length} top-up{pendingTopups.length>1?"s":""} pending review</div>
-              <div className="opacity-80">Credits will appear after admin approval — usually within a few hours.</div>
+              <div className="font-semibold">{pendingTopups.length} {L(`top-up${pendingTopups.length>1?"s":""} pending review`, `ဖြည့်သွင်းမှု စစ်ဆေးဆဲ`)}</div>
+              <div className="opacity-80">{L("Credits will appear after admin approval — usually within a few hours.", "Admin အတည်ပြုပြီးနောက် credits ပေါ်လာမည် — ပုံမှန်အားဖြင့် နာရီအနည်းငယ်အတွင်း။")}</div>
             </div>
           </div>
         )}
 
         {/* Packages */}
         <section>
-          <h2 className="mb-3 text-base font-semibold">Credit packages</h2>
+          <h2 className="mb-3 text-base font-semibold">{L("Credit packages", "Credit ပက်ကေ့ချ်")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {packages.map((p) => (
               <div key={p.id} className={`relative rounded-2xl border p-4 ${p.popular ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
@@ -173,9 +176,9 @@ function WalletPage() {
               onClick={() => { setCustomAmount(""); setCustomOpen(true); }}
               className="rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 text-left transition hover:bg-primary/10"
             >
-              <div className="text-sm font-semibold text-primary">Custom amount</div>
-              <div className="mt-1 text-xs text-muted-foreground">Multiples of 1,000 — minimum {fmt(MIN_CUSTOM)} MMK</div>
-              <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"><Plus className="h-3 w-3" /> Enter amount</div>
+              <div className="text-sm font-semibold text-primary">{L("Custom amount", "ပမာဏ ကိုယ်တိုင်သတ်မှတ်")}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{L(`Multiples of 1,000 — minimum ${fmt(MIN_CUSTOM)} MMK`, `1,000 ၏ ဆတိုး — အနည်းဆုံး ${fmt(MIN_CUSTOM)} ကျပ်`)}</div>
+              <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"><Plus className="h-3 w-3" /> {L("Enter amount", "ပမာဏ ထည့်ပါ")}</div>
             </button>
           </div>
         </section>
@@ -183,14 +186,14 @@ function WalletPage() {
         {/* Pending top-ups */}
         {topups.length > 0 && (
           <section>
-            <h2 className="mb-3 text-base font-semibold">My top-ups</h2>
+            <h2 className="mb-3 text-base font-semibold">{L("My top-ups", "ကျွန်ုပ်၏ ဖြည့်သွင်းမှုများ")}</h2>
             <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
               {topups.map((t) => (
                 <li key={t.id} className="flex items-center justify-between gap-2 p-3 text-sm">
                   <div>
                     <div className="font-medium">{t.package_name} · {fmt(t.total_credits)} credits</div>
-                    <div className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · Ref: {t.payment_reference || "—"}</div>
-                    {t.admin_notes && <div className="text-xs text-muted-foreground">Note: {t.admin_notes}</div>}
+                    <div className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {L("Ref", "Ref")}: {t.payment_reference || "—"}</div>
+                    {t.admin_notes && <div className="text-xs text-muted-foreground">{L("Note", "မှတ်ချက်")}: {t.admin_notes}</div>}
                   </div>
                   <StatusBadge status={t.status} />
                 </li>
@@ -201,10 +204,10 @@ function WalletPage() {
 
         {/* Transactions */}
         <section>
-          <h2 className="mb-3 text-base font-semibold">Transaction history</h2>
+          <h2 className="mb-3 text-base font-semibold">{L("Transaction history", "ငွေလွှဲမှတ်တမ်း")}</h2>
           {txs.length === 0 ? (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              No transactions yet.
+              {L("No transactions yet.", "ငွေပေးချေမှု မရှိသေး။")}
             </p>
           ) : (
             <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
@@ -216,7 +219,7 @@ function WalletPage() {
                   </div>
                   <div className={`text-right ${t.amount_credits >= 0 ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
                     <div className="font-semibold">{t.amount_credits >= 0 ? "+" : ""}{fmt(t.amount_credits)}</div>
-                    <div className="text-[10px] text-muted-foreground">bal {fmt(t.balance_after)}</div>
+                    <div className="text-[10px] text-muted-foreground">{L("bal", "လက်ကျန်")} {fmt(t.balance_after)}</div>
                   </div>
                 </li>
               ))}
@@ -228,9 +231,9 @@ function WalletPage() {
       {/* Custom amount picker */}
       <Dialog open={customOpen} onOpenChange={setCustomOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Custom top-up amount</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{L("Custom top-up amount", "ပမာဏ ကိုယ်တိုင်သတ်မှတ်")}</DialogTitle></DialogHeader>
           <div className="space-y-2 text-sm">
-            <Label>Amount (MMK)</Label>
+            <Label>{L("Amount (MMK)", "ပမာဏ (ကျပ်)")}</Label>
             <Input
               type="number"
               inputMode="numeric"
@@ -241,13 +244,13 @@ function WalletPage() {
               placeholder="50000"
             />
             <p className="text-xs text-muted-foreground">
-              Rounded to nearest 1,000 — min {fmt(MIN_CUSTOM)} MMK.{" "}
+              {L("Rounded to nearest 1,000 — min", "1,000 ၏ ဆတိုး — အနည်းဆုံး")} {fmt(MIN_CUSTOM)} MMK.{" "}
               {customMmk > 0 && <span className="font-semibold text-primary">→ {fmt(customMmk)} MMK = {fmt(customMmk)} credits</span>}
             </p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCustomOpen(false)}>Cancel</Button>
-            <Button onClick={openCustom} disabled={customMmk < MIN_CUSTOM}>Continue</Button>
+            <Button variant="ghost" onClick={() => setCustomOpen(false)}>{L("Cancel", "ပယ်ဖျက်")}</Button>
+            <Button onClick={openCustom} disabled={customMmk < MIN_CUSTOM}>{L("Continue", "ဆက်လုပ်")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -259,9 +262,9 @@ function WalletPage() {
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <div>
-              <Label>Payment method</Label>
+              <Label>{L("Payment method", "ငွေပေးချေမှု နည်းလမ်း")}</Label>
               <select className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={methodSlug} onChange={(e) => setMethodSlug(e.target.value)}>
-                {methods.length === 0 && <option value="">No methods configured</option>}
+                {methods.length === 0 && <option value="">{L("No methods configured", "နည်းလမ်း မသတ်မှတ်ရသေး")}</option>}
                 {methods.map((m) => <option key={m.slug} value={m.slug}>{m.label}</option>)}
               </select>
             </div>
@@ -277,7 +280,7 @@ function WalletPage() {
                       )}
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Scan in {selectedMethod.label} and pay <strong>{fmt(picked?.mmk ?? 0)} MMK</strong>
+                      {L("Scan in", "တွင် Scan ဖတ်ပြီး ငွေပေးပါ")} {selectedMethod.label} <strong>{fmt(picked?.mmk ?? 0)} MMK</strong>
                     </p>
                     {selectedMethod.phone_number && (
                       <p className="text-xs">📱 {selectedMethod.phone_number}{selectedMethod.account_name ? ` · ${selectedMethod.account_name}` : ""}</p>
@@ -285,23 +288,23 @@ function WalletPage() {
                     {selectedMethod.instructions && <p className="mt-1 text-xs text-muted-foreground">{selectedMethod.instructions}</p>}
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Admin hasn't configured this method yet. Pick another or contact support.</p>
+                  <p className="text-xs text-muted-foreground">{L("Admin hasn't configured this method yet. Pick another or contact support.", "Admin မသတ်မှတ်ရသေး။ အခြားနည်းလမ်း ရွေးပါ သို့ ဆက်သွယ်ပါ။")}</p>
                 )}
               </div>
             )}
             <div>
-              <Label>Transaction reference</Label>
+              <Label>{L("Transaction reference", "ငွေလွှဲ Reference")}</Label>
               <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. KBZ123456789" />
             </div>
             <div>
-              <Label>Payment proof (screenshot) *</Label>
+              <Label>{L("Payment proof (screenshot) *", "ငွေပေးချေမှု သက်သေ (ဖန်သားပြင်ရိုက်)")}</Label>
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <p className="mt-1 text-[11px] text-muted-foreground">Credits will be added only after admin approves your proof.</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{L("Credits will be added only after admin approves your proof.", "Admin သက်သေ အတည်ပြုမှသာ credits ပေါင်းမည်။")}</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPicked(null)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={busy || !file || !hasQr}>{busy ? "Submitting…" : "Submit for approval"}</Button>
+            <Button variant="ghost" onClick={() => setPicked(null)}>{L("Cancel", "ပယ်ဖျက်")}</Button>
+            <Button onClick={handleSubmit} disabled={busy || !file || !hasQr}>{busy ? L("Submitting…", "တင်နေ…") : L("Submit for approval", "အတည်ပြုချက် တင်ပါ")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -310,10 +313,11 @@ function WalletPage() {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { lang } = useI18n();
   const map: Record<string, { c: string; Icon: any; label: string }> = {
-    pending: { c: "bg-amber-500/15 text-amber-600 dark:text-amber-400", Icon: Clock, label: "Pending" },
-    approved: { c: "bg-green-500/15 text-green-600 dark:text-green-400", Icon: CheckCircle2, label: "Approved" },
-    rejected: { c: "bg-destructive/10 text-destructive", Icon: XCircle, label: "Rejected" },
+    pending: { c: "bg-amber-500/15 text-amber-600 dark:text-amber-400", Icon: Clock, label: lang === "en" ? "Pending" : "ဆဲ" },
+    approved: { c: "bg-green-500/15 text-green-600 dark:text-green-400", Icon: CheckCircle2, label: lang === "en" ? "Approved" : "အတည်ပြု" },
+    rejected: { c: "bg-destructive/10 text-destructive", Icon: XCircle, label: lang === "en" ? "Rejected" : "ငြင်းပယ်" },
   };
   const it = map[status] ?? map.pending;
   return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${it.c}`}><it.Icon className="h-3 w-3" />{it.label}</span>;

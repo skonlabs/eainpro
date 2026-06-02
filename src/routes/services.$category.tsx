@@ -9,16 +9,20 @@ import { LoadingState } from "@/components/site/LoadingState";
 
 export const Route = createFileRoute("/services/$category")({
   component: CategoryPage,
-  notFoundComponent: () => (
-    <div className="grid min-h-screen place-items-center bg-background p-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">Category not found</h1>
-        <Link to="/services" className="mt-4 inline-block text-primary hover:underline">
-          Browse all services
-        </Link>
+  notFoundComponent: () => {
+    const { lang } = useI18n();
+    const L = (en: string, my: string) => (lang === "en" ? en : my);
+    return (
+      <div className="grid min-h-screen place-items-center bg-background p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">{L("Category not found", "အမျိုးအစား မတွေ့ပါ")}</h1>
+          <Link to="/services" className="mt-4 inline-block text-primary hover:underline">
+            {L("Browse all services", "ဝန်ဆောင်မှုများ ကြည့်ရန်")}
+          </Link>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
   errorComponent: ({ error }) => (
     <div className="grid min-h-screen place-items-center p-6 text-center">
       <p>{error.message}</p>
