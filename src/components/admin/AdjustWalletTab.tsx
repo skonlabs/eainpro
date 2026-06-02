@@ -43,7 +43,13 @@ export function AdjustWalletTab() {
       </div>
       <div>
         <Label className="text-xs">Amount (credits, negative to debit)</Label>
-        <Input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="e.g. 5000 or -2000" />
+        <Input
+          type="text"
+          inputMode="numeric"
+          value={delta}
+          onChange={(e) => setDelta(e.target.value.replace(/[^0-9-]/g, ""))}
+          placeholder="e.g. 5000 or -2000"
+        />
       </div>
       <div>
         <Label className="text-xs">Reason / note *</Label>
