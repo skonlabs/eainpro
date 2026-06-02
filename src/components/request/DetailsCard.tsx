@@ -101,9 +101,14 @@ export function DetailsCard({
           {new Date(lead.created_at).toLocaleString()}
         </Field>
         <Field label={L("Budget", "ဘတ်ဂျက်")}>
-          {lead.budget_min || lead.budget_max
-              ? `${lead.budget_min ? lead.budget_min.toLocaleString() : "—"} – ${lead.budget_max ? lead.budget_max.toLocaleString() : "—"} MMK`
-              : "—"}
+          {(() => {
+            const lo = lead.budget_min;
+            const hi = lead.budget_max;
+            if (!lo && !hi) return L("No fixed budget", "မသတ်မှတ်");
+            if (!lo && hi) return L(`Under ${hi.toLocaleString()} MMK`, `${hi.toLocaleString()} ကျပ်အောက်`);
+            if (lo && !hi) return L(`${lo.toLocaleString()}+ MMK`, `${lo.toLocaleString()}+ ကျပ်`);
+            return `${lo!.toLocaleString()} – ${hi!.toLocaleString()} MMK`;
+          })()}
         </Field>
       </div>
       {lead.short_description && lead.full_description && lead.short_description !== lead.full_description && (
