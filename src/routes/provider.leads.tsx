@@ -17,6 +17,7 @@ import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
 import { useI18n } from "@/lib/i18n";
 import { unlockStatusPair, unlockHintPair } from "@/lib/status-i18n";
+import { CITIES, TOWNSHIPS } from "@/lib/catalog";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
