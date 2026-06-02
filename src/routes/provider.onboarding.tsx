@@ -241,7 +241,7 @@ function OnboardingPage() {
                   type="number"
                   min={0}
                   value={years}
-                  onChange={(e) => setYears(Number(e.target.value))}
+                  onChange={(e) => setYears(Math.max(0, Number(e.target.value) || 0))}
                 />
               </div>
               <label className="mt-6 flex cursor-pointer items-center gap-2 text-sm">
@@ -278,10 +278,11 @@ function OnboardingPage() {
                     {active && (
                       <Input
                         className="mt-2 h-8 text-sm"
+                        inputMode="numeric"
                         placeholder={lang === "en" ? "Base price (optional)" : "အခြေခံစျေး (ရွေး)"}
                         value={cats[c.slug]}
                         onChange={(e) =>
-                          setCats((s) => ({ ...s, [c.slug]: e.target.value }))
+                          setCats((s) => ({ ...s, [c.slug]: e.target.value.replace(/\D/g, "") }))
                         }
                       />
                     )}

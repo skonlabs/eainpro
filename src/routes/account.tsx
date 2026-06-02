@@ -390,7 +390,7 @@ function AccountPage() {
                     min={0}
                     value={biz.years_experience}
                     onChange={(e) =>
-                      setBiz((b) => ({ ...b, years_experience: Number(e.target.value) }))
+                      setBiz((b) => ({ ...b, years_experience: Math.max(0, Number(e.target.value) || 0) }))
                     }
                   />
                 </div>
@@ -430,10 +430,11 @@ function AccountPage() {
                       {active && (
                         <Input
                           className="mt-2 h-8 text-sm"
+                          inputMode="numeric"
                           placeholder={L("Base price (optional)", "အခြေခံစျေး (ရွေး)")}
                           value={bizCats[c.slug]}
                           onChange={(e) =>
-                            setBizCats((s) => ({ ...s, [c.slug]: e.target.value }))
+                            setBizCats((s) => ({ ...s, [c.slug]: e.target.value.replace(/\D/g, "") }))
                           }
                         />
                       )}
