@@ -162,10 +162,10 @@ export function DetailsCard({
         ) : (
           <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-5">
             <Field label={L("When", "ဘယ်အချိန်")}>
-              {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, L)}
+              {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, L("en", "my") as "en" | "my")}
             </Field>
             <Field label={L("Preferred Time", "နှစ်သက်သော အချိန်")}>
-              {lead.preferred_time ? (L("en", "my") === "my" ? windowLabel(lead.preferred_time, "my") : windowLabel(lead.preferred_time, "en")) : "—"}
+              {lead.preferred_time ? windowLabel(lead.preferred_time, L("en", "my") as "en" | "my") : "—"}
             </Field>
           </div>
         )}
