@@ -52,6 +52,8 @@ function LeadsPage() {
   const { user, roles, loading, rolesReady } = useAuth();
   const guard = useRoleGuard("provider");
   const nav = useNavigate();
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [tab, setTab] = useState("available");
   const [available, setAvailable] = useState<LeadPreview[] | null>(null);
   const [unlocked, setUnlocked] = useState<any[] | null>(null);
