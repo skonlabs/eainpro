@@ -241,7 +241,7 @@ function OnboardingPage() {
                   type="number"
                   min={0}
                   value={years}
-                  onChange={(e) => setYears(Number(e.target.value))}
+                  onChange={(e) => setYears(Math.max(0, Number(e.target.value) || 0))}
                 />
               </div>
               <label className="mt-6 flex cursor-pointer items-center gap-2 text-sm">
