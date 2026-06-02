@@ -17,7 +17,7 @@ import { X as XIcon } from "lucide-react";
 import { WonLeadCard } from "@/components/provider/WonLeadCard";
 import { useI18n } from "@/lib/i18n";
 import { unlockStatusPair, unlockHintPair } from "@/lib/status-i18n";
-import { CITIES, TOWNSHIPS } from "@/lib/catalog";
+import { CITIES, TOWNSHIPS, WINDOW_OPTIONS } from "@/lib/catalog";
 
 export const Route = createFileRoute("/provider/leads")({
   component: LeadsPage,
@@ -46,6 +46,24 @@ const readDismissed = (): Set<string> => {
 const writeDismissed = (s: Set<string>) => {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(s))); } catch {}
+};
+
+const urgencyLabel = (value: string | null | undefined, lang: "en" | "my") => {
+  if (!value) return "";
+  if (lang === "en") return value;
+  const map: Record<string, string> = {
+    today: "ဒီနေ့ပဲ လိုသည်",
+    tomorrow: "၁-၂ ရက်အတွင်း",
+    this_week: "ဒီအပတ်",
+    flexible: "ပြောင်းလဲနိုင်သည်",
+  };
+  return map[value] ?? value;
+};
+
+const preferredTimeLabel = (value: string | null | undefined, lang: "en" | "my") => {
+  if (!value) return "";
+  if (lang === "en") return value;
+  return WINDOW_OPTIONS.find((option) => option.value === value)?.my ?? value;
 };
 
 function LeadsPage() {
