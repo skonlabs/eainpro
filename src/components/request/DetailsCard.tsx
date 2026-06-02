@@ -7,7 +7,7 @@ import { MapPin, Phone, Star } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Lead, T } from "./types";
 import { Field, FieldLabel, FieldValue } from "./Field";
-import { CITIES, TOWNSHIPS } from "@/lib/catalog";
+import { CITIES, TOWNSHIPS, TIMING_OPTIONS, WINDOW_OPTIONS } from "@/lib/catalog";
 import { bookingStatusPair } from "@/lib/status-i18n";
 import { windowLabel } from "@/lib/display-i18n";
 
@@ -56,34 +56,27 @@ export function DetailsCard({
 }) {
   const showContact = !isProvider || hasUnlock;
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(lead.full_description ?? lead.short_description);
-  const [urgency, setUrgency] = useState(lead.urgency);
+  const initialTiming = (TIMING_OPTIONS.find((t) => t.value === lead.urgency)?.value ?? "flexible") as typeof TIMING_OPTIONS[number]["value"];
+  const [urgency, setUrgency] = useState<string>(initialTiming);
   const [preferredDate, setPreferredDate] = useState(lead.preferred_date ?? "");
   const [preferredTime, setPreferredTime] = useState(lead.preferred_time ?? "");
-  const [address, setAddress] = useState(lead.address ?? "");
   const [saving, setSaving] = useState(false);
   const save = async () => {
-    const text = draft.trim().slice(0, 10000);
-    if (!text) return;
     setSaving(true);
     const { error } = await supabase
       .from("customer_leads")
       .update({
-        full_description: text,
         urgency,
         preferred_date: preferredDate || null,
         preferred_time: preferredTime || null,
-        address: address.trim() || null,
       })
       .eq("id", lead.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     onUpdated({
-      full_description: text,
       urgency,
       preferred_date: preferredDate || null,
       preferred_time: preferredTime || null,
-      address: address.trim() || null,
     });
     setEditing(false);
     toast.success(L("Updated", "ပြင်ပြီး"));
@@ -121,6 +114,12 @@ export function DetailsCard({
       <div className="border-t border-border/60 pt-4">
         <div className="flex items-center justify-between">
           <FieldLabel>{L("Description", "ဖော်ပြ")}</FieldLabel>
+        </div>
+        <FieldValue className="whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</FieldValue>
+      </div>
+      <div className="border-t border-border/60 pt-4">
+        <div className="flex items-center justify-between">
+          <FieldLabel>{L("Schedule", "အချိန်ဇယား")}</FieldLabel>
           {canEdit && !editing && (
             <button type="button" onClick={() => setEditing(true)} className="text-xs font-medium text-primary hover:underline">
               {L("Edit", "ပြင်")}
@@ -128,70 +127,73 @@ export function DetailsCard({
           )}
         </div>
         {editing ? (
-          <div className="mt-2 space-y-3">
-            <textarea
-              className="w-full rounded-md border border-border bg-background p-2 text-sm"
-              rows={4}
-              maxLength={10000}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value.slice(0, 10000))}
-              disabled={saving}
-            />
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              <div className="min-w-0">
-                <FieldLabel>{L("Urgency", "အရေးပေါ်")}</FieldLabel>
-                <select
-                  className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm"
-                  value={urgency}
-                  onChange={(e) => setUrgency(e.target.value)}
-                  disabled={saving}
-                >
-                  <option value="now">{L("Now", "ယခုချက်ချင်း")}</option>
-                  <option value="today">{L("Today", "ယနေ့")}</option>
-                  <option value="this_week">{L("This week", "ဤဆောင်ပတ်")}</option>
-                  <option value="flexible">{L("Flexible", "ကြိုက်တဲ့အချိန်")}</option>
-                </select>
-              </div>
-              <div className="min-w-0">
-                <FieldLabel>{L("Preferred date", "ရက်")}</FieldLabel>
-                <Input className="mt-2" type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} disabled={saving} />
-              </div>
-              <div className="min-w-0">
-                <FieldLabel>{L("Preferred time", "အချိန်")}</FieldLabel>
-                <Input className="mt-2" type="time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} disabled={saving} />
-              </div>
-              <div className="min-w-0">
-                <FieldLabel>{L("Address", "လိပ်စာ")}</FieldLabel>
-                <Input className="mt-2" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={L("Street, ward…", "လမ်း, ရပ်ကွက်…")} disabled={saving} />
+          <div className="mt-3 space-y-4">
+            <div>
+              <FieldLabel>{L("When", "ဘယ်အချိန်")}</FieldLabel>
+              <select
+                className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm"
+                value={preferredDate ? "" : urgency}
+                onChange={(e) => { setUrgency(e.target.value); setPreferredDate(""); }}
+                disabled={saving}
+              >
+                <option value="" disabled>{L("Select…", "ရွေးပါ…")}</option>
+                {TIMING_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>{L(t.en, t.my)}</option>
+                ))}
+              </select>
+              <label className="mt-3 block text-xs font-semibold text-muted-foreground">
+                {L("Or pick a specific date", "သို့မဟုတ် ရက်ရွေးပါ")}
+              </label>
+              <Input
+                className="mt-1"
+                type="date"
+                value={preferredDate}
+                onChange={(e) => { setPreferredDate(e.target.value); if (e.target.value) setUrgency("flexible"); }}
+                disabled={saving}
+              />
+            </div>
+            <div>
+              <FieldLabel>{L("Preferred Time", "နှစ်သက်သော အချိန်")}</FieldLabel>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {WINDOW_OPTIONS.map((w) => (
+                  <button
+                    key={w.value}
+                    type="button"
+                    onClick={() => setPreferredTime(preferredTime === w.value ? "" : w.value)}
+                    disabled={saving}
+                    className={`rounded-md border p-2 text-sm ${preferredTime === w.value ? "border-primary bg-primary/10 font-semibold text-primary" : "border-border bg-background"}`}
+                  >
+                    {L(w.en, w.my)}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => {
-                setDraft(lead.full_description ?? lead.short_description);
-                setUrgency(lead.urgency);
+                setUrgency(initialTiming);
                 setPreferredDate(lead.preferred_date ?? "");
                 setPreferredTime(lead.preferred_time ?? "");
-                setAddress(lead.address ?? "");
                 setEditing(false);
               }} disabled={saving}>
                 {L("Cancel", "ပယ်ဖျက်")}
               </Button>
-              <Button size="sm" onClick={save} disabled={saving || !draft.trim()}>
+              <Button size="sm" onClick={save} disabled={saving}>
                 {saving ? L("Saving…", "သိမ်းနေသည်…") : L("Save", "သိမ်း")}
               </Button>
             </div>
           </div>
         ) : (
-          <FieldValue className="whitespace-pre-wrap">{lead.full_description ?? lead.short_description}</FieldValue>
+          <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-5">
+            <Field label={L("When", "ဘယ်အချိန်")}>
+              {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, L)}
+            </Field>
+            <Field label={L("Preferred Time", "နှစ်သက်သော အချိန်")}>
+              {lead.preferred_time ? (L("en", "my") === "my" ? windowLabel(lead.preferred_time, "my") : windowLabel(lead.preferred_time, "en")) : "—"}
+            </Field>
+          </div>
         )}
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border/60 pt-4">
-        <Field label={L("When", "ဘယ်အချိန်")}>
-          {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, L)}
-        </Field>
-        <Field label={L("Preferred Time", "နှစ်သက်သော အချိန်")}>
-          {lead.preferred_time ? (L("en", "my") === "my" ? windowLabel(lead.preferred_time, "my") : windowLabel(lead.preferred_time, "en")) : "—"}
-        </Field>
         <Field label={L("Location", "နေရာ")} className="col-span-2">
           <span className="inline-flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
