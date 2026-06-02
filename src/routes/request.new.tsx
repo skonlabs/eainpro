@@ -291,7 +291,7 @@ function NewRequestPage() {
       case "question":
         return getAnswerValues(step.questionId!).length > 0;
       case "township":
-        return form.township.trim().length > 0;
+        return form.township.trim().length > 0 && form.address.trim().length > 0;
       case "description":
         return form.description.trim().length >= 20;
       case "contact":
@@ -729,26 +729,6 @@ function NewRequestPage() {
           </StepShell>
         );
       }
-
-      case "urgency":
-        return (
-          <StepShell
-            title={L("How soon do you need this?", "ဘယ်လောက် မြန်ဆန် လိုသလဲ?")}
-            hint={L("Helps providers prioritize.", "ဝန်ဆောင်မှုပေးသူများ ဦးစားပေးနိုင်ရန်။")}
-          >
-            <div className="grid gap-2 sm:grid-cols-2">
-              {URGENCY_OPTIONS.map((u) => (
-                <BigChoice
-                  key={u.value}
-                  active={form.urgency === u.value}
-                  onClick={() => pick("urgency", u.value as typeof form.urgency)}
-                >
-                  {L(u.en, u.my)}
-                </BigChoice>
-              ))}
-            </div>
-          </StepShell>
-        );
 
       case "city":
         return (
