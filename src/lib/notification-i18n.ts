@@ -17,12 +17,12 @@ const TITLES: Pair[] = [
   { en: "Work has started", my: "အလုပ် စတင်ပြီး" },
   { en: "Top-up rejected", my: "ငွေဖြည့်ခြင်း ပယ်ချ" },
   { en: "Low wallet balance", my: "ပိုက်ဆံအိတ် လက်ကျန် နည်းပါးနေ" },
-  { en: "You lost a lead", my: "Lead တစ်ခု လက်လွတ်" },
+  { en: "You lost a lead", my: "အလုပ်အပ်စာတစ်ခု လက်လွတ်သွားသည်" },
   { en: "Job marked completed", my: "အလုပ် ပြီးစီးကြောင်း မှတ်သားပြီး" },
   { en: "Job started", my: "အလုပ် စတင်ပြီး" },
   { en: "Job in progress", my: "အလုပ် ဆောင်ရွက်ဆဲ" },
-  { en: "Customer cancelled a lead", my: "ဖောက်သည် Lead ကို ပယ်ဖျက်လိုက်ပြီ" },
-  { en: "Lead closed — customer chose another provider", my: "Lead ပိတ်ပြီး — ဖောက်သည် အခြားသူကိုရွေး" },
+  { en: "Customer cancelled a lead", my: "ဖောက်သည်က အလုပ်အပ်စာကို ပယ်ဖျက်လိုက်သည်" },
+  { en: "Lead closed — customer chose another provider", my: "အလုပ်အပ်စာပိတ်သွားသည် — ဖောက်သည်က အခြားဝန်ဆောင်မှုပေးသူကို ရွေးချယ်လိုက်သည်" },
 ];
 
 // Translate a service/subcategory name (English) to Burmese.
@@ -59,10 +59,10 @@ const BODIES: Pair[] = [
   { en: "They are heading to your address now.", my: "သင့်လိပ်စာဆီ လာနေပါပြီ။" },
   { en: "Your provider has started the job.", my: "ဝန်ဆောင်မှုပေးသူ အလုပ်စပြီ။" },
   { en: "Open the request to see details.", my: "အသေးစိတ်အတွက် တောင်းဆိုမှုကို ဖွင့်ပါ။" },
-  { en: "A customer sent this request directly to you. Unlock to see details.", my: "ဖောက်သည်က ဤတောင်းဆိုမှုကို သင့်ထံ တိုက်ရိုက်ပို့ထားသည်။ အသေးစိတ်ကြည့်ရန် Unlock လုပ်ပါ။" },
-  { en: "A refund was issued for a lead unlock.", my: "Lead unlock အတွက် ပြန်အမ်းငွေ ထုတ်ပေးပြီး။" },
+  { en: "A customer sent this request directly to you. Unlock to see details.", my: "ဖောက်သည်က ဤတောင်းဆိုမှုကို သင့်ထံ တိုက်ရိုက်ပို့ထားသည်။ အသေးစိတ်ကြည့်ရန် ဖွင့်ပါ။" },
+  { en: "A refund was issued for a lead unlock.", my: "အလုပ်အပ်စာ ဖွင့်ခြင်းအတွက် ပြန်အမ်းငွေ ထုတ်ပေးပြီးပါပြီ။" },
   { en: "They may contact you shortly.", my: "မကြာမီ သင့်ကို ဆက်သွယ်ပါမည်။" },
-  { en: "Please contact support.", my: "ကျေးဇူးပြု၍ support ကို ဆက်သွယ်ပါ။" },
+  { en: "Please contact support.", my: "ကျေးဇူးပြု၍ အကူအညီဌာနကို ဆက်သွယ်ပါ။" },
 ];
 
 function translateExact(text: string | null | undefined, table: Pair[], lang: Lang): string {
@@ -83,13 +83,13 @@ export function translateNotificationTitle(title: string, lang: Lang): string {
   m = title.match(/^(.+) viewed your request$/);
   if (m) return `${m[1]} သင့်တောင်းဆိုမှုကို ကြည့်ရှုခဲ့သည်`;
   m = title.match(/^Top-up approved · \+(.+) credits$/);
-  if (m) return `ငွေဖြည့်ခြင်း အတည်ပြု · +${m[1]} credits`;
+  if (m) return `ငွေဖြည့်ခြင်း အတည်ပြု · +${m[1]} ခရက်ဒစ်`;
   m = title.match(/^Refund issued · \+(.+) credits$/);
-  if (m) return `ပြန်အမ်းငွေ ထုတ်ပေး · +${m[1]} credits`;
+  if (m) return `ပြန်အမ်းငွေ ထုတ်ပေး · +${m[1]} ခရက်ဒစ်`;
   m = title.match(/^Direct request:\s*(.+)$/);
   if (m) return `တိုက်ရိုက်တောင်းဆိုမှု: ${serviceMy(m[1])}`;
   m = title.match(/^New (.+) lead in (.+)$/);
-  if (m) return `${cityMy(m[2])} တွင် ${serviceMy(m[1])} lead အသစ်`;
+  if (m) return `${cityMy(m[2])} တွင် ${serviceMy(m[1])} အလုပ်အပ်စာအသစ်`;
   m = title.match(/^Booking (.+)$/);
   if (m) return `ဘွတ်ကင် ${bookingStatusMy(m[1])}`;
   return translateExact(title, TITLES, lang);
@@ -107,20 +107,20 @@ export function translateNotificationBody(body: string | null, lang: Lang): stri
   m = body.match(/^The customer cancelled "(.+)"\. No further action needed\.$/);
   if (m) return `ဖောက်သည်က "${m[1]}" ကို ပယ်ဖျက်လိုက်ပါပြီ။ နောက်ထပ် ဆောင်ရွက်စရာ မလိုပါ။`;
   m = body.match(/^You have (.+) credits left\. Top up to keep unlocking leads\.$/);
-  if (m) return `သင့်တွင် ${m[1]} credits ကျန်ပါသည်။ Lead များ ဆက်လက် unlock လုပ်ရန် ငွေဖြည့်ပါ။`;
+  if (m) return `သင့်တွင် ${m[1]} ခရက်ဒစ် ကျန်ပါသည်။ အလုပ်အပ်စာများကို ဆက်လက်ဖွင့်ရန် ငွေဖြည့်ပါ။`;
   m = body.match(/^Unlock for (.+) credits to see customer details\.$/);
-  if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} credits ဖြင့် unlock လုပ်ပါ။`;
+  if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} ခရက်ဒစ်ဖြင့် ဖွင့်ပါ။`;
   m = body.match(/^(.+) package added to your wallet\.$/);
   if (m) return `${m[1]} package ကို သင့်ပိုက်ဆံအိတ်ထဲ ထည့်ပြီးပါပြီ။`;
   m = body.match(/^Admin added (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
   if (m) {
     const note = m[2] ? ` ${m[2]}` : "";
-    return `Admin က ${m[1]} credits ထည့်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+    return `Admin က ${m[1]} ခရက်ဒစ် ထည့်ပေးခဲ့သည်။${note} (လက်ကျန်အသစ်: ${m[3]})`;
   }
   m = body.match(/^Admin removed (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
   if (m) {
     const note = m[2] ? ` ${m[2]}` : "";
-    return `Admin က ${m[1]} credits နုတ်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+    return `Admin က ${m[1]} ခရက်ဒစ် နုတ်ယူခဲ့သည်။${note} (လက်ကျန်အသစ်: ${m[3]})`;
   }
   return translateExact(body, BODIES, lang);
 }
