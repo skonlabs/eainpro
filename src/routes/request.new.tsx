@@ -421,6 +421,24 @@ function NewRequestPage() {
         preferred_time: form.window || null,
         short_description: shortDesc,
         full_description: fullDesc,
+        budget_min: (() => {
+          switch (form.budget) {
+            case "u30k": return null;
+            case "30_50k": return 30000;
+            case "50_100k": return 50000;
+            case "100k+": return 100000;
+            default: return null;
+          }
+        })(),
+        budget_max: (() => {
+          switch (form.budget) {
+            case "u30k": return 30000;
+            case "30_50k": return 50000;
+            case "50_100k": return 100000;
+            case "100k+": return null;
+            default: return null;
+          }
+        })(),
         lead_price_credits: priceCredits,
         max_provider_unlocks: maxUnlocks,
         expires_at: expiresAt,
