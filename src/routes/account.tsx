@@ -430,10 +430,11 @@ function AccountPage() {
                       {active && (
                         <Input
                           className="mt-2 h-8 text-sm"
+                          inputMode="numeric"
                           placeholder={L("Base price (optional)", "အခြေခံစျေး (ရွေး)")}
                           value={bizCats[c.slug]}
                           onChange={(e) =>
-                            setBizCats((s) => ({ ...s, [c.slug]: e.target.value }))
+                            setBizCats((s) => ({ ...s, [c.slug]: e.target.value.replace(/\D/g, "") }))
                           }
                         />
                       )}
