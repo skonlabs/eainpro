@@ -291,8 +291,14 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
         <div>
           <div className="text-base font-semibold">{lead.service_name_en}</div>
           <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{lead.city_slug}</span>
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{lead.urgency}</span>
+            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(() => {
+              const city = CITIES.find((c) => c.slug === lead.city_slug);
+              const cityLabel = city ? city.en : lead.city_slug;
+              const ts = lead.township_slug ? (TOWNSHIPS[lead.city_slug] ?? []).find((t) => t.slug === lead.township_slug) : null;
+              const tsLabel = ts ? ts.en : (lead.township_slug ?? null);
+              return [tsLabel, cityLabel].filter(Boolean).join(", ");
+            })()}</span>
+            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{lead.preferred_date ? `${lead.preferred_date}${lead.preferred_time && lead.preferred_time !== "any" ? ` · ${lead.preferred_time}` : ""}` : lead.urgency}</span>
             {lead.photo_count > 0 && <span className="flex items-center gap-1"><ImageIcon className="h-3 w-3" />{lead.photo_count}</span>}
           </div>
         </div>

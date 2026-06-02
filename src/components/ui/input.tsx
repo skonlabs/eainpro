@@ -3,10 +3,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, onKeyDown, onPaste, min, ...props }, ref) => {
-    // Globally block negative numbers across the site: prevent typing
-    // the minus sign, "e"/"E" exponents, and pasting negative values
-    // into any numeric input.
+  ({ className, type, onKeyDown, onPaste, onChange, min, ...props }, ref) => {
+    // Globally block negative numbers across the site for numeric inputs:
+    // block keystrokes, paste, and sanitize the value on change (covers
+    // mobile keyboards / autofill where keydown may not fire).
     const isNumeric = type === "number";
     return (
       <input
@@ -31,6 +31,19 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
             }
           }
           onPaste?.(e);
+        }}
+        onChange={(e) => {
+          if (isNumeric) {
+            const v = e.currentTarget.value;
+            const cleaned = v.replace(/[-+eE]/g, "");
+            if (cleaned !== v) {
+              e.currentTarget.value = cleaned;
+            }
+            if (cleaned !== "" && Number(cleaned) < 0) {
+              e.currentTarget.value = "0";
+            }
+          }
+          onChange?.(e);
         }}
         {...props}
       />
