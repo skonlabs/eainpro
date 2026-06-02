@@ -305,7 +305,11 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
               const tsLabel = ts ? (lang === "en" ? ts.en : ts.my) : (lead.township_slug ?? null);
               return [tsLabel, cityLabel].filter(Boolean).join(", ");
             })()}</span>
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{lead.preferred_date ? `${lead.preferred_date}${lead.preferred_time && lead.preferred_time !== "any" ? ` · ${preferredTimeLabel(lead.preferred_time, lang)}` : ""}` : urgencyLabel(lead.urgency, lang)}</span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, lang)}
+              {lead.preferred_time && lead.preferred_time !== "any" ? ` · ${windowLabel(lead.preferred_time, lang)}` : ""}
+            </span>
             {lead.photo_count > 0 && <span className="flex items-center gap-1"><ImageIcon className="h-3 w-3" />{lead.photo_count}</span>}
           </div>
         </div>
