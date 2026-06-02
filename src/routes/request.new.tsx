@@ -63,7 +63,6 @@ type StepKind =
   | "category"
   | "subcategory"
   | "question"
-  | "urgency"
   | "city"
   | "township"
   | "photos"
@@ -174,7 +173,6 @@ function NewRequestPage() {
     if (!form.category) list.push({ kind: "category" });
     if (form.category && subs.length > 0) list.push({ kind: "subcategory" });
     questions.forEach((q) => list.push({ kind: "question", questionId: q.id }));
-    list.push({ kind: "urgency" });
     list.push({ kind: "city" });
     list.push({ kind: "township" });
     list.push({ kind: "photos" });
