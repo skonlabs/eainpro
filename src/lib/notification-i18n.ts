@@ -1,10 +1,13 @@
 import type { Lang } from "@/lib/i18n";
+import { CATEGORIES, CITIES } from "@/lib/catalog";
 
 type Pair = { en: string; my: string };
 
 // Static title translations by exact text.
 const TITLES: Pair[] = [
   { en: "New message", my: "မက်ဆေ့ဂျ်အသစ်" },
+  { en: "Wallet credited", my: "ပိုက်ဆံအိတ်ထဲ ငွေထည့်ပြီး" },
+  { en: "Wallet debited", my: "ပိုက်ဆံအိတ်မှ ငွေနုတ်ပြီး" },
   { en: "Your quote was accepted", my: "သင့်စျေးနှုန်းကို လက်ခံပြီးပါပြီ" },
   { en: "Booking confirmed", my: "ဘွတ်ကင် အတည်ပြုပြီး" },
   { en: "Booking cancelled", my: "ဘွတ်ကင် ပယ်ဖျက်လိုက်ပြီ" },
@@ -21,6 +24,27 @@ const TITLES: Pair[] = [
   { en: "Customer cancelled a lead", my: "ဖောက်သည် Lead ကို ပယ်ဖျက်လိုက်ပြီ" },
   { en: "Lead closed — customer chose another provider", my: "Lead ပိတ်ပြီး — ဖောက်သည် အခြားသူကိုရွေး" },
 ];
+
+// Translate a service/subcategory name (English) to Burmese.
+function serviceMy(name: string): string {
+  const lower = name.trim().toLowerCase();
+  for (const c of CATEGORIES) {
+    if (c.en.toLowerCase() === lower) return c.my;
+    for (const s of c.subcategories ?? []) {
+      if (s.en.toLowerCase() === lower) return s.my;
+    }
+  }
+  return name;
+}
+
+// Translate a city (slug or English name) to Burmese.
+function cityMy(value: string): string {
+  const v = value.trim().toLowerCase();
+  for (const c of CITIES) {
+    if (c.slug.toLowerCase() === v || c.en.toLowerCase() === v) return c.my;
+  }
+  return value;
+}
 
 const BODIES: Pair[] = [
   { en: "Tap to review the details and accept.", my: "အသေးစိတ်ကြည့်ပြီး လက်ခံရန် နှိပ်ပါ။" },
@@ -63,9 +87,9 @@ export function translateNotificationTitle(title: string, lang: Lang): string {
   m = title.match(/^Refund issued · \+(.+) credits$/);
   if (m) return `ပြန်အမ်းငွေ ထုတ်ပေး · +${m[1]} credits`;
   m = title.match(/^Direct request:\s*(.+)$/);
-  if (m) return `တိုက်ရိုက်တောင်းဆိုမှု: ${m[1]}`;
+  if (m) return `တိုက်ရိုက်တောင်းဆိုမှု: ${serviceMy(m[1])}`;
   m = title.match(/^New (.+) lead in (.+)$/);
-  if (m) return `${m[2]} တွင် ${m[1]} lead အသစ်`;
+  if (m) return `${cityMy(m[2])} တွင် ${serviceMy(m[1])} lead အသစ်`;
   m = title.match(/^Booking (.+)$/);
   if (m) return `ဘွတ်ကင် ${bookingStatusMy(m[1])}`;
   return translateExact(title, TITLES, lang);
@@ -79,7 +103,7 @@ export function translateNotificationBody(body: string | null, lang: Lang): stri
   m = body.match(/^A booking status is now (.+)\.$/);
   if (m) return `ဘွတ်ကင်အခြေအနေသည် ${bookingStatusMy(m[1])} ဖြစ်ပါပြီ။`;
   m = body.match(/^The (.+) lead in (.+) was booked with someone else\.$/);
-  if (m) return `${m[2]} ရှိ ${m[1]} lead ကို အခြားသူနှင့် ဘွတ်ကင်လုပ်လိုက်ပါပြီ။`;
+  if (m) return `${cityMy(m[2])} ရှိ ${serviceMy(m[1])} lead ကို အခြားသူနှင့် ဘွတ်ကင်လုပ်လိုက်ပါပြီ။`;
   m = body.match(/^The customer cancelled "(.+)"\. No further action needed\.$/);
   if (m) return `ဖောက်သည်က "${m[1]}" ကို ပယ်ဖျက်လိုက်ပါပြီ။ နောက်ထပ် ဆောင်ရွက်စရာ မလိုပါ။`;
   m = body.match(/^You have (.+) credits left\. Top up to keep unlocking leads\.$/);
@@ -88,6 +112,16 @@ export function translateNotificationBody(body: string | null, lang: Lang): stri
   if (m) return `ဖောက်သည် အချက်အလက်များကြည့်ရန် ${m[1]} credits ဖြင့် unlock လုပ်ပါ။`;
   m = body.match(/^(.+) package added to your wallet\.$/);
   if (m) return `${m[1]} package ကို သင့်ပိုက်ဆံအိတ်ထဲ ထည့်ပြီးပါပြီ။`;
+  m = body.match(/^Admin added (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
+  if (m) {
+    const note = m[2] ? ` ${m[2]}` : "";
+    return `Admin က ${m[1]} credits ထည့်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+  }
+  m = body.match(/^Admin removed (.+) credits\.\s*(.*?)\s*\(New balance:\s*(.+)\)$/);
+  if (m) {
+    const note = m[2] ? ` ${m[2]}` : "";
+    return `Admin က ${m[1]} credits နုတ်ပြီး။${note} (လက်ကျန်အသစ်: ${m[3]})`;
+  }
   return translateExact(body, BODIES, lang);
 }
 
