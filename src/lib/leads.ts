@@ -9,6 +9,7 @@ export type LeadPreview = {
   service_name_my: string;
   city_slug: string;
   township_id: string | null;
+  township_slug: string | null;
   urgency: string;
   preferred_date: string | null;
   preferred_time: string | null;
