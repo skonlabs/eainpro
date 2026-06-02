@@ -278,10 +278,11 @@ function OnboardingPage() {
                     {active && (
                       <Input
                         className="mt-2 h-8 text-sm"
+                        inputMode="numeric"
                         placeholder={lang === "en" ? "Base price (optional)" : "အခြေခံစျေး (ရွေး)"}
                         value={cats[c.slug]}
                         onChange={(e) =>
-                          setCats((s) => ({ ...s, [c.slug]: e.target.value }))
+                          setCats((s) => ({ ...s, [c.slug]: e.target.value.replace(/\D/g, "") }))
                         }
                       />
                     )}
