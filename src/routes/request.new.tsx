@@ -13,7 +13,6 @@ import {
   CITIES,
   CATEGORY_SUBCATEGORIES,
   CATEGORY_QUESTIONS,
-  URGENCY_OPTIONS,
   TIMING_OPTIONS,
   WINDOW_OPTIONS,
   CONTACT_OPTIONS,
@@ -39,7 +38,6 @@ import {
   FileText,
   MapPin,
   Image as ImageIcon,
-  Zap,
   CalendarClock,
   Wallet,
 } from "lucide-react";
