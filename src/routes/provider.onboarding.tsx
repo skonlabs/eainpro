@@ -35,6 +35,7 @@ export const Route = createFileRoute("/provider/onboarding")({
 
 function OnboardingPage() {
   const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const { user, loading: authLoading, refreshRoles, roles, rolesReady } = useAuth();
   const nav = useNavigate();
 
@@ -59,7 +60,7 @@ function OnboardingPage() {
     // Block customers (and admins without provider role) from onboarding.
     // Onboarding is only for users signed up as providers.
     if (rolesReady && !roles.includes("provider")) {
-      toast.error("Provider account required. Sign up as a provider to onboard.");
+      toast.error(L("Provider account required. Sign up as a provider to onboard.", "Provider အကောင့် လိုအပ်သည်။ Provider အဖြစ် မှတ်ပုံတင်ပါ။"));
       nav({ to: roles.includes("admin") ? "/admin" : "/", replace: true });
       return;
     }
@@ -167,7 +168,7 @@ function OnboardingPage() {
     setUploadingKind(null);
     if (error) { toast.error(error.message); return; }
     if (data) setDocs((p) => [data as DocRow, ...p]);
-    toast.success("Uploaded — pending review");
+    toast.success(L("Uploaded — pending review", "တင်ပြီး — စစ်ဆေးဆဲ"));
   };
 
   const removeDoc = async (id: string) => {
@@ -342,7 +343,7 @@ function OnboardingPage() {
                           {latest.status === "approved" && <CheckCircle2 className="h-3 w-3" />}
                           {latest.status === "rejected" && <XCircle className="h-3 w-3" />}
                           {latest.status === "pending" && <Clock className="h-3 w-3" />}
-                          {latest.status}
+                          {latest.status === "approved" ? L("Approved", "အတည်ပြု") : latest.status === "rejected" ? L("Rejected", "ငြင်းပယ်") : L("Pending", "ဆဲ")}
                         </span>
                       )}
                     </div>

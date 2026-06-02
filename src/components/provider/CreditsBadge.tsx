@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Wallet, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { getWallet, fmt } from "@/lib/wallet";
 import { supabase } from "@/lib/supabase";
 
@@ -9,6 +10,8 @@ type Props = { size?: "sm" | "md"; variant?: "solid" | "onDark"; compact?: boole
 
 export function CreditsBadge({ size = "md", variant = "solid", compact = false }: Props) {
   const { user } = useAuth();
+  const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const [balance, setBalance] = useState<number | null>(null);
   const channelInstanceRef = useRef(`badge${Math.random().toString(36).slice(2, 10)}`);
 
@@ -44,15 +47,15 @@ export function CreditsBadge({ size = "md", variant = "solid", compact = false }
   return (
     <Link
       to="/provider/wallet"
-      aria-label="Wallet balance"
+      aria-label={L("Wallet balance", "ပိုက်ဆံအိတ် လက်ကျန်")}
       className={`group inline-flex items-center gap-2 rounded-full ${surface} ${pad} font-semibold transition`}
     >
       <Wallet className={iconSize} />
       <span className="tabular-nums">{balance === null ? "—" : fmt(balance)}</span>
-      {!compact && <span className="opacity-90">credits</span>}
+      {!compact && <span className="opacity-90">{L("credits", "credits")}</span>}
       <span className={`ml-1 inline-flex items-center gap-0.5 rounded-full ${chip} px-1.5 py-0.5 text-xs`}>
         <Plus className="h-3 w-3" />
-        {!compact && <span className="hidden sm:inline">Top up</span>}
+        {!compact && <span className="hidden sm:inline">{L("Top up", "ဖြည့်ပါ")}</span>}
       </span>
     </Link>
   );

@@ -11,15 +11,16 @@ import { useI18n } from "@/lib/i18n";
 import { bookingStatusPair } from "@/lib/status-i18n";
 import { CITIES, TOWNSHIPS } from "@/lib/catalog";
 
-const ADVANCE: Record<string, { key: string; label: string; icon: any }> = {
-  accepted: { key: "on_the_way", label: "I'm on the way", icon: Truck },
-  on_the_way: { key: "started", label: "Start work", icon: Play },
-  started: { key: "completed", label: "Mark completed", icon: CheckCircle2 },
-  in_progress: { key: "completed", label: "Mark completed", icon: CheckCircle2 },
+const ADVANCE: Record<string, { key: string; label: string; labelMy: string; icon: any }> = {
+  accepted: { key: "on_the_way", label: "I'm on the way", labelMy: "လမ်းပေါ်ရောက်ပြီ", icon: Truck },
+  on_the_way: { key: "started", label: "Start work", labelMy: "အလုပ်စပါ", icon: Play },
+  started: { key: "completed", label: "Mark completed", labelMy: "ပြီးစီးမည်", icon: CheckCircle2 },
+  in_progress: { key: "completed", label: "Mark completed", labelMy: "ပြီးစီးမည်", icon: CheckCircle2 },
 };
 
 export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId: string; onChange: () => void }) {
   const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const l = unlock.customer_leads;
   const leadId: string = unlock.lead_id;
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -53,7 +54,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
     const { error } = await supabase.from("bookings").update(patch).eq("id", booking.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Updated");
+    toast.success(L("Updated", "အပ်ဒိတ်ပြီး"));
     await loadBooking();
     onChange();
   };
@@ -69,7 +70,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
     }).eq("id", booking.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("New time sent to customer");
+    toast.success(L("New time sent to customer", "အချိန်အသစ် ဖောက်သည်ထံ ပို့ပြီး"));
     setReschedOpen(false);
     await loadBooking();
   };
@@ -80,7 +81,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
     const { error } = await supabase.from("bookings").update({ time_confirmed_by_provider: true }).eq("id", booking.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Time confirmed");
+    toast.success(L("Time confirmed", "အချိန် အတည်ပြုပြီး"));
     await loadBooking();
   };
 
@@ -95,10 +96,10 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
               params={{ customerId: l.customer_id }}
               className="text-base font-semibold text-primary underline-offset-2 hover:underline"
             >
-              {l?.customer_name ?? "Customer"}
+              {l?.customer_name ?? L("Customer", "ဖောက်သည်")}
             </Link>
           ) : (
-            <div className="text-base font-semibold">{l?.customer_name ?? "Customer"}</div>
+            <div className="text-base font-semibold">{l?.customer_name ?? L("Customer", "ဖောက်သည်")}</div>
           )}
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
@@ -109,7 +110,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
         </div>
         {l?.customer_phone && (
           <a href={`tel:${l.customer_phone}`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow">
-            <Phone className="h-3.5 w-3.5" /> Call
+            <Phone className="h-3.5 w-3.5" /> {L("Call", "ဆက်သွယ်")}
           </a>
         )}
       </div>
@@ -121,18 +122,18 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Calendar className="h-3 w-3" /> Scheduled
+                <Calendar className="h-3 w-3" /> {L("Scheduled", "ချိန်းဆိုထား")}
               </div>
               <div className="mt-1 text-sm font-semibold">
-                {scheduled ? scheduled.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Not scheduled yet"}
+                {scheduled ? scheduled.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : L("Not scheduled yet", "မချိန်းရသေး")}
               </div>
               {booking && (
                 <div className="mt-1 text-[11px] text-muted-foreground">
                   {bothConfirmed
-                    ? "Both sides confirmed"
+                    ? L("Both sides confirmed", "နှစ်ဖက်လုံး အတည်ပြုပြီ")
                     : customerConfirmed
-                      ? "Customer confirmed — please confirm"
-                      : "Waiting for customer to confirm"}
+                      ? L("Customer confirmed — please confirm", "ဖောက်သည် အတည်ပြုပြီ — သင်လည်း အတည်ပြုပါ")
+                      : L("Waiting for customer to confirm", "ဖောက်သည် အတည်ပြုရန် စောင့်ဆိုင်းနေ")}
                 </div>
               )}
             </div>
@@ -140,7 +141,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
 
           {booking && !bothConfirmed && customerConfirmed && booking.provider_id === userId && !reschedOpen && (
             <Button size="sm" className="mt-2 w-full" onClick={confirmTime} disabled={busy}>
-              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirm this time
+              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {L("Confirm this time", "ဤအချိန် အတည်ပြု")}
             </Button>
           )}
 
@@ -148,18 +149,18 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
             <Dialog open={reschedOpen} onOpenChange={setReschedOpen}>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{scheduled ? "Reschedule visit" : "Schedule visit"}</DialogTitle>
+                  <DialogTitle>{scheduled ? L("Reschedule visit", "ချိန်းဆိုချက် ပြင်") : L("Schedule visit", "ချိန်းဆိုမည်")}</DialogTitle>
                   <DialogDescription>
-                    Pick a date and time. The customer will be asked to confirm.
+                    {L("Pick a date and time. The customer will be asked to confirm.", "ရက်နှင့် အချိန် ရွေးပါ။ ဖောက်သည်ကို အတည်ပြုရန် မေးမည်။")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 py-2">
-                  <label className="text-xs font-medium text-muted-foreground">Date &amp; time</label>
+                  <label className="text-xs font-medium text-muted-foreground">{L("Date & time", "ရက်နှင့် အချိန်")}</label>
                   <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
                 </div>
                 <DialogFooter className="gap-2 sm:gap-2">
-                  <Button variant="outline" onClick={() => setReschedOpen(false)} disabled={busy}>Cancel</Button>
-                  <Button onClick={proposeTime} disabled={busy || !when}>Send to customer</Button>
+                  <Button variant="outline" onClick={() => setReschedOpen(false)} disabled={busy}>{L("Cancel", "ပယ်ဖျက်")}</Button>
+                  <Button onClick={proposeTime} disabled={busy || !when}>{L("Send to customer", "ဖောက်သည်ထံ ပို့")}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -195,14 +196,14 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
                   disabled={busy}
                 >
                   <Calendar className="mr-1.5 h-4 w-4" />
-                  {scheduled ? "Reschedule" : "Schedule visit"}
+                  {scheduled ? L("Reschedule", "ချိန်းဆိုချက် ပြင်") : L("Schedule visit", "ချိန်းဆိုမည်")}
                 </Button>
                 <Button
                   onClick={advance}
                   disabled={busy || blocked}
-                  title={blocked ? "Both sides must confirm the visit time first" : undefined}
+                  title={blocked ? L("Both sides must confirm the visit time first", "နှစ်ဖက်လုံး ချိန်းဆိုချိန် အတည်ပြုဦးရမည်") : undefined}
                 >
-                  <next.icon className="mr-1.5 h-4 w-4" /> {next.label}
+                  <next.icon className="mr-1.5 h-4 w-4" /> {L(next.label, next.labelMy)}
                 </Button>
               </div>
               {blocked && (
@@ -224,7 +225,7 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
             search={{ tab: "messages" }}
             className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-accent"
           >
-            <MessageCircle className="h-3.5 w-3.5" /> Chat
+            <MessageCircle className="h-3.5 w-3.5" /> {L("Chat", "မက်ဆေ့")}
           </Link>
           <Link
             to="/request/$leadId"
@@ -232,13 +233,13 @@ export function WonLeadCard({ unlock, userId, onChange }: { unlock: any; userId:
             search={{ tab: "booking" }}
             className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-accent"
           >
-            Full booking <ChevronRight className="h-3.5 w-3.5" />
+            {L("Full booking", "ဘုတ်ကင် အပြည့်")} <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
         {status === "completed" && !booking?.customer_confirmed_at && (
           <p className="flex items-center gap-1.5 rounded-md border border-amber-300/60 bg-amber-50 p-2 text-[11px] text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-            <Clock className="h-3 w-3" /> Waiting for customer to confirm completion.
+            <Clock className="h-3 w-3" /> {L("Waiting for customer to confirm completion.", "ဖောက်သည် ပြီးစီးမှု အတည်ပြုရန် စောင့်ဆိုင်းနေ။")}
           </p>
         )}
       </div>

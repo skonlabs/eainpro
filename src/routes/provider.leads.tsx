@@ -130,13 +130,13 @@ function LeadsPage() {
       if (!res.ok) {
         toast.error(UNLOCK_ERROR_MESSAGES[res.error ?? ""] ?? res.error ?? "Failed to unlock");
       } else {
-        toast.success("Lead unlocked! Customer details revealed.");
+        toast.success(L("Lead unlocked! Customer details revealed.", "Lead ဖွင့်ပြီး! ဖောက်သည် အချက်အလက် ပေါ်လာပြီ။"));
         setPickedLead(null);
         refresh();
         setTab("unlocked");
       }
     } catch (e: any) {
-      toast.error(e.message ?? "Failed");
+      toast.error(e.message ?? L("Failed", "မအောင်မြင်ပါ"));
     } finally {
       setUnlocking(false);
     }
@@ -145,7 +145,7 @@ function LeadsPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6 sm:py-10">
-        <h1 className="text-2xl font-bold">Leads</h1>
+        <h1 className="text-2xl font-bold">{L("Leads", "Lead များ")}</h1>
 
         {loadError ? (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
@@ -157,7 +157,7 @@ function LeadsPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="available">
-              Available
+              {L("Available", "ရရှိနိုင်")}
               {available && available.filter((l) => !dismissed.has(l.id)).length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                   {available.filter((l) => !dismissed.has(l.id)).length}
@@ -165,7 +165,7 @@ function LeadsPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="unlocked">
-              Unlocked
+              {L("Unlocked", "ဖွင့်ပြီး")}
               {unlocked && unlocked.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-foreground">
                   {unlocked.length}
@@ -173,7 +173,7 @@ function LeadsPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="won">
-              Won
+              {L("Won", "အနိုင်ရ")}
               {won.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold text-white">
                   {won.length}
@@ -181,7 +181,7 @@ function LeadsPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="lost">
-              Lost
+              {L("Lost", "ရှုံး")}
               {lost.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
                   {lost.length}
@@ -194,17 +194,17 @@ function LeadsPage() {
             {available === null ? <SkelList /> :
               !hasServices || !hasAreas ? (
                 <div className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-900">
-                  <p className="font-semibold mb-1">Finish your provider profile to receive leads.</p>
+                  <p className="font-semibold mb-1">{L("Finish your provider profile to receive leads.", "Lead ရရှိရန် provider ပရိုဖိုင် ပြည့်စုံပါစေ။")}</p>
                   <p className="text-xs mb-3">
-                    {!hasServices && "You haven't selected any service categories. "}
-                    {!hasAreas && "You haven't set any service areas. "}
+                    {!hasServices && L("You haven't selected any service categories. ", "ဝန်ဆောင်မှု အမျိုးအစား မရွေးရသေး။ ")}
+                    {!hasAreas && L("You haven't set any service areas. ", "ဝန်ဆောင်ပေးသော နယ်မြေ မသတ်မှတ်ရသေး။ ")}
                   </p>
-                  <Link to="/provider/onboarding" className="inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">Update profile</Link>
+                  <Link to="/provider/onboarding" className="inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">{L("Update profile", "ပရိုဖိုင် အပ်ဒိတ်")}</Link>
                 </div>
               ) :
               (() => {
                 const visible = available.filter((l) => !dismissed.has(l.id));
-                if (visible.length === 0) return <Empty msg="No matching leads in your service areas right now. Check back soon." />;
+                if (visible.length === 0) return <Empty msg={L("No matching leads in your service areas right now. Check back soon.", "သင့် နယ်မြေတွင် Lead မရှိသေး။ နောက်မှ ပြန်စစ်ပါ။")} />;
                 return visible.map((l) => (
                   <LockedCard key={l.id} lead={l} onUnlock={() => setPickedLead(l)} onDismiss={() => dismiss(l.id)} />
                 ));
@@ -213,17 +213,17 @@ function LeadsPage() {
 
           <TabsContent value="unlocked" className="space-y-3">
             {unlocked === null ? <SkelList /> :
-              unlocked.length === 0 ? <Empty msg="You haven't unlocked any leads yet." /> :
+              unlocked.length === 0 ? <Empty msg={L("You haven't unlocked any leads yet.", "Lead တစ်ခုမှ မဖွင့်ရသေး။")} /> :
               unlocked.map((u) => <UnlockedCard key={u.id} unlock={u} onChange={refresh} />)}
           </TabsContent>
 
           <TabsContent value="won" className="space-y-3">
-            {won.length === 0 ? <Empty msg="No won jobs yet." /> :
+            {won.length === 0 ? <Empty msg={L("No won jobs yet.", "အနိုင်ရ အလုပ် မရှိသေး။")} /> :
               won.map((u) => <WonLeadCard key={u.id} unlock={u} userId={user!.id} onChange={refresh} />)}
           </TabsContent>
 
           <TabsContent value="lost" className="space-y-3">
-            {lost.length === 0 ? <Empty msg="No lost or invalid leads." /> :
+            {lost.length === 0 ? <Empty msg={L("No lost or invalid leads.", "ရှုံး သို့ မမှန်ကန်သော Lead မရှိ။")} /> :
               lost.map((u) => <UnlockedCard key={u.id} unlock={u} onChange={refresh} />)}
           </TabsContent>
         </Tabs>
@@ -232,7 +232,7 @@ function LeadsPage() {
       <Dialog open={!!pickedLead} onOpenChange={(o) => !o && setPickedLead(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Unlock this lead?</DialogTitle>
+            <DialogTitle>{L("Unlock this lead?", "ဤ Lead ဖွင့်မလား?")}</DialogTitle>
           </DialogHeader>
           {pickedLead && (
             <div className="space-y-3 text-sm">
@@ -243,26 +243,26 @@ function LeadsPage() {
                 </div>
               </div>
               <p>
-                Confirm to deduct <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> from your wallet and reveal the customer's full request, contact details and address. This fee is non-refundable once valid details are shown.
+{L("Confirm to deduct", "ဖြတ်တောက်ရန် အတည်ပြုပါ")} <strong>{fmt(pickedLead.lead_price_credits)} credits</strong> {L("from your wallet and reveal the customer's full request, contact details and address. This fee is non-refundable once valid details are shown.", "ပိုက်ဆံအိတ်မှ ဖြတ်ပြီး ဖောက်သည်၏ တောင်းဆိုချက်နှင့် ဆက်သွယ်ရေး အသေးစိတ် ဖော်ပြမည်။ အချက်အလက် မှန်ကန်ပါက ငွေပြန်မအပ်ပါ။")}
               </p>
               <p className="text-xs text-muted-foreground">
-                Wallet balance: <strong>{fmt(balance)} credits</strong> → after unlock: <strong>{fmt(Math.max(0, balance - pickedLead.lead_price_credits))} credits</strong>
+{L("Wallet balance:", "ပိုက်ဆံအိတ် လက်ကျန်:")} <strong>{fmt(balance)} credits</strong> → {L("after unlock:", "ဖွင့်ပြီးနောက်:")} <strong>{fmt(Math.max(0, balance - pickedLead.lead_price_credits))} credits</strong>
               </p>
               <p className="text-xs text-muted-foreground">
-                {pickedLead.current_unlock_count} of {pickedLead.max_provider_unlocks} providers have unlocked this lead.
+{pickedLead.current_unlock_count} {L("of", "/")} {pickedLead.max_provider_unlocks} {L("providers have unlocked this lead.", "provider Lead ဖွင့်ပြီး။")}
               </p>
               {balance < pickedLead.lead_price_credits && (
                 <p className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
-                  Insufficient credits. You have {fmt(balance)}, need {fmt(pickedLead.lead_price_credits)}.{" "}
-                  <Link to="/provider/wallet" className="underline">Top up</Link>
+                  {L("Insufficient credits. You have", "Credits မလုံ။ သင့်တွင်")} {fmt(balance)}{L(", need", ", လိုသည်")} {fmt(pickedLead.lead_price_credits)}.{" "}
+                  <Link to="/provider/wallet" className="underline">{L("Top up", "ဖြည့်ပါ")}</Link>
                 </p>
               )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPickedLead(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setPickedLead(null)}>{L("Cancel", "ပယ်ဖျက်")}</Button>
             <Button onClick={doUnlock} disabled={unlocking || (pickedLead ? balance < pickedLead.lead_price_credits : true)}>
-              {unlocking ? "Unlocking…" : `Unlock for ${fmt(pickedLead?.lead_price_credits ?? 0)} credits`}
+              {unlocking ? L("Unlocking…", "ဖွင့်နေ…") : `${L("Unlock for", "ဖွင့်ရန်")} ${fmt(pickedLead?.lead_price_credits ?? 0)} credits`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -284,7 +284,7 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
     <div className={`rounded-2xl border bg-card p-4 ${lead.is_direct ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
       {lead.is_direct && (
         <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-          Direct request · for you only
+          {L("Direct request · for you only", "တိုက်ရိုက် တောင်းဆိုချက် · သင့်အတွက်သာ")}
         </div>
       )}
       <div className="flex items-start justify-between gap-3">
@@ -304,30 +304,30 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-primary">{fmt(lead.lead_price_credits)}</div>
-          <div className="text-[10px] text-muted-foreground">credits to view</div>
+          <div className="text-[10px] text-muted-foreground">{L("credits to view", "credits ကြည့်ရမည်")}</div>
         </div>
       </div>
       <p className="mt-2 text-sm text-muted-foreground italic">
-        Lead details are hidden. View the lead to see the customer's request, contact info and address.
+        {L("Lead details are hidden. View the lead to see the customer's request, contact info and address.", "Lead အသေးစိတ် ဖုံးကွယ်ထား။ ဖောက်သည်၏ တောင်းဆိုချက်နှင့် ဆက်သွယ်ရေးကို ကြည့်ရန် ဖွင့်ပါ။")}
       </p>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Received: {new Date(lead.created_at).toLocaleString()}
+        {L("Received:", "ရရှိ:")} {new Date(lead.created_at).toLocaleString()}
       </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {lead.current_unlock_count} of {lead.max_provider_unlocks} unlocked
-          {slotsLeft <= 2 && <span className="ml-1 font-semibold text-amber-600">· {slotsLeft} slot{slotsLeft===1?"":"s"} left</span>}
+          {lead.current_unlock_count} {L("of", "/")} {lead.max_provider_unlocks} {L("unlocked", "ဖွင့်ပြီး")}
+          {slotsLeft <= 2 && <span className="ml-1 font-semibold text-amber-600">· {slotsLeft} {L(`slot${slotsLeft===1?"":"s"} left`, "နေရာ ကျန်")}</span>}
         </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onDismiss}
             className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-            title="Hide this lead"
+            title={L("Hide this lead", "ဤ Lead ဖုံး")}
           >
-            <XIcon className="h-3 w-3" /> Not interested
+            <XIcon className="h-3 w-3" /> {L("Not interested", "မစိတ်ဝင်စား")}
           </button>
-          <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />View Lead ({fmt(lead.lead_price_credits)} credits)</Button>
+          <Button size="sm" onClick={onUnlock}><Lock className="mr-1 h-3.5 w-3.5" />{L("View Lead", "Lead ကြည့်")} ({fmt(lead.lead_price_credits)} credits)</Button>
         </div>
       </div>
     </div>
@@ -336,6 +336,7 @@ function LockedCard({ lead, onUnlock, onDismiss }: { lead: LeadPreview; onUnlock
 
 function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void }) {
   const { lang } = useI18n();
+  const L = (en: string, my: string) => (lang === "en" ? en : my);
   const tStatus = (s: string) => (lang === "en" ? unlockStatusPair(s).en : unlockStatusPair(s).my);
   const tHint = (s: string) => (lang === "en" ? unlockHintPair(s).en : unlockHintPair(s).my);
   const l = unlock.customer_leads;
@@ -374,7 +375,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
 
   const sendQuote = async () => {
     const amt = price ? parseInt(price, 10) : 0;
-    if (!amt || amt <= 0) { toast.error("Enter a valid quote amount first"); return; }
+    if (!amt || amt <= 0) { toast.error(L("Enter a valid quote amount first", "Quote ပမာဏ ထည့်ပါ")); return; }
     setQuoteBusy(true);
     const { data, error } = await supabase
       .from("quotes")
@@ -403,7 +404,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
     setExistingQuote(data as any);
     setStatus("quoted");
     setQuoteOpen(false);
-    toast.success("Quote sent to customer");
+    toast.success(L("Quote sent to customer", "Quote ဖောက်သည်ထံ ပို့ပြီး"));
     onChange();
   };
 
@@ -419,7 +420,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
   }, [unlock.id]);
 
   const submitReport = async () => {
-    if (!reportReason.trim()) { toast.error("Add a short reason"); return; }
+    if (!reportReason.trim()) { toast.error(L("Add a short reason", "အကြောင်းပြချက် ထည့်ပါ")); return; }
     setReportBusy(true);
     const { error } = await supabase.from("unlock_refund_requests").insert({
       unlock_id: unlock.id,
@@ -431,7 +432,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
     if (error) return toast.error(error.message);
     setReportSent(true);
     setReportOpen(false);
-    toast.success("Report sent. Admin will review.");
+    toast.success(L("Report sent. Admin will review.", "တိုင်ကြားချက် ပို့ပြီး။ Admin စစ်ဆေးမည်။"));
   };
 
   const save = async () => {
@@ -442,7 +443,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
         quoted_price_mmk: price ? parseInt(price, 10) : null,
         provider_notes: notes || null,
       });
-      toast.success("Saved");
+      toast.success(L("Saved", "သိမ်းပြီး"));
       onChange();
     } catch (e: any) {
       toast.error(e.message);
@@ -461,18 +462,18 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
                 params={{ customerId: l.customer_id }}
                 className="font-semibold text-primary underline-offset-2 hover:underline"
               >
-                {l?.customer_name ?? "Customer"}
+                {l?.customer_name ?? L("Customer", "ဖောက်သည်")}
               </Link>
             ) : (
-              <span className="font-semibold">{l?.customer_name ?? "Customer"}</span>
+              <span className="font-semibold">{l?.customer_name ?? L("Customer", "ဖောက်သည်")}</span>
             )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             {l?.city_slug ?? ""}{l?.urgency ? ` · ${l.urgency}` : ""}
           </div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">
-            {l?.created_at && <>Lead received: {new Date(l.created_at).toLocaleString()} · </>}
-            Unlocked: {new Date(unlock.unlocked_at).toLocaleString()}
+            {l?.created_at && <>{L("Lead received:", "Lead ရရှိ:")} {new Date(l.created_at).toLocaleString()} · </>}
+            {L("Unlocked:", "ဖွင့်ပြီး:")} {new Date(unlock.unlocked_at).toLocaleString()}
           </div>
         </div>
         {l?.customer_phone && (
@@ -483,25 +484,25 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       </div>
       {(l?.address || l?.township_slug || l?.city_slug) && (() => {
         const city = CITIES.find((c) => c.slug === l.city_slug);
-        const cityLabel = city ? city.en : l.city_slug;
+        const cityLabel = city ? (lang === "en" ? city.en : city.my) : l.city_slug;
         const ts = l.township_slug
           ? TOWNSHIPS[l.city_slug]?.find((t) => t.slug === l.township_slug)
           : null;
-        const tsLabel = ts ? ts.en : l.township_slug ?? null;
+        const tsLabel = ts ? (lang === "en" ? ts.en : ts.my) : l.township_slug ?? null;
         const parts = [l.address, tsLabel, cityLabel].filter(Boolean);
-        return <p className="mt-2 text-xs"><strong>Address:</strong> {parts.join(", ")}</p>;
+        return <p className="mt-2 text-xs"><strong>{L("Address:", "လိပ်စာ:")}</strong> {parts.join(", ")}</p>;
       })()}
       {(l?.full_description || l?.short_description) && (
         <p className="mt-2 text-sm">{l.full_description ?? l.short_description}</p>
       )}
       {l?.preferred_date && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Preferred: {l.preferred_date}{l.preferred_time ? ` ${l.preferred_time}` : ""}
+          {L("Preferred:", "ဦးစားပေး:")} {l.preferred_date}{l.preferred_time ? ` ${l.preferred_time}` : ""}
         </p>
       )}
       {(l?.budget_min || l?.budget_max) && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Budget: {l.budget_min ? `${l.budget_min} ` : ""}{l.budget_max ? `- ${l.budget_max}` : ""} MMK
+          {L("Budget:", "ဘတ်ဂျက်:")} {l.budget_min ? `${l.budget_min} ` : ""}{l.budget_max ? `- ${l.budget_max}` : ""} MMK
         </p>
       )}
       {!l && (
@@ -513,7 +514,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       <div className="mt-3 flex flex-wrap gap-2">
         {l?.customer_phone && (
           <a href={`tel:${l.customer_phone}`} className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent">
-            <Phone className="h-3.5 w-3.5" /> Call customer
+            <Phone className="h-3.5 w-3.5" /> {L("Call customer", "ဖောက်သည် ဆက်သွယ်")}
           </a>
         )}
         <Link
@@ -522,7 +523,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           search={{ tab: "messages" }}
           className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent"
         >
-          <MessageCircle className="h-3.5 w-3.5" /> Message customer
+          <MessageCircle className="h-3.5 w-3.5" /> {L("Message customer", "ဖောက်သည် မက်ဆေ့")}
         </Link>
         <Link
           to="/request/$leadId"
@@ -530,7 +531,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           search={{ tab: "details" }}
           className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-accent"
         >
-          View full request
+          {L("View full request", "တောင်းဆိုချက် အပြည့်")}
         </Link>
       </div>
 
@@ -541,11 +542,11 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           onClick={() => setQuoteOpen(true)}
         >
           <Send className="mr-1 h-3.5 w-3.5" />
-          {existingQuote ? "Update quote to customer" : "Send quote to customer"}
+          {existingQuote ? L("Update quote to customer", "Quote အပ်ဒိတ်") : L("Send quote to customer", "Quote ပို့ပါ")}
         </Button>
         {existingQuote && (
           <span className="text-[11px] text-muted-foreground">
-            Sent: {fmt(existingQuote.amount)} MMK · {new Date(existingQuote.created_at).toLocaleString()}
+            {L("Sent:", "ပို့ပြီး:")} {fmt(existingQuote.amount)} MMK · {new Date(existingQuote.created_at).toLocaleString()}
           </span>
         )}
       </div>
@@ -553,8 +554,8 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <div className="text-xs font-semibold">Job progress</div>
-            <div className="text-[11px] text-muted-foreground">Track this lead so you remember where it stands. Only you see this.</div>
+            <div className="text-xs font-semibold">{L("Job progress", "အလုပ် တိုးတက်မှု")}</div>
+            <div className="text-[11px] text-muted-foreground">{L("Track this lead so you remember where it stands. Only you see this.", "ဤ Lead ၏ အခြေအနေကို မှတ်သားပါ။ သင်သာ မြင်သည်။")}</div>
           </div>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_META[unlock.status as StatusKey]?.tone ?? "bg-muted text-foreground"}`}>
             {tStatus(unlock.status)}
@@ -573,12 +574,12 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             <Button
               size="sm"
               onClick={async () => {
-                if (!confirm(`Update job progress to "${tStatus(status)}"?`)) return;
+                if (!confirm(L(`Update job progress to "${tStatus(status)}"?`, `အလုပ်တိုးတက်မှုကို "${tStatus(status)}" သို့ ပြောင်းမလား?`))) return;
                 await save();
               }}
               disabled={saving}
             >
-              {saving ? "Saving…" : "Confirm change"}
+              {saving ? L("Saving…", "သိမ်းနေ…") : L("Confirm change", "ပြောင်းလဲမည်")}
             </Button>
           )}
         </div>
@@ -590,7 +591,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
       <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
         {reportSent ? (
           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" /> Refund request submitted
+            <AlertTriangle className="h-3 w-3" /> {L("Refund request submitted", "ငွေပြန်အမ်းရန် တောင်းဆိုပြီး")}
           </span>
         ) : (
           <button
@@ -598,7 +599,7 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
             onClick={() => setReportOpen(true)}
             className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 hover:underline"
           >
-            <AlertTriangle className="h-3 w-3" /> Report invalid lead / request refund
+            <AlertTriangle className="h-3 w-3" /> {L("Report invalid lead / request refund", "မမှန်ကန်သော Lead တိုင်ကြား / ငွေပြန်တောင်း")}
           </button>
         )}
       </div>
@@ -607,43 +608,43 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
           <DialogHeader><DialogTitle>Report this lead</DialogTitle></DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-xs text-muted-foreground">
-              Use this when the lead has wrong contact info, is spam, or fraudulent. Admin will review and refund your credits if approved.
+              {L("Use this when the lead has wrong contact info, is spam, or fraudulent. Admin will review and refund your credits if approved.", "ဆက်သွယ်ရေး မမှန်ကန်သော Lead ဖြစ်ပါက တိုင်ကြားပါ။ Admin စစ်ဆေးပြီး credits ပြန်အမ်းနိုင်သည်။")}
             </p>
             <div>
-              <label className="text-xs font-medium">Reason</label>
+              <label className="text-xs font-medium">{L("Reason", "အကြောင်းရင်း")}</label>
               <select
                 className="mt-1 w-full rounded-md border border-border bg-background p-2 text-sm"
                 value={reportKind}
                 onChange={(e) => setReportKind(e.target.value as typeof reportKind)}
               >
-                <option value="wrong_info">Wrong contact info / unreachable</option>
-                <option value="spam_lead">Spam or duplicate</option>
-                <option value="fraud">Fraudulent</option>
-                <option value="other">Other</option>
+                <option value="wrong_info">{L("Wrong contact info / unreachable", "ဆက်သွယ်ရေး မမှန်")}</option>
+                <option value="spam_lead">{L("Spam or duplicate", "Spam သို့ ထပ်တူ")}</option>
+                <option value="fraud">{L("Fraudulent", "လိမ်ညာမှု")}</option>
+                <option value="other">{L("Other", "အခြား")}</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium">Details</label>
-              <Textarea rows={3} value={reportReason} onChange={(e) => setReportReason(e.target.value)} placeholder="What happened?" />
+              <label className="text-xs font-medium">{L("Details", "အသေးစိတ်")}</label>
+              <Textarea rows={3} value={reportReason} onChange={(e) => setReportReason(e.target.value)} placeholder={L("What happened?", "ဘာဖြစ်သွားသနည်း?")} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reportBusy}>Cancel</Button>
-            <Button onClick={submitReport} disabled={reportBusy || !reportReason.trim()}>{reportBusy ? "Sending…" : "Submit report"}</Button>
+            <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reportBusy}>{L("Cancel", "ပယ်ဖျက်")}</Button>
+            <Button onClick={submitReport} disabled={reportBusy || !reportReason.trim()}>{reportBusy ? L("Sending…", "ပို့နေ…") : L("Submit report", "တိုင်ကြားမည်")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={quoteOpen} onOpenChange={(o) => !o && setQuoteOpen(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{existingQuote ? "Update quote" : "Send quote to customer"}</DialogTitle>
+            <DialogTitle>{existingQuote ? L("Update quote", "Quote အပ်ဒိတ်") : L("Send quote to customer", "Quote ဖောက်သည်ထံ ပို့ပါ")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-xs text-muted-foreground">
-              The customer will receive a notification with your quote and can accept it to create a booking.
+              {L("The customer will receive a notification with your quote and can accept it to create a booking.", "ဖောက်သည်သည် သင်၏ quote အကြောင်း သတိပေးချက် ရမည်ဖြစ်ပြီး လက်ခံလျှင် ဘုတ်ကင် ဖန်တီးနိုင်သည်။")}
             </p>
             <div>
-              <label className="text-xs font-medium">Price (MMK)</label>
+              <label className="text-xs font-medium">{L("Price (MMK)", "စျေး (ကျပ်)")}</label>
               <Input
                 className="mt-1"
                 inputMode="numeric"
@@ -653,28 +654,28 @@ function UnlockedCard({ unlock, onChange }: { unlock: any; onChange: () => void 
               />
             </div>
             <div>
-              <label className="text-xs font-medium">When can you do it? (optional)</label>
+              <label className="text-xs font-medium">{L("When can you do it? (optional)", "ဘယ်အချိန် လုပ်နိုင်သည်? (ရွေး)")}</label>
               <Input
                 className="mt-1"
                 value={quoteEta}
                 onChange={(e) => setQuoteEta(e.target.value)}
-                placeholder="e.g. Tomorrow 10am"
+                placeholder={L("e.g. Tomorrow 10am", "ဥပမာ မနက်ဖြန် ၁၀ နာရီ")}
               />
             </div>
             <div>
-              <label className="text-xs font-medium">Notes for customer (optional)</label>
+              <label className="text-xs font-medium">{L("Notes for customer (optional)", "ဖောက်သည်အတွက် မှတ်ချက် (ရွေး)")}</label>
               <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
             {price && (
               <p className="rounded-md bg-primary/5 p-2 text-xs">
-                Confirm sending <strong>{fmt(parseInt(price, 10))} MMK</strong> quote to {l?.customer_name ?? "the customer"}.
+                {L("Confirm sending", "ပို့မည်ဟု အတည်ပြုပါ")} <strong>{fmt(parseInt(price, 10))} MMK</strong> {L("quote to", "quote ကို")} {l?.customer_name ?? L("the customer", "ဖောက်သည်")}.
               </p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setQuoteOpen(false)} disabled={quoteBusy}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setQuoteOpen(false)} disabled={quoteBusy}>{L("Cancel", "ပယ်ဖျက်")}</Button>
             <Button onClick={sendQuote} disabled={quoteBusy || !price || parseInt(price, 10) <= 0}>
-              {quoteBusy ? "Sending…" : existingQuote ? "Update quote" : "Confirm & send"}
+              {quoteBusy ? L("Sending…", "ပို့နေ…") : existingQuote ? L("Update quote", "Quote အပ်ဒိတ်") : L("Confirm & send", "အတည်ပြုပြီး ပို့")}
             </Button>
           </DialogFooter>
         </DialogContent>
