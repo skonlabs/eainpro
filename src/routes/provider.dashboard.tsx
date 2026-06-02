@@ -197,8 +197,8 @@ function DashboardPage() {
                   <div className="flex gap-3 px-3 py-3">
                     <div className="mt-0.5">{icon}</div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{a.title}</p>
-                      {a.body && <p className="line-clamp-2 text-xs text-muted-foreground">{a.body}</p>}
+                      <p className="truncate text-sm font-medium">{translateNotificationTitle(a.title, lang)}</p>
+                      {a.body && <p className="line-clamp-2 text-xs text-muted-foreground">{translateNotificationBody(a.body, lang)}</p>}
                       <p className="mt-1 text-[10px] text-muted-foreground">{new Date(a.created_at).toLocaleString()}</p>
                     </div>
                   </div>
