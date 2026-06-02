@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CalendarCheck, Inbox, TrendingUp, CheckCircle2, Star, Bell, Trophy, XCircle, Send, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/site/LoadingState";
 import { bookingStatusPair } from "@/lib/status-i18n";
+import { translateNotificationTitle, translateNotificationBody } from "@/lib/notification-i18n";
 
 export const Route = createFileRoute("/provider/dashboard")({ component: DashboardPage });
 
