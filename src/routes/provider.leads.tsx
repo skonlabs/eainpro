@@ -49,8 +49,6 @@ const writeDismissed = (s: Set<string>) => {
   try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(s))); } catch {}
 };
 
-const preferredTimeLabel = (value: string | null | undefined, lang: "en" | "my") => windowLabel(value, lang);
-
 function LeadsPage() {
   const { user, roles, loading, rolesReady } = useAuth();
   const guard = useRoleGuard("provider");
