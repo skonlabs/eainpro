@@ -67,10 +67,10 @@ function PricingRow({ row, onSave }: { row: any; onSave: (id: string, p: any) =>
         <div className="text-xs text-muted-foreground">{row.service_types?.category_slug}/{row.service_types?.slug}</div>
       </td>
       <td className="p-3">
-        <Input type="number" className="w-28" value={price} onChange={(e) => setPrice(parseInt(e.target.value || "0", 10))} onBlur={() => price !== row.price_credits && onSave(row.id, { price_credits: price })} />
+        <Input type="number" min={0} className="w-28" value={price} onChange={(e) => setPrice(Math.max(0, parseInt(e.target.value || "0", 10)))} onBlur={() => price !== row.price_credits && onSave(row.id, { price_credits: price })} />
       </td>
       <td className="p-3">
-        <Input type="number" className="w-20" value={max} onChange={(e) => setMax(parseInt(e.target.value || "1", 10))} onBlur={() => max !== row.max_provider_unlocks && onSave(row.id, { max_provider_unlocks: max })} />
+        <Input type="number" min={1} className="w-20" value={max} onChange={(e) => setMax(Math.max(1, parseInt(e.target.value || "1", 10)))} onBlur={() => max !== row.max_provider_unlocks && onSave(row.id, { max_provider_unlocks: max })} />
       </td>
       <td className="p-3">
         <Switch checked={refund} onCheckedChange={(v) => { setRefund(v); onSave(row.id, { refund_allowed: v }); }} />
