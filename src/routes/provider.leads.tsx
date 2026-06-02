@@ -242,7 +242,7 @@ function LeadsPage() {
               <div className="rounded-lg border border-border p-3">
                 <div className="font-medium">{lang === "en" ? pickedLead.service_name_en : pickedLead.service_name_my}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {(CITIES.find((c) => c.slug === pickedLead.city_slug)?.[lang] ?? pickedLead.city_slug)} · {urgencyLabel(pickedLead.urgency, lang)}
+                  {(CITIES.find((c) => c.slug === pickedLead.city_slug)?.[lang] ?? pickedLead.city_slug)} · {whenLabel(pickedLead.urgency, pickedLead.created_at, pickedLead.preferred_date, lang)}
                 </div>
               </div>
               <p>
