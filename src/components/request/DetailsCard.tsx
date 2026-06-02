@@ -9,6 +9,30 @@ import type { Lead, T } from "./types";
 import { Field, FieldLabel, FieldValue } from "./Field";
 import { CITIES, TOWNSHIPS } from "@/lib/catalog";
 import { bookingStatusPair } from "@/lib/status-i18n";
+import { windowLabel } from "@/lib/display-i18n";
+
+function formatDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function whenLabel(urgency: string, createdAt: string, preferredDate: string | null, L: T) {
+  const created = new Date(createdAt);
+  switch (urgency) {
+    case "today":
+      return formatDate(created);
+    case "tomorrow": {
+      const t = new Date(created);
+      t.setDate(t.getDate() + 1);
+      return formatDate(t);
+    }
+    case "this_week":
+      return L("This Week", "ဒီအပတ်");
+    case "flexible":
+      return preferredDate ?? L("Flexible", "ပြောင်းလဲနိုင်သည်");
+    default:
+      return preferredDate ?? urgency.replace(/_/g, " ");
+  }
+}
 
 export function DetailsCard({
   lead,
@@ -157,11 +181,11 @@ export function DetailsCard({
         )}
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border/60 pt-4">
-        <Field label={L("Urgency", "အရေးပေါ်")}>
-          <span className="capitalize">{lead.urgency.replace(/_/g, " ")}</span>
+        <Field label={L("When", "ဘယ်အချိန်")}>
+          {whenLabel(lead.urgency, lead.created_at, lead.preferred_date, L)}
         </Field>
-        <Field label={L("Preferred", "နှစ်သက်ရာ")}>
-          {lead.preferred_date ?? "—"}{lead.preferred_time ? ` · ${lead.preferred_time}` : ""}
+        <Field label={L("Preferred Time", "နှစ်သက်သော အချိန်")}>
+          {lead.preferred_time ? (L("en", "my") === "my" ? windowLabel(lead.preferred_time, "my") : windowLabel(lead.preferred_time, "en")) : "—"}
         </Field>
         <Field label={L("Location", "နေရာ")} className="col-span-2">
           <span className="inline-flex items-center gap-1.5">
