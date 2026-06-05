@@ -18,7 +18,7 @@ type Booking = { id: string; lead_id: string; status: string; scheduled_at: stri
 
 type EarningsRow = { id: string; amount: number | null; provider_confirmed_at: string | null; scheduled_at: string | null; status: string };
 
-type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string };
+type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string; booking_id: string; customer_name?: string };
 
 function DashboardPage() {
   const { lang } = useI18n();
@@ -58,7 +58,7 @@ function DashboardPage() {
           .limit(500),
         supabase
           .from("reviews")
-          .select("id, rating, comment, created_at")
+          .select("id, rating, comment, created_at, booking_id")
           .eq("provider_id", uid)
           .eq("rated_by", "customer")
           .order("created_at", { ascending: false })
@@ -80,11 +80,30 @@ function DashboardPage() {
           .eq("status", "won")
           .gte("unlocked_at", since7d),
       ]);
+      const reviews = (rvs ?? []) as ReviewRow[];
+      if (reviews.length > 0) {
+        const bookingIds = [...new Set(reviews.map((r) => r.booking_id))];
+        const { data: bks2 } = await supabase
+          .from("bookings")
+          .select("id, lead_id")
+          .in("id", bookingIds);
+        const jobIds = [...new Set((bks2 ?? []).map((b: any) => b.lead_id).filter(Boolean))];
+        if (jobIds.length > 0) {
+          const { data: leads } = await supabase.rpc("get_customer_leads", { _lead_ids: jobIds });
+          const leadMap = new Map<string, any>((leads ?? []).map((l: any) => [l.id, l]));
+          const bookingMap = new Map<string, string>((bks2 ?? []).map((b: any) => [b.id, b.lead_id]));
+          for (const r of reviews) {
+            const jobId = bookingMap.get(r.booking_id);
+            const lead = jobId ? leadMap.get(jobId) : null;
+            if (lead?.customer_name) r.customer_name = lead.customer_name;
+          }
+        }
+      }
       return {
         missing: false as const,
         bookings: (bks ?? []) as unknown as Booking[],
         earnings: (done ?? []) as EarningsRow[],
-        reviews: (rvs ?? []) as ReviewRow[],
+        reviews,
         ratingAvg: prov.rating_avg ?? null,
         newLeads24h: newLeads ?? 0,
         pendingQuotes: pendingQuotes ?? 0,
@@ -232,10 +251,15 @@ function DashboardPage() {
               {reviews.map((r) => (
                 <li key={r.id} className="rounded-xl border border-border bg-card p-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Star key={n} className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star key={n} className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+                        ))}
+                      </div>
+                      {r.customer_name && (
+                        <span className="text-xs font-medium text-muted-foreground">{r.customer_name}</span>
+                      )}
                     </div>
                     <span className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
                   </div>
