@@ -47,16 +47,16 @@ function ReviewsPage() {
         const bookingIds = [...new Set(reviews.map((r) => r.booking_id))];
         const { data: bookings } = await supabase
           .from("bookings")
-          .select("id, job_id")
+          .select("id, lead_id")
           .in("id", bookingIds);
 
-        const jobIds = [...new Set((bookings ?? []).map((b: any) => b.job_id).filter(Boolean))];
+        const jobIds = [...new Set((bookings ?? []).map((b: any) => b.lead_id).filter(Boolean))];
         if (jobIds.length > 0) {
           const { data: leads } = await supabase.rpc("get_customer_leads", {
             _lead_ids: jobIds,
           });
           const leadMap = new Map<string, any>((leads ?? []).map((l: any) => [l.id, l]));
-          const bookingMap = new Map<string, string>((bookings ?? []).map((b: any) => [b.id, b.job_id]));
+          const bookingMap = new Map<string, string>((bookings ?? []).map((b: any) => [b.id, b.lead_id]));
 
           for (const r of reviews) {
             const jobId = bookingMap.get(r.booking_id);
